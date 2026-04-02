@@ -304,3 +304,18 @@ model Subscription {
 
   @@map("subscriptions")
 }
+
+model Gift {
+  id          Int      @id @default(autoincrement())
+  userId      Int      @map("user_id")
+  giverName   String   @map("giver_name")
+  giverPhone  String?  @map("giver_phone")
+  amount      Float    @default(0)
+  message     String?
+  status      String   @default("new")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("gifts")
+}
