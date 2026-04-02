@@ -3,47 +3,15 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "sqlite"
   url      = env("DB_URL")
 }
 
-enum Plan {
-  free
-  premium
-}
 
-enum RsvpStatus {
-  pending
-  confirmed
-  declined
-}
 
-enum WaStatus {
-  disconnected
-  connecting
-  connected
-}
 
-enum TableType {
-  round
-  square
-  rectangle
-}
 
-enum HallElementType {
-  bar
-  stage
-  dancefloor
-  entrance
-  other
-}
 
-enum MessageStatus {
-  pending
-  sent
-  failed
-  cancelled
-}
 
 model User {
   id              Int      @id @default(autoincrement())
@@ -57,7 +25,7 @@ model User {
   profileImageUrl String?  @map("profile_image_url")
   rsvpToken       String   @unique @default(uuid()) @map("rsvp_token")
   emailVerified   Boolean  @default(false) @map("email_verified")
-  plan            Plan     @default(free)
+  plan            String     @default("free")
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
 
@@ -127,11 +95,12 @@ model Guest {
   phone      String?
   email      String?
   groupName  String?    @map("group_name")
-  rsvpStatus RsvpStatus @default(pending) @map("rsvp_status")
+  rsvpStatus String @default("pending") @map("rsvp_status")
   numPeople  Int        @default(1) @map("num_people")
   giftAmount Float?     @map("gift_amount")
   notes      String?
   tableId    Int?       @map("table_id")
+  guestToken String?    @unique @map("guest_token") // 5-6 chars, for personalized links
   createdAt  DateTime   @default(now()) @map("created_at")
   updatedAt  DateTime   @updatedAt @map("updated_at")
 
@@ -145,8 +114,8 @@ model Guest {
 model WaSession {
   id                   Int      @id @default(autoincrement())
   userId               Int      @unique @map("user_id")
-  sessionDataEncrypted String?  @db.Text @map("session_data_encrypted")
-  status               WaStatus @default(disconnected)
+  sessionDataEncrypted String?  @map("session_data_encrypted")
+  status               String @default("disconnected")
   phoneNumber          String?  @map("phone_number")
   createdAt            DateTime @default(now()) @map("created_at")
   lastActive           DateTime? @map("last_active")
@@ -160,8 +129,8 @@ model WaTemplate {
   id        Int      @id @default(autoincrement())
   userId    Int      @map("user_id")
   name      String
-  content   String   @db.Text
-  variables Json     @default("[]")
+  content   String  
+  variables String     @default("[]")
   isDefault Boolean  @default(false) @map("is_default")
   createdAt DateTime @default(now()) @map("created_at")
 
@@ -175,10 +144,10 @@ model WaMessage {
   id           Int           @id @default(autoincrement())
   userId       Int           @map("user_id")
   templateId   Int?          @map("template_id")
-  recipientIds Json          @map("recipient_ids")
+  recipientIds String          @map("recipient_ids")
   scheduledAt  DateTime?     @map("scheduled_at")
   sentAt       DateTime?     @map("sent_at")
-  status       MessageStatus @default(pending)
+  status       String @default("pending")
   error        String?
   createdAt    DateTime      @default(now()) @map("created_at")
 
@@ -209,7 +178,7 @@ model Table {
   id        Int       @id @default(autoincrement())
   layoutId  Int       @map("layout_id")
   userId    Int       @map("user_id")
-  type      TableType @default(round)
+  type      String @default("round")
   x         Float
   y         Float
   seats     Int       @default(8)
@@ -240,7 +209,7 @@ model TableAssignment {
 model HallElement {
   id       Int             @id @default(autoincrement())
   layoutId Int             @map("layout_id")
-  type     HallElementType
+  type     String
   x        Float
   y        Float
   width    Float
@@ -257,7 +226,7 @@ model CardTemplate {
   id         Int      @id @default(autoincrement())
   userId     Int?     @map("user_id")
   name       String
-  designJson Json     @map("design_json")
+  designJson String     @map("design_json")
   isDefault  Boolean  @default(false) @map("is_default")
   previewUrl String?  @map("preview_url")
   isPremium  Boolean  @default(false) @map("is_premium")
@@ -294,7 +263,7 @@ model Vendor {
   rating       Float?
   city         String?
   isFeatured   Boolean @default(false) @map("is_featured")
-  description  String? @db.Text
+  description  String?
 
   userVendors UserVendor[]
 
@@ -307,7 +276,7 @@ model UserVendor {
   vendorId      Int     @map("vendor_id")
   status        String  @default("considering")
   priceAgreed   Float?  @map("price_agreed")
-  notes         String? @db.Text
+  notes         String?
   contractUrl   String? @map("contract_url")
 
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -319,7 +288,7 @@ model UserVendor {
 model Subscription {
   id         Int      @id @default(autoincrement())
   userId     Int      @unique @map("user_id")
-  plan       Plan     @default(free)
+  plan       String     @default("free")
   startsAt   DateTime @default(now()) @map("starts_at")
   endsAt     DateTime? @map("ends_at")
   paymentRef String?  @map("payment_ref")

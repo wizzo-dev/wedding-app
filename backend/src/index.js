@@ -6,8 +6,12 @@ import rateLimit from '@fastify/rate-limit'
 import jwt from '@fastify/jwt'
 import cookie from '@fastify/cookie'
 import multipart from '@fastify/multipart'
-import { createServer } from 'http'
-import { Server as SocketIO } from 'socket.io'
+import staticFiles from '@fastify/static'
+// socket.io - will be added later
+import { fileURLToPath } from 'url'
+import { dirname, join } from 'path'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
 
 // Routes
 import authRoutes from './routes/auth.js'
@@ -23,12 +27,6 @@ import dashboardRoutes from './routes/dashboard.js'
 import rsvpRoutes from './routes/rsvp.js'
 
 const app = Fastify({ logger: process.env.NODE_ENV === 'development' })
-const httpServer = createServer(app.server)
-
-// ── Socket.io ────────────────────────────────────────────────────────────────
-export const io = new SocketIO(httpServer, {
-  cors: { origin: process.env.FRONTEND_URL, credentials: true }
-})
 
 // ── Security Middleware ───────────────────────────────────────────────────────
 await app.register(helmet, {
@@ -41,7 +39,7 @@ await app.register(helmet, {
 })
 
 await app.register(cors, {
-  origin: process.env.FRONTEND_URL,
+  origin: process.env.NODE_ENV === 'development' ? true : process.env.FRONTEND_URL,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']
 })
@@ -104,12 +102,24 @@ app.register(vendorRoutes,    { prefix: '/api/vendors' })
 app.register(dashboardRoutes, { prefix: '/api/dashboard' })
 app.register(rsvpRoutes,      { prefix: '/api/rsvp' })
 
+// ── Static Frontend ───────────────────────────────────────────────────────────
+const frontendDist = join(__dirname, '../../frontend/dist')
+app.register(staticFiles, {
+  root: frontendDist,
+  prefix: '/',
+  decorateReply: false
+})
+
 // ── Health Check ──────────────────────────────────────────────────────────────
 app.get('/health', async () => ({ status: 'ok', ts: Date.now() }))
 
-// ── 404 ───────────────────────────────────────────────────────────────────────
+// ── 404 - SPA Fallback ────────────────────────────────────────────────────────
 app.setNotFoundHandler((req, reply) => {
-  reply.code(404).send({ error: 'NOT_FOUND', message: 'endpoint לא קיים' })
+  if (req.url.startsWith('/api/')) {
+    reply.code(404).send({ error: 'NOT_FOUND', message: 'endpoint לא קיים' })
+  } else {
+    reply.sendFile('index.html', frontendDist)
+  }
 })
 
 // ── Error Handler ─────────────────────────────────────────────────────────────
