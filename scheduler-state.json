@@ -1,209 +1,49 @@
 {
-  "paused": true,
+  "paused": false,
   "currentIndex": 14,
   "lastCompleted": "WaSend",
   "lastCompletedAt": "2026-04-02T21:30:00Z",
-  "waitingForApproval": [
-    "AppLayout",
-    "Landing"
-  ],
+  "waitingForApproval": [],
   "pages": [
-    {
-      "name": "Landing",
-      "status": "pushed",
-      "branch": "feat/page/landing",
-      "completedAt": "2026-04-02T20:05:00Z"
-    },
-    {
-      "name": "Login",
-      "status": "pending",
-      "branch": null
-    },
-    {
-      "name": "Register",
-      "status": "pending",
-      "branch": null
-    },
-    {
-      "name": "Dashboard",
-      "status": "pending",
-      "branch": null
-    },
-    {
-      "name": "BudgetOverview",
-      "status": "pushed",
-      "branch": "feat/page/budget-overview",
-      "completedAt": "2026-04-02T20:30:00Z"
-    },
-    {
-      "name": "BudgetCategory",
-      "status": "pushed",
-      "branch": "feat/page/budget-overview",
-      "completedAt": "2026-04-02T20:30:00Z"
-    },
-    {
-      "name": "GuestsList",
-      "status": "pending",
-      "branch": null
-    },
-    {
-      "name": "GuestCard",
-      "status": "pending",
-      "branch": null
-    },
-    {
-      "name": "GuestImport",
-      "status": "pending",
-      "branch": null
-    },
-    {
-      "name": "GuestStats",
-      "status": "pending",
-      "branch": null
-    },
-    {
-      "name": "WhatsAppConnect",
-      "status": "pushed",
-      "branch": "feat/page/whatsapp-connect",
-      "completedAt": "2026-04-02T21:30:00Z"
-    },
-    {
-      "name": "WaTemplates",
-      "status": "pushed",
-      "branch": "feat/page/wa-templates",
-      "completedAt": "2026-04-02T21:30:00Z"
-    },
-    {
-      "name": "WaSend",
-      "status": "pushed",
-      "branch": "feat/page/wa-send",
-      "completedAt": "2026-04-02T21:30:00Z"
-    },
-    {
-      "name": "WaHistory",
-      "status": "pending",
-      "branch": null
-    },
-    {
-      "name": "SeatingMap",
-      "status": "pending",
-      "branch": null
-    },
-    {
-      "name": "HallSettings",
-      "status": "pending",
-      "branch": null
-    },
-    {
-      "name": "CardsGallery",
-      "status": "pending",
-      "branch": null
-    },
-    {
-      "name": "CardPreview",
-      "status": "pending",
-      "branch": null
-    },
-    {
-      "name": "GiftsList",
-      "status": "pending",
-      "branch": null
-    },
-    {
-      "name": "GiftStats",
-      "status": "pending",
-      "branch": null
-    },
-    {
-      "name": "VendorsList",
-      "status": "pending",
-      "branch": null
-    },
-    {
-      "name": "VendorDetail",
-      "status": "pending",
-      "branch": null
-    },
-    {
-      "name": "MyVendors",
-      "status": "pending",
-      "branch": null
-    },
-    {
-      "name": "Tasks",
-      "status": "pending",
-      "branch": null
-    },
-    {
-      "name": "Timeline",
-      "status": "pending",
-      "branch": null
-    },
-    {
-      "name": "Settings",
-      "status": "pending",
-      "branch": null
-    },
-    {
-      "name": "Account",
-      "status": "pending",
-      "branch": null
-    },
-    {
-      "name": "Subscription",
-      "status": "pending",
-      "branch": null
-    },
-    {
-      "name": "RSVP",
-      "status": "pending",
-      "branch": null
-    },
-    {
-      "name": "GiftPublic",
-      "status": "pending",
-      "branch": null
-    },
-    {
-      "name": "CardsExport",
-      "status": "pending",
-      "branch": null
-    },
-    {
-      "name": "DashboardStats",
-      "status": "pending",
-      "branch": null
-    },
-    {
-      "name": "Notifications",
-      "status": "pending",
-      "branch": null
-    },
-    {
-      "name": "Profile",
-      "status": "pending",
-      "branch": null
-    },
-    {
-      "name": "VendorSuggestions",
-      "status": "pending",
-      "branch": null
-    },
-    {
-      "name": "PaymentStubs",
-      "status": "pending",
-      "branch": null
-    },
-    {
-      "name": "PublicLanding",
-      "status": "pending",
-      "branch": null
-    },
-    {
-      "name": "NotFound",
-      "status": "pending",
-      "branch": null
-    }
+    { "name": "Landing",           "status": "pushed",   "branch": "feat/page/landing",         "completedAt": "2026-04-02T20:05:00Z" },
+    { "name": "Login",             "status": "pushed",   "branch": "feat/page/login",            "completedAt": "2026-04-02T21:00:00Z" },
+    { "name": "Register",          "status": "pushed",   "branch": "feat/page/register",         "completedAt": "2026-04-02T21:00:00Z" },
+    { "name": "Dashboard",         "status": "pushed",   "branch": "feat/page/dashboard",        "completedAt": "2026-04-02T20:30:00Z" },
+    { "name": "BudgetOverview",    "status": "pushed",   "branch": "feat/page/budget-overview",  "completedAt": "2026-04-02T20:30:00Z" },
+    { "name": "BudgetCategory",    "status": "pushed",   "branch": "feat/page/budget-overview",  "completedAt": "2026-04-02T20:30:00Z" },
+    { "name": "GuestsList",        "status": "pushed",   "branch": "feat/page/guests-list-new",  "completedAt": "2026-04-02T21:55:00Z" },
+    { "name": "GuestCard",         "status": "pushed",   "branch": "feat/page/guest-card",       "completedAt": "2026-04-02T21:55:00Z" },
+    { "name": "GuestImport",       "status": "pushed",   "branch": "feat/page/guest-import",     "completedAt": "2026-04-02T21:55:00Z" },
+    { "name": "GuestStats",        "status": "pushed",   "branch": "feat/page/guest-stats",      "completedAt": "2026-04-02T21:55:00Z" },
+    { "name": "AppLayout",         "status": "pushed",   "branch": "feat/page/app-layout",       "completedAt": "2026-04-02T20:00:00Z" },
+    { "name": "WhatsAppConnect",   "status": "pushed",   "branch": "feat/page/whatsapp-connect", "completedAt": "2026-04-02T21:30:00Z" },
+    { "name": "WaTemplates",       "status": "pushed",   "branch": "feat/page/wa-templates",     "completedAt": "2026-04-02T21:30:00Z" },
+    { "name": "WaSend",            "status": "pushed",   "branch": "feat/page/wa-send",          "completedAt": "2026-04-02T21:30:00Z" },
+    { "name": "WaHistory",         "status": "pending",  "branch": null },
+    { "name": "SeatingMap",        "status": "pending",  "branch": null },
+    { "name": "HallSettings",      "status": "pending",  "branch": null },
+    { "name": "CardsGallery",      "status": "pending",  "branch": null },
+    { "name": "CardPreview",       "status": "pending",  "branch": null },
+    { "name": "GiftsList",         "status": "pending",  "branch": null },
+    { "name": "GiftStats",         "status": "pending",  "branch": null },
+    { "name": "VendorsList",       "status": "pending",  "branch": null },
+    { "name": "VendorDetail",      "status": "pending",  "branch": null },
+    { "name": "MyVendors",         "status": "pending",  "branch": null },
+    { "name": "Tasks",             "status": "pending",  "branch": null },
+    { "name": "Timeline",          "status": "pending",  "branch": null },
+    { "name": "Settings",          "status": "pending",  "branch": null },
+    { "name": "Account",           "status": "pending",  "branch": null },
+    { "name": "Subscription",      "status": "pending",  "branch": null },
+    { "name": "RSVP",              "status": "pending",  "branch": null },
+    { "name": "GiftPublic",        "status": "pending",  "branch": null },
+    { "name": "CardsExport",       "status": "pending",  "branch": null },
+    { "name": "DashboardStats",    "status": "pending",  "branch": null },
+    { "name": "Notifications",     "status": "pending",  "branch": null },
+    { "name": "Profile",           "status": "pending",  "branch": null },
+    { "name": "VendorSuggestions", "status": "pending",  "branch": null },
+    { "name": "PaymentStubs",      "status": "pending",  "branch": null },
+    { "name": "PublicLanding",     "status": "pending",  "branch": null },
+    { "name": "NotFound",          "status": "pending",  "branch": null }
   ],
   "appLayout": {
     "status": "pushed",
