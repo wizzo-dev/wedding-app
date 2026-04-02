@@ -1,5 +1,56 @@
 # WORKLOG - Freddy Dev Agent
 
+## 2026-04-02T21:00Z | GuestsList | feat/page/guests-list
+
+**Summary:** Full Hebrew RTL guests management page with Prisma migration for `side` field, complete CRUD backend, and polished Vue 3 table UI.
+
+**What was built:**
+
+### Backend
+- Updated `schema.prisma`: added `side String @default("חתן")` to Guest model
+- Migration `20260402205126_add_guest_side` — full table recreation with `side` column
+- Full guests CRUD (`backend/src/routes/guests.js`):
+  - `GET /api/guests` — list with optional `search`, `status`, `side` filters + stats
+  - `POST /api/guests` — create guest
+  - `POST /api/guests/bulk` — bulk import (CSV-like format)
+  - `GET /api/guests/:id` — single guest with table name
+  - `PUT /api/guests/:id` — update any field
+  - `DELETE /api/guests/:id` — delete
+
+### GuestsListView.vue
+- Page header with "הוסף אורח" + "ייבוא מרובה" buttons
+- Stats badges: total / מגיעים / לא בטוחים / לא מגיעים / ממתינים / נפשות (clickable filters)
+- Search bar with clear button (client-side instant filtering)
+- Filter pills: all/confirmed/maybe/declined/pending
+- Side filter pills: כולם / צד חתן / צד כלה / משותף
+- Responsive data table:
+  - Avatar with initials (color-coded by name)
+  - Name + phone link
+  - Side badge (blue=חתן, pink=כלה, gray=משותף)
+  - RSVP badge (color-coded: green/red/amber/gray)
+  - Table name chip
+  - People count
+  - Actions: WhatsApp 💬 / Edit ✏️ / Delete 🗑️
+- Add/Edit modal: name, phone, email, group, side, RSVP status, people count, notes
+- Bulk import modal: paste CSV (name, phone, side per line)
+- Loading skeleton (8 rows), error state, empty state with CTA
+- Result count footer
+- Hebrew RTL throughout, fully mobile responsive
+
+**Files changed:**
+- `backend/prisma/schema.prisma`
+- `backend/prisma/migrations/20260402205126_add_guest_side/migration.sql`
+- `backend/src/routes/guests.js`
+- `frontend/src/router/index.js` (updated guests route)
+- `frontend/src/views/app/GuestsListView.vue` (new, ~550 lines)
+
+**Branch:** `feat/page/guests-list`
+**Build:** ✅ Passes (GuestsListView: 15.27kB gzip:5.14kB)
+**Route:** `/app/guests` → GuestsListView
+
+---
+
+
 ## 2026-04-02T20:30Z | BudgetOverview + BudgetCategory | feat/page/budget-overview
 
 **Summary:** Full Hebrew RTL budget management pages with Prisma migrations, complete backend CRUD, and polished Vue 3 UI.
