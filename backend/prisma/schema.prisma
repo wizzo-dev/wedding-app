@@ -26,6 +26,7 @@ model User {
   rsvpToken       String   @unique @default(uuid()) @map("rsvp_token")
   emailVerified   Boolean  @default(false) @map("email_verified")
   plan            String     @default("free")
+  budgetTotal     Float    @default(0) @map("budget_total")
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
 
@@ -79,6 +80,7 @@ model BudgetExpense {
   vendorName   String   @map("vendor_name")
   amount       Float
   note         String?
+  isPaid       Boolean  @default(false) @map("is_paid")
   date         DateTime @default(now())
   createdAt    DateTime @default(now()) @map("created_at")
 
