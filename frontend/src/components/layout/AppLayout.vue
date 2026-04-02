@@ -9,7 +9,13 @@
             <span v-if="!collapsed" class="brand-name">יאללה חתונה</span>
           </Transition>
         </div>
-        <button class="collapse-btn btn btn-icon btn-ghost" @click="collapsed = !collapsed" v-if="!isMobile">
+        <button
+          class="collapse-btn btn btn-icon btn-ghost"
+          @click="collapsed = !collapsed"
+          v-if="!isMobile"
+          :aria-label="collapsed ? 'הרחב סרגל צד' : 'כווץ סרגל צד'"
+          :aria-expanded="!collapsed"
+        >
           <span class="icon">{{ collapsed ? '›' : '‹' }}</span>
         </button>
       </div>
