@@ -1,5 +1,3 @@
-import { prisma } from '../models/db.js'
-
 // Static card templates — no DB required (phase 1)
 const TEMPLATES = [
   {
@@ -83,70 +81,6 @@ export default async function cardsRoutes(app) {
     if (premium === 'false') templates = templates.filter(t => !t.premium)
     if (premium === 'true') templates = templates.filter(t => t.premium)
     return { templates, categories: CATEGORIES, total: templates.length }
-  })
-
-  // GET /api/cards/selected
-  app.get('/selected', { preHandler: [app.authenticate] }, async (req) => {
-    const user = await prisma.user.findUnique({
-      where: { id: req.user.userId },
-      select: { selectedCardTemplateId: true }
-    })
-    return { templateId: user?.selectedCardTemplateId || null }
-  })
-
-  // PUT /api/cards/selected
-  app.put('/selected', { preHandler: [app.authenticate] }, async (req, reply) => {
-    const { templateId } = req.body
-    if (!templateId) return reply.code(400).send({ error: 'templateId נדרש' })
-    const template = TEMPLATES.find(t => t.id === parseInt(templateId))
-    if (!template) return reply.code(404).send({ error: 'תבנית לא נמצאה' })
-    await prisma.user.update({
-      where: { id: req.user.userId },
-      data: { selectedCardTemplateId: parseInt(templateId) }
-    })
-    return { success: true, templateId: parseInt(templateId), templateName: template.name }
-  })
-
-  // GET /api/cards/preview/:templateId — template + user settings merged
-  app.get('/preview/:templateId', { preHandler: [app.authenticate] }, async (req, reply) => {
-    const id = parseInt(req.params.templateId)
-    const template = TEMPLATES.find(t => t.id === id)
-    if (!template) return reply.code(404).send({ error: 'תבנית לא נמצאה' })
-
-    const user = await prisma.user.findUnique({
-      where: { id: req.user.userId },
-      select: { name1: true, name2: true, weddingDate: true, venue: true, venueAddress: true, rsvpToken: true }
-    })
-
-    return {
-      template,
-      settings: {
-        name1: user?.name1 || '',
-        name2: user?.name2 || '',
-        weddingDate: user?.weddingDate || null,
-        venue: user?.venue || '',
-        venueAddress: user?.venueAddress || '',
-        rsvpToken: user?.rsvpToken || ''
-      }
-    }
-  })
-
-  // PUT /api/cards/settings — save card settings (updates user profile)
-  app.put('/settings', { preHandler: [app.authenticate] }, async (req) => {
-    const { name1, name2, weddingDate, venue, venueAddress, phone } = req.body
-    const data = {}
-    if (name1 !== undefined) data.name1 = name1
-    if (name2 !== undefined) data.name2 = name2
-    if (weddingDate !== undefined) data.weddingDate = weddingDate ? new Date(weddingDate) : null
-    if (venue !== undefined) data.venue = venue
-    if (venueAddress !== undefined) data.venueAddress = venueAddress
-
-    const updated = await prisma.user.update({
-      where: { id: req.user.userId },
-      data,
-      select: { name1: true, name2: true, weddingDate: true, venue: true, venueAddress: true, rsvpToken: true }
-    })
-    return { success: true, settings: updated }
   })
 
   // GET /api/cards/templates/:id
