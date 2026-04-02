@@ -355,3 +355,63 @@
 - `feat/page/guest-import`
 - `feat/page/guest-stats`
 
+
+---
+
+## 2026-04-02T21:20Z | Critical + High Fixes | feat/fix/budget-api-contract
+
+**Summary:** Fix sprint — all 7 critical/high issues from the reviewer. Budget API built from scratch, frontend views implemented, auth loop fixed, validation schemas updated, bulk import hardened.
+
+**Changes:**
+
+### CRITICAL FIX 1 + 2 — Budget API contract (was TODO)
+- Replaced stub `budget.js` with full implementation:
+  - `GET /api/budget` → `{totalBudget, totalSpent, remaining, categories[{id,name,allocatedAmount,allocatedPercent,spent,icon,color}]}`
+  - `PUT /api/budget/total` → updates `users.total_budget`, returns user object
+  - `POST /api/budget/categories` → create category
+  - `PUT /api/budget/categories/:id` → update category
+  - `DELETE /api/budget/categories/:id` → delete (auth + ownership check)
+  - `POST /api/budget/expenses` → `{categoryId, vendorName, amount, note, date}` — full validation
+  - `GET /api/budget/expenses?categoryId=X` → list expenses (optional filter by categoryId)
+  - `DELETE /api/budget/expenses/:id` → delete expense
+- Added `totalBudget Float @default(0)` to User model in `schema.prisma`
+- Migration `20260402211626_add_total_budget` applied
+
+### Frontend — BudgetView.vue (was "בבנייה" placeholder)
+- Summary cards: totalBudget / totalSpent / remaining
+- SVG donut chart computed from `totalSpent/totalBudget` (color changes amber→red on high usage)
+- Edit total budget modal (`saveTotal()` sends correct value, never resets to 0)
+- Category cards with progress bars, spent amounts, edit/delete actions
+- Add/Edit category modal
+
+### Frontend — CategoryView.vue (was "בבנייה" placeholder)
+- Loads expenses via `GET /api/budget/expenses?categoryId=:id` (correct param)
+- Progress bar, spent/allocated badges
+- Add expense modal with full validation
+- Delete expense
+
+### HIGH FIX 3 — Guests: silent delete failure
+- `GuestsListView.vue` — removed `// silent` catch, now shows `alert(msg)` on delete failure
+
+### HIGH FIX 4 — Guests: bulk import validation
+- `guests.js POST /bulk`:
+  - Rate limit: 3 imports/hour per user (in-memory, `bulkImportRateMap`)
+  - Hard cap: 500 guests max per import
+  - Per-row validation: שם חובה + phone regex (`/^[+\d\s\-()\u200f]{7,20}$/`)
+  - Invalid rows reported in response (`skipped`, `invalidRows[{row, name, errors}]`)
+
+### HIGH FIX 5 — Auth: 401 refresh loop
+- `useApi.js` — added early exit: if `original.url?.includes('/auth/refresh')`, flush queue, clear token, redirect to `/login` immediately (no retry)
+
+### HIGH FIX 6 — createGuest missing `side` field
+- `validate.js schemas.createGuest` — added `side: z.enum(['groom', 'bride', 'mutual']).optional()`
+
+### HIGH FIX 7 — updateRsvp missing `maybe`
+- `validate.js schemas.updateRsvp` — changed to `z.enum(['pending', 'confirmed', 'declined', 'maybe'])` for consistency with `guests.js` route, stats, and frontend
+
+**Verification:**
+- `npm run build` → 0 errors (157 modules)
+- `pm2 restart yalla-api` → healthy
+- Sanity curl tests on all 8 budget endpoints ✅
+- Bulk import validation test (1 valid, 2 invalid) ✅
+- DELETE /api/guests/9999 → 404 NOT_FOUND ✅
