@@ -363,3 +363,59 @@
 **PR:** https://github.com/wizzo-dev/wedding-app/pull/new/feat/fix/critical-auth
 
 ---
+
+---
+
+## [2026-04-02] WaHistory Page — Freddy Batch 6
+
+**Branch:** `feat/page/wa-history-seating`
+**Built by:** Freddy (subagent, batch 6)
+
+### What was built
+- `HistoryView.vue` — WhatsApp message history page with filter tabs (date, status), expandable failed result rows, re-send action, batch stats (sent/failed/total)
+- `seating.js` backend — Full CRUD for seating tables: GET/POST/PUT/DELETE /api/seating/tables, /assign, /settings, /generate-tables, /stats
+- Merged all WA pages (whatsapp.js 297 lines), seating backend, and HallSettings into this branch
+
+### Build Status
+- `npm run build` → ✅ 0 errors
+- `pm2 restart yalla-api` → ✅ online
+
+---
+
+## [2026-04-02] HallSettings Page — Freddy Batch 6
+
+**Branch:** `feat/page/hall-settings`
+**Built by:** Freddy (subagent, batch 6)
+
+### What was built
+- `HallSettingsView.vue` (views/app/HallSettingsView.vue, 550 lines) — Venue settings page
+- `seating/HallSettingsView.vue` — Alternative hall settings with full form + generate-tables + stats
+- Backend: GET/PUT `/api/seating/settings` — hall name, capacity, background color
+- Backend: POST `/api/seating/generate-tables` — auto-generate N tables with naming style options
+- Backend: GET `/api/seating/stats` — occupancy/assignment statistics
+
+### Build Status
+- `npm run build` → ✅ 0 errors
+- `pm2 restart yalla-api` → ✅ online
+
+---
+
+## [2026-04-02] CardsGallery Page — Freddy Batch 6
+
+**Branch:** `feat/page/card-preview`
+**Built by:** Freddy (subagent, batch 6)
+
+### What was built
+- `CardsView.vue` (views/app/cards/CardsView.vue) — Invitation card gallery with 8 templates
+  - Category filter tabs (classic, romantic, modern, luxury, nature, vintage, beach, rustic)
+  - Popular/free filters
+  - Quick preview modal with template details
+  - Color swatches, layout labels
+- `PreviewView.vue` (views/app/cards/PreviewView.vue) — Full template detail page with CTA
+- `cards.js` backend — GET `/api/cards/templates`, `/templates/:id`, `/templates/slug/:slug`
+  - 8 static templates with primaryColor, accentColor, bgColor, premium, popular, layout, fields
+
+### Build Status
+- `npm run build` → ✅ 0 errors (CardsView: 4.99 kB, PreviewView: 4.47 kB)
+- `pm2 restart yalla-api` → ✅ online
+

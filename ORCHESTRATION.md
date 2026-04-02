@@ -44,13 +44,16 @@ _Last updated: 2026-04-02T22:15Z by Watchdog_
 | WaTemplates | feat/page/wa-templates | round5 ⚠️ CRITICAL |
 | WaSend | feat/page/wa-send | round5 ⚠️ CRITICAL |
 
-### 🔧 In progress (Freddy, spawned 21:50Z)
-- WaHistory → `feat/page/wa-history`
-- SeatingMap → `feat/page/seating-map`
-- HallSettings → `feat/page/hall-settings`
+| WaHistory | feat/page/wa-history-seating | round6 ⏳ |
+| SeatingMap | feat/page/wa-history-seating | round6 ⏳ |
+| HallSettings | feat/page/hall-settings | round6 ⏳ |
+| CardsGallery | feat/page/card-preview | round6 ⏳ |
 
-### ⏳ Pending (after current batch)
-CardsGallery → CardPreview → GiftsList → GiftStats → VendorsList → VendorDetail → MyVendors → Tasks → Timeline → Settings → Account → Subscription → RSVP → GiftPublic → CardsExport → DashboardStats → Notifications → Profile → VendorSuggestions → PaymentStubs → PublicLanding → NotFound
+### 🔧 In progress (Freddy batch 6, 2026-04-02 22:xx Z)
+- Concurrent agents building: Tasks, Timeline, Settings, Vendors, Gifts
+
+### ⏳ Pending
+CardPreview → RSVP → GiftPublic → CardsExport → DashboardStats → Notifications → Profile → VendorSuggestions → PaymentStubs → PublicLanding → NotFound
 
 ---
 
@@ -62,6 +65,10 @@ CardsGallery → CardPreview → GiftsList → GiftStats → VendorsList → Ven
 - **[HIGH]** Budget API backend is still a stub
 - **[HIGH]** Prisma schema drift across branches
 - **[HIGH]** CSV formula injection risk on import
+
+### 🔜 Round 6 (pending — when Freddy finishes current batch):
+- Settings/Account/Subscription, Tasks/Timeline, CardsGallery, CardPreview — unreviewed
+- Also: fix branches feat/fix/budget-api-contract, feat/fix/critical-auth, feat/fix/guests-endpoints (unreviewed, not yet merged)
 
 ### From Round 5 (WhatsApp branches):
 - ~~**[CRITICAL]** Schema drift — `WaTemplate.type`, `WaMessage.message/results` missing~~ ✅ FIXED in `feat/fix/wa-schema-and-routes`
