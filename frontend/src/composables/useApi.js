@@ -35,6 +35,16 @@ api.interceptors.response.use(
       original._retry = true
       refreshing = true
 
+      // If the failing request is itself /auth/refresh, don't retry — logout directly
+      if (original.url?.includes('/auth/refresh')) {
+        queue.forEach(p => p.reject(err))
+        queue = []
+        refreshing = false
+        tokenRegistry.clear()
+        window.location.href = '/login'
+        return Promise.reject(err)
+      }
+
       try {
         const res = await api.post('/auth/refresh')
         const token = res.data.accessToken

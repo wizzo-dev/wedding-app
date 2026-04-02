@@ -55,6 +55,7 @@ export const schemas = {
       name: z.string().min(1).max(100).trim(),
       phone: z.string().regex(/^[+\d\s\-()]{7,20}$/).optional().nullable(),
       email: z.string().email().optional().nullable(),
+      side: z.enum(['groom', 'bride', 'mutual']).optional(),
       groupName: z.string().max(50).optional().nullable(),
       numPeople: z.number().int().min(1).max(30).default(1),
       notes: z.string().max(500).optional().nullable()
@@ -64,7 +65,7 @@ export const schemas = {
   updateRsvp: z.object({
     params: z.object({ id: z.coerce.number().int().positive() }),
     body: z.object({
-      rsvpStatus: z.enum(['pending', 'confirmed', 'declined']),
+      rsvpStatus: z.enum(['pending', 'confirmed', 'declined', 'maybe']),
       numPeople: z.number().int().min(0).max(30).optional()
     })
   }),
