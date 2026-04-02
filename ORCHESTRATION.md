@@ -1,6 +1,6 @@
 # Wedding App יאללה — Orchestration State
 
-_Last updated: 2026-04-02T22:17Z by Watchdog_
+_Last updated: 2026-04-02T22:22Z by Watchdog_
 
 ## Status: ACTIVE 🟢
 ## Goal: all pages done by morning
@@ -18,8 +18,9 @@ _Last updated: 2026-04-02T22:17Z by Watchdog_
 ## Active Agents
 | Agent | Status | Task |
 |-------|--------|------|
-| **Freddy** | 🟢 RUNNING | CardsGallery + CardPreview + GiftsList |
-| **Hamevaker** | 🟢 RUNNING | Round 6 — reviewing WaHistory/SeatingMap/HallSettings (on main) |
+| **Freddy** | 🟢 RUNNING (28m+) | CardsGallery ✅, CardPreview 🔧 in progress |
+| **freddy-fix** | ✅ DONE + MERGED | feat/fix/wa-schema-and-routes → main (22:15Z) |
+| **Hamevaker** | ✅ Round 5 DONE | Reviewed WhatsApp branches — Round 6 pending (when Freddy done) |
 
 ---
 
@@ -46,13 +47,16 @@ _Last updated: 2026-04-02T22:17Z by Watchdog_
 | SeatingMap | ⚠️ main (direct push!) | round6 🔄 |
 | HallSettings | ⚠️ main (direct push!) | round6 🔄 |
 
-### 🔧 In progress (Freddy, spawned 22:17Z)
-- CardsGallery → `feat/page/cards-gallery`
-- CardPreview → `feat/page/card-preview`
-- GiftsList → `feat/page/gifts-list`
+### 🔧 In progress (Freddy, running 28m+)
+- CardPreview → `feat/page/card-preview` (ACTIVE as of 22:22Z)
+
+### 📦 Freddy-built, NOT yet merged to main (on feat/page/cards-gallery branch)
+- Settings + Account + Subscription (1 commit `7ca88c8`) — pending hamevaker round 6
+- Tasks + Timeline (1 commit `f48feb1`) — pending hamevaker round 6
+- CardsGallery (`239ed5e`) — pending hamevaker round 6
 
 ### ⏳ Pending (after current batch)
-GiftStats → VendorsList → VendorDetail → MyVendors → Tasks → Timeline → Settings → Account → Subscription → RSVP → GiftPublic → CardsExport → DashboardStats → Notifications → Profile → VendorSuggestions → PaymentStubs → PublicLanding → NotFound
+GiftsList → GiftStats → VendorsList → VendorDetail → MyVendors → RSVP → GiftPublic → CardsExport → DashboardStats → Notifications → Profile → VendorSuggestions → PaymentStubs → PublicLanding → NotFound
 
 ---
 
