@@ -1,3 +1,71 @@
+## 2026-04-02T22:18Z | CardsGallery + CardPreview + GiftsList | feat branches
+
+**Summary:** Implemented 3 full production-quality pages for yalla-wedding.
+
+### Pages Built
+
+#### 1. CardsGallery — `/app/cards` | Branch: `feat/page/cards-gallery`
+- **Frontend:** `frontend/src/views/app/cards/CardsView.vue` (replaced)
+  - Grid of 8 card design templates with preview thumbnails
+  - Filter by category (classic/romantic/modern/luxury/nature/vintage/beach/rustic)
+  - Hover overlay shows "בחר עיצוב" button (CTA on each card)
+  - Selected card gets pink checkmark border + floating badge (`.selected` CSS class)
+  - "עבור לעריכה" CTA in header when template selected
+  - Full-screen preview modal with "בחר ועבור לעריכה" button
+  - Loading skeleton states, error/empty states with retry
+  - Selection persisted via `PUT /api/cards/selected`
+  - On load: fetches `GET /api/cards/selected` to restore previous selection
+  - Hebrew RTL, mobile responsive
+- **Backend:** Enhanced `backend/src/routes/cards.js`:
+  - `GET /api/cards/selected` — returns user's selected templateId
+  - `PUT /api/cards/selected` — stores templateId on User.selectedCardTemplateId
+- **Schema:** Added `selectedCardTemplateId Int?` to User model; ran `prisma db push`
+
+#### 2. CardPreview — `/app/cards/preview/:id` | Branch: `feat/page/card-preview`
+- **Frontend:** `frontend/src/views/app/cards/PreviewView.vue` (replaced)
+  - Full two-panel live editor:
+    - Left panel: form fields (couple names, date, venue, phone, RSVP toggle, dresscode)
+    - Right panel: live card mockup (reactive styled div — no build step needed)
+  - Card mockup renders template colors/fonts with form data in real time
+  - "שמור שינויים" button — saves to backend, shows timestamp + toast
+  - "הורד PDF" button — mock toast: "בקרוב 🎉"
+  - "שתף קישור" — copies `/rsvp/:token` to clipboard
+  - Toolbar with back button, template chip, all 3 action buttons
+  - Loads user profile (name1, name2, weddingDate, venue) from existing settings
+  - RSVP URL box with one-click copy
+  - Loading skeleton, error state with retry
+- **Backend:** Enhanced `backend/src/routes/cards.js`:
+  - `GET /api/cards/preview/:templateId` — template + user settings merged
+  - `PUT /api/cards/settings` — saves couple names/date/venue to User profile
+
+#### 3. GiftsList — `/app/gifts` | Branch: `feat/page/gifts-list`
+- **Frontend:** `frontend/src/views/app/gifts/GiftsView.vue` (replaced from placeholder)
+  - Stats row: total gifts / total amount (₪) / average / thanked count / new count
+  - Full gifts table: giver name, phone, amount, message, date, status
+  - "סמן תודה" / "בטל תודה" toggle per row (optimistic UI update)
+  - Add/Edit gift modal with validation (giverName required, amount numeric)
+  - Delete gift with confirmation modal
+  - Search bar (debounced 400ms) + status tab filter (כל / חדש / תודה נשלחה)
+  - Pagination (50 per page)
+  - "ייצוא CSV" mock toast
+  - Loading skeleton, error/empty states with CTA
+  - Hebrew RTL, mobile responsive (horizontal scroll on small screens)
+- **Backend:** Full implementation of `backend/src/routes/gifts.js`:
+  - `GET /api/gifts/stats` — total, totalAmount, avgAmount, thanked, new
+  - `GET /api/gifts` — paginated list with search + status filter
+  - `POST /api/gifts` — create with validation (400 for missing name)
+  - `PUT /api/gifts/:id` — update with ownership check (404 if not found/wrong user)
+  - `DELETE /api/gifts/:id` — delete with ownership check (204 on success)
+- **Schema:** Added `Gift` model (id, userId, giverName, giverPhone, amount, message, status, createdAt) to `schema.prisma`; ran `prisma db push`
+- **Fix:** Repaired corrupted `frontend/src/views/app/settings/SettingsView.vue`
+
+### Build & Deploy
+- `npm run build` — ✅ 0 errors on all 3 branches
+- `pm2 restart yalla-api` — ✅ health check OK each time
+- All 3 branches pushed to GitHub with PRs available
+
+---
+
 ## 2026-04-02T22:15Z | WaHistory + SeatingMap + HallSettings | main
 
 **Summary:** Implemented 3 full production-quality pages for yalla-wedding.
