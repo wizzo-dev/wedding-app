@@ -1,6 +1,6 @@
 # Wedding App יאללה — Orchestration State
 
-_Last updated: 2026-04-02T22:14Z by freddy-fix_
+_Last updated: 2026-04-02T22:15Z by Watchdog_
 
 ## Status: ACTIVE 🟢
 ## Goal: all pages done by morning
@@ -19,6 +19,7 @@ _Last updated: 2026-04-02T22:14Z by freddy-fix_
 | Agent | Status | Task |
 |-------|--------|------|
 | **Freddy** | 🟢 RUNNING | WaHistory + SeatingMap + HallSettings |
+| **freddy-fix** | ✅ DONE + MERGED | feat/fix/wa-schema-and-routes → main (22:15Z) |
 | **Hamevaker** | ✅ Round 5 DONE | Reviewed WhatsApp branches |
 
 ---
@@ -71,8 +72,9 @@ CardsGallery → CardPreview → GiftsList → GiftStats → VendorsList → Ven
 - **[MEDIUM]** Hardcoded demo data instead of pulling from user settings
 - **[MEDIUM]** `/app/whatsapp/history` UI stub (minor, low priority)
 
-### Fix branch ready for hamevaker review:
-- `feat/fix/wa-schema-and-routes` — all 4 CRITICAL + 2 HIGH from Round 5 fixed ✅
+### Fix branch — MERGED to main (22:15Z):
+- `feat/fix/wa-schema-and-routes` — all 4 CRITICAL + 2 HIGH from Round 5 fixed, build ✅, PM2 restarted ✅
+- `feat/page/gifts` — spurious duplicate commit ef16ba3 reverted (1be981a) ✅
 
 ---
 
