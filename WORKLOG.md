@@ -1,5 +1,51 @@
 # WORKLOG - Freddy Dev Agent
 
+## 2026-04-02T22:11Z | WA Schema+Route Fixes | feat/fix/wa-schema-and-routes
+
+**Summary:** Surgical fix of 4 CRITICAL + 2 HIGH issues found by hamevaker Round 5.
+
+### What was fixed
+
+**🔴 CRITICAL 1 — Prisma Schema Drift: WaTemplate.type**
+- Added `type String @default("custom")` to WaTemplate model in `schema.prisma`
+- Applied via `ALTER TABLE wa_templates ADD COLUMN type TEXT NOT NULL DEFAULT 'custom'`
+- All POST /templates and PUT /templates now work without PrismaClientValidationError
+
+**🔴 CRITICAL 2 — Prisma Schema Drift: WaMessage.message**
+- Added `message String?` to WaMessage model
+- Fixed `results String?` to `results String? @default("[]")`
+- POST /send no longer crashes; GET /history returns real data; stats populated correctly
+- Applied via `ALTER TABLE wa_messages ADD COLUMN message TEXT`
+
+**🔴 CRITICAL 3 — HTTP 200 on 400/404 errors**
+- Fixed all 4 locations in `whatsapp.js`:
+  - POST /templates: `reply.code(400).send(...)` 
+  - PUT /templates/:id: `reply.code(404).send(...)` (was `return { statusCode: 404, ... }`)
+  - DELETE /templates/:id: `reply.code(404).send(...)` (was `return { statusCode: 404, ... }`)
+  - POST /send: `reply.code(400).send(...)` (was `return { statusCode: 400, ... }`)
+- All functions now use `async (req, reply)` signature
+
+**🔴 CRITICAL 4 — parseInt without NaN check**
+- Added `if (isNaN(id)) return reply.code(400).send({ error: 'ID לא תקין' })` in:
+  - PUT /templates/:id (line ~176)
+  - DELETE /templates/:id (line ~202)
+
+**🟡 HIGH — WhatsApp stub view UX break**
+- Changed `{ path: 'whatsapp', name: 'Whatsapp', component: WhatsappView }` to
+  `{ path: 'whatsapp', redirect: '/app/whatsapp/connect' }` in `frontend/src/router/index.js`
+- `/app/whatsapp` now redirects to connect page instead of showing "בבנייה 🚧"
+
+**🟡 HIGH — Batch send without size cap**
+- Added `if (guestIds.length > 200) return reply.code(400).send(...)` in POST /send
+
+### Build & Deploy
+- `npx prisma generate` ✅
+- `npm run build` ✅ 0 errors, 157 modules
+- `pm2 restart yalla-api` ✅ online
+- Health: `{"status":"ok"}`
+
+---
+
 ## 2026-04-02T21:00Z | GuestsList | feat/page/guests-list
 
 **Summary:** Full Hebrew RTL guests management page with Prisma migration for `side` field, complete CRUD backend, and polished Vue 3 table UI.

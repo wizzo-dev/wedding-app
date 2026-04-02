@@ -1,6 +1,6 @@
 # Wedding App יאללה — Orchestration State
 
-_Last updated: 2026-04-02T21:58Z by Watchdog_
+_Last updated: 2026-04-02T22:14Z by freddy-fix_
 
 ## Status: ACTIVE 🟢
 ## Goal: all pages done by morning
@@ -63,12 +63,16 @@ CardsGallery → CardPreview → GiftsList → GiftStats → VendorsList → Ven
 - **[HIGH]** CSV formula injection risk on import
 
 ### From Round 5 (WhatsApp branches):
-- **[CRITICAL]** Schema drift — `WaTemplate.type`, `WaMessage.message/results` missing from `schema.prisma` → POST /templates and POST /send crash at runtime
-- **[HIGH]** HTTP 200 returned on 400/404 errors across all WhatsApp routes — frontend never catches failures
-- **[HIGH]** No batch size cap on bulk send — no rate limiting
-- **[HIGH]** `parseInt` without NaN validation on template ID routes — crashes on non-numeric input
+- ~~**[CRITICAL]** Schema drift — `WaTemplate.type`, `WaMessage.message/results` missing~~ ✅ FIXED in `feat/fix/wa-schema-and-routes`
+- ~~**[HIGH]** HTTP 200 returned on 400/404 errors across all WhatsApp routes~~ ✅ FIXED in `feat/fix/wa-schema-and-routes`
+- ~~**[HIGH]** No batch size cap on bulk send~~ ✅ FIXED in `feat/fix/wa-schema-and-routes` (cap: 200)
+- ~~**[HIGH]** `parseInt` without NaN validation on template ID routes~~ ✅ FIXED in `feat/fix/wa-schema-and-routes`
+- ~~**[HIGH]** `/app/whatsapp` UI stub~~ ✅ FIXED in `feat/fix/wa-schema-and-routes` (redirect to /connect)
 - **[MEDIUM]** Hardcoded demo data instead of pulling from user settings
-- **[MEDIUM]** `/app/whatsapp` and `/app/whatsapp/history` UI stubs
+- **[MEDIUM]** `/app/whatsapp/history` UI stub (minor, low priority)
+
+### Fix branch ready for hamevaker review:
+- `feat/fix/wa-schema-and-routes` — all 4 CRITICAL + 2 HIGH from Round 5 fixed ✅
 
 ---
 
