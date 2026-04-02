@@ -5,7 +5,7 @@ const SIDES = ['חתן', 'כלה', 'משותף']
 
 export default async function guestRoutes(app) {
 
-  // ── GET /api/guests — list all guests with table info ────────────────────────
+  // ── GET /api/guests — list with optional filters ─────────────────────────────
   app.get('/', { preHandler: [app.authenticate] }, async (req) => {
     const userId = req.user.userId
     const { search, status, side } = req.query
@@ -29,25 +29,22 @@ export default async function guestRoutes(app) {
       ]
     }
 
-    const guests = await prisma.guest.findMany({
-      where,
-      include: {
-        table: {
-          select: { id: true, name: true }
-        }
-      },
-      orderBy: [{ side: 'asc' }, { name: 'asc' }]
-    })
+    const [guests, all] = await Promise.all([
+      prisma.guest.findMany({
+        where,
+        include: { table: { select: { id: true, name: true } } },
+        orderBy: [{ side: 'asc' }, { name: 'asc' }]
+      }),
+      prisma.guest.findMany({ where: { userId } })
+    ])
 
-    // Summary stats
-    const all = await prisma.guest.findMany({ where: { userId } })
     const stats = {
       total: all.length,
       totalPeople: all.reduce((s, g) => s + g.numPeople, 0),
       confirmed: all.filter(g => g.rsvpStatus === 'confirmed').length,
-      declined: all.filter(g => g.rsvpStatus === 'declined').length,
-      maybe: all.filter(g => g.rsvpStatus === 'maybe').length,
-      pending: all.filter(g => g.rsvpStatus === 'pending').length
+      declined:  all.filter(g => g.rsvpStatus === 'declined').length,
+      maybe:     all.filter(g => g.rsvpStatus === 'maybe').length,
+      pending:   all.filter(g => g.rsvpStatus === 'pending').length
     }
 
     return {
@@ -70,7 +67,7 @@ export default async function guestRoutes(app) {
     }
   })
 
-  // ── POST /api/guests — create guest ──────────────────────────────────────────
+  // ── POST /api/guests ──────────────────────────────────────────────────────────
   app.post('/', { preHandler: [app.authenticate] }, async (req, reply) => {
     const userId = req.user.userId
     const { name, phone, email, side, groupName, rsvpStatus, numPeople, notes } = req.body
@@ -94,6 +91,34 @@ export default async function guestRoutes(app) {
     })
 
     return { ...guest, tableName: null }
+  })
+
+  // ── POST /api/guests/bulk ─────────────────────────────────────────────────────
+  app.post('/bulk', { preHandler: [app.authenticate] }, async (req, reply) => {
+    const userId = req.user.userId
+    const { guests: list } = req.body
+
+    if (!Array.isArray(list) || list.length === 0) {
+      return reply.code(400).send({ error: 'VALIDATION', message: 'רשימת אורחים נדרשת' })
+    }
+
+    const created = await prisma.guest.createMany({
+      data: list
+        .filter(g => g.name && g.name.trim())
+        .map(g => ({
+          userId,
+          name: g.name.trim(),
+          phone: g.phone || null,
+          email: g.email || null,
+          side: g.side && SIDES.includes(g.side) ? g.side : 'חתן',
+          groupName: g.groupName || null,
+          rsvpStatus: g.rsvpStatus && RSVP_STATUSES.includes(g.rsvpStatus) ? g.rsvpStatus : 'pending',
+          numPeople: Number(g.numPeople) || 1,
+          notes: g.notes || null
+        }))
+    })
+
+    return { count: created.count, message: `${created.count} אורחים נוספו בהצלחה` }
   })
 
   // ── GET /api/guests/:id ───────────────────────────────────────────────────────
@@ -148,33 +173,5 @@ export default async function guestRoutes(app) {
 
     await prisma.guest.delete({ where: { id } })
     return { success: true }
-  })
-
-  // ── POST /api/guests/bulk — bulk import ───────────────────────────────────────
-  app.post('/bulk', { preHandler: [app.authenticate] }, async (req, reply) => {
-    const userId = req.user.userId
-    const { guests: list } = req.body
-
-    if (!Array.isArray(list) || list.length === 0) {
-      return reply.code(400).send({ error: 'VALIDATION', message: 'רשימת אורחים נדרשת' })
-    }
-
-    const created = await prisma.guest.createMany({
-      data: list
-        .filter(g => g.name && g.name.trim())
-        .map(g => ({
-          userId,
-          name: g.name.trim(),
-          phone: g.phone || null,
-          email: g.email || null,
-          side: g.side && SIDES.includes(g.side) ? g.side : 'חתן',
-          groupName: g.groupName || null,
-          rsvpStatus: g.rsvpStatus && RSVP_STATUSES.includes(g.rsvpStatus) ? g.rsvpStatus : 'pending',
-          numPeople: Number(g.numPeople) || 1,
-          notes: g.notes || null
-        }))
-    })
-
-    return { count: created.count, message: `${created.count} אורחים נוספו בהצלחה` }
   })
 }

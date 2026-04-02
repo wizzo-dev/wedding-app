@@ -17,27 +17,17 @@
       </div>
     </div>
 
-    <!-- Stats badges -->
+    <!-- Stats Badges -->
     <div v-if="!loading && stats" class="stats-row">
-      <div class="stat-badge" :class="{ active: activeFilter === 'all' }" @click="setFilter('all')">
-        <span class="sb-num">{{ stats.total }}</span>
-        <span class="sb-label">הכל</span>
-      </div>
-      <div class="stat-badge confirmed" :class="{ active: activeFilter === 'confirmed' }" @click="setFilter('confirmed')">
-        <span class="sb-num">{{ stats.confirmed }}</span>
-        <span class="sb-label">מגיעים</span>
-      </div>
-      <div class="stat-badge maybe" :class="{ active: activeFilter === 'maybe' }" @click="setFilter('maybe')">
-        <span class="sb-num">{{ stats.maybe }}</span>
-        <span class="sb-label">לא בטוחים</span>
-      </div>
-      <div class="stat-badge declined" :class="{ active: activeFilter === 'declined' }" @click="setFilter('declined')">
-        <span class="sb-num">{{ stats.declined }}</span>
-        <span class="sb-label">לא מגיעים</span>
-      </div>
-      <div class="stat-badge pending" :class="{ active: activeFilter === 'pending' }" @click="setFilter('pending')">
-        <span class="sb-num">{{ stats.pending }}</span>
-        <span class="sb-label">ממתינים</span>
+      <div
+        v-for="tab in statTabs"
+        :key="tab.key"
+        class="stat-badge"
+        :class="[tab.cls, { active: activeFilter === tab.filter }]"
+        @click="setFilter(tab.filter)"
+      >
+        <span class="sb-num">{{ stats[tab.key] }}</span>
+        <span class="sb-label">{{ tab.label }}</span>
       </div>
       <div class="stat-badge people-total">
         <span class="sb-num">{{ stats.totalPeople }}</span>
@@ -45,7 +35,7 @@
       </div>
     </div>
 
-    <!-- Search + filter bar -->
+    <!-- Search + Filter Toolbar -->
     <div class="toolbar card">
       <div class="card-body toolbar-body">
         <div class="search-wrap">
@@ -54,31 +44,28 @@
             v-model="search"
             class="input search-input"
             placeholder="חפש לפי שם, טלפון, קבוצה..."
-            @input="onSearchInput"
           />
-          <button v-if="search" class="clear-search" @click="clearSearch">✕</button>
+          <button v-if="search" class="clear-search" @click="search = ''">✕</button>
         </div>
-        <div class="filter-pills">
-          <button
-            v-for="tab in filterTabs"
-            :key="tab.value"
-            class="filter-pill"
-            :class="{ active: activeFilter === tab.value }"
-            @click="setFilter(tab.value)"
-          >
-            {{ tab.label }}
-          </button>
-        </div>
-        <div class="side-filters">
-          <button
-            v-for="s in sideFilters"
-            :key="s.value"
-            class="side-pill"
-            :class="{ active: activeSide === s.value }"
-            @click="setSide(s.value)"
-          >
-            {{ s.label }}
-          </button>
+        <div class="filter-row">
+          <div class="filter-pills">
+            <button
+              v-for="tab in filterTabs"
+              :key="tab.value"
+              class="filter-pill"
+              :class="{ active: activeFilter === tab.value }"
+              @click="setFilter(tab.value)"
+            >{{ tab.label }}</button>
+          </div>
+          <div class="side-pills">
+            <button
+              v-for="s in sideFilters"
+              :key="s.value"
+              class="side-pill"
+              :class="{ active: activeSide === s.value }"
+              @click="activeSide = s.value"
+            >{{ s.label }}</button>
+          </div>
         </div>
       </div>
     </div>
@@ -91,10 +78,11 @@
             <div class="skeleton" style="width:40px;height:40px;border-radius:50%;flex-shrink:0;"></div>
             <div style="flex:1;display:flex;flex-direction:column;gap:6px;">
               <div class="skeleton" style="height:14px;width:35%;"></div>
-              <div class="skeleton" style="height:12px;width:20%;"></div>
+              <div class="skeleton" style="height:12px;width:22%;"></div>
             </div>
             <div class="skeleton" style="height:24px;width:60px;border-radius:12px;"></div>
             <div class="skeleton" style="height:24px;width:60px;border-radius:12px;"></div>
+            <div class="skeleton" style="height:24px;width:80px;border-radius:8px;"></div>
           </div>
         </div>
       </div>
@@ -108,27 +96,32 @@
       <button class="btn btn-primary" @click="fetchGuests">נסה שוב</button>
     </div>
 
-    <!-- Empty States -->
+    <!-- Content -->
     <template v-else>
+
+      <!-- Empty States -->
       <div v-if="filteredGuests.length === 0" class="empty-state card">
         <div class="card-body">
           <div class="empty-state-icon">🎊</div>
-          <p class="empty-state-title" v-if="search || activeFilter !== 'all'">לא נמצאו אורחים</p>
-          <p class="empty-state-title" v-else>עדיין אין אורחים</p>
+          <p class="empty-state-title">
+            {{ (search || activeFilter !== 'all' || activeSide !== 'all') ? 'לא נמצאו אורחים' : 'עדיין אין אורחים' }}
+          </p>
           <p class="empty-state-text" v-if="search">נסה לחפש במילים אחרות</p>
           <p class="empty-state-text" v-else-if="activeFilter !== 'all'">אין אורחים בסטטוס זה</p>
           <p class="empty-state-text" v-else>הוסף את האורחים הראשונים שלך לחתונה</p>
-          <button v-if="!search && activeFilter === 'all'" class="btn btn-primary" @click="openAddModal">
-            + הוסף אורח ראשון
-          </button>
-          <button v-else-if="search" class="btn btn-ghost" @click="clearSearch">נקה חיפוש</button>
+          <div style="display:flex;gap:var(--space-2);justify-content:center;flex-wrap:wrap;">
+            <button v-if="search" class="btn btn-ghost" @click="search = ''">נקה חיפוש</button>
+            <button v-if="!search && activeFilter === 'all' && activeSide === 'all'" class="btn btn-primary" @click="openAddModal">
+              + הוסף אורח ראשון
+            </button>
+          </div>
         </div>
       </div>
 
       <!-- Guests Table -->
       <div v-else class="guests-table card">
-        <div class="card-body" style="padding:0">
-          <!-- Table Header -->
+        <div class="card-body" style="padding:0;">
+          <!-- Header -->
           <div class="table-header">
             <span class="th-name">אורח</span>
             <span class="th-side">צד</span>
@@ -138,31 +131,37 @@
             <span class="th-actions">פעולות</span>
           </div>
 
-          <!-- Guest Rows -->
+          <!-- Rows -->
           <div
-            v-for="(guest, idx) in filteredGuests"
+            v-for="(guest, i) in filteredGuests"
             :key="guest.id"
             class="guest-row"
-            :class="{ 'row-alt': idx % 2 === 1 }"
+            :class="{ 'row-even': i % 2 === 0 }"
           >
-            <!-- Avatar + Name -->
+            <!-- Identity -->
             <div class="guest-identity">
-              <div class="avatar avatar-md guest-avatar" :style="{ background: avatarBg(guest.name) }">
-                {{ initials(guest.name) }}
-              </div>
+              <div
+                class="avatar avatar-md guest-avatar"
+                :style="{ background: avatarBg(guest.name), color: avatarColor(guest.name) }"
+              >{{ initials(guest.name) }}</div>
               <div class="guest-info">
                 <span class="guest-name">{{ guest.name }}</span>
-                <span v-if="guest.phone" class="guest-phone">{{ guest.phone }}</span>
-                <span v-else class="guest-phone text-light">ללא טלפון</span>
+                <a
+                  v-if="guest.phone"
+                  :href="`tel:${guest.phone}`"
+                  class="guest-phone"
+                  @click.stop
+                >{{ guest.phone }}</a>
+                <span v-else class="guest-phone no-phone">ללא טלפון</span>
               </div>
             </div>
 
-            <!-- Side Badge -->
+            <!-- Side -->
             <div class="td-side">
               <span class="side-badge" :class="sideClass(guest.side)">{{ guest.side }}</span>
             </div>
 
-            <!-- RSVP Badge -->
+            <!-- RSVP -->
             <div class="td-rsvp">
               <span class="rsvp-badge" :class="rsvpClass(guest.rsvpStatus)">
                 {{ rsvpLabel(guest.rsvpStatus) }}
@@ -172,7 +171,7 @@
             <!-- Table -->
             <div class="td-table">
               <span v-if="guest.tableName" class="table-chip">🪑 {{ guest.tableName }}</span>
-              <span v-else class="text-light text-sm">—</span>
+              <span v-else class="no-data">—</span>
             </div>
 
             <!-- People count -->
@@ -191,26 +190,28 @@
               <button
                 class="btn btn-ghost btn-icon btn-sm"
                 @click="openEditModal(guest)"
-                title="ערוך"
+                title="ערוך אורח"
               >✏️</button>
               <button
                 class="btn btn-ghost btn-icon btn-sm action-del"
                 @click="deleteGuest(guest.id)"
                 :disabled="deletingId === guest.id"
-                title="מחק"
+                title="מחק אורח"
               >{{ deletingId === guest.id ? '⏳' : '🗑️' }}</button>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Bottom count -->
-      <div v-if="filteredGuests.length > 0" class="bottom-count">
+      <!-- Footer count -->
+      <p v-if="filteredGuests.length > 0" class="result-count">
         מציג {{ filteredGuests.length }} מתוך {{ guests.length }} אורחים
-      </div>
+        <template v-if="totalFilteredPeople > 0"> · {{ totalFilteredPeople }} נפשות</template>
+      </p>
+
     </template>
 
-    <!-- Add / Edit Guest Modal -->
+    <!-- ─── Add / Edit Guest Modal ─────────────────────────────────────────── -->
     <Teleport to="body">
       <div v-if="showGuestModal" class="modal-backdrop" @click.self="closeGuestModal">
         <div class="modal pop-in" dir="rtl">
@@ -222,27 +223,27 @@
             <div class="form-row-2">
               <div class="form-group">
                 <label class="label">שם מלא *</label>
-                <input v-model="guestForm.name" class="input" placeholder="ישראל ישראלי" />
+                <input v-model="form.name" class="input" placeholder="ישראל ישראלי" />
               </div>
               <div class="form-group">
                 <label class="label">טלפון</label>
-                <input v-model="guestForm.phone" class="input" placeholder="050-1234567" type="tel" />
+                <input v-model="form.phone" class="input" placeholder="050-1234567" type="tel" />
               </div>
             </div>
             <div class="form-row-2">
               <div class="form-group">
                 <label class="label">אימייל</label>
-                <input v-model="guestForm.email" class="input" placeholder="guest@email.com" type="email" />
+                <input v-model="form.email" class="input" placeholder="guest@email.com" />
               </div>
               <div class="form-group">
                 <label class="label">קבוצה / משפחה</label>
-                <input v-model="guestForm.groupName" class="input" placeholder="משפחת כהן" />
+                <input v-model="form.groupName" class="input" placeholder="משפחת כהן" />
               </div>
             </div>
             <div class="form-row-3">
               <div class="form-group">
                 <label class="label">צד</label>
-                <select v-model="guestForm.side" class="input">
+                <select v-model="form.side" class="input">
                   <option value="חתן">חתן</option>
                   <option value="כלה">כלה</option>
                   <option value="משותף">משותף</option>
@@ -250,35 +251,35 @@
               </div>
               <div class="form-group">
                 <label class="label">סטטוס הגעה</label>
-                <select v-model="guestForm.rsvpStatus" class="input">
-                  <option value="pending">ממתין</option>
-                  <option value="confirmed">מגיע</option>
-                  <option value="maybe">לא בטוח</option>
-                  <option value="declined">לא מגיע</option>
+                <select v-model="form.rsvpStatus" class="input">
+                  <option value="pending">⏳ ממתין</option>
+                  <option value="confirmed">✅ מגיע</option>
+                  <option value="maybe">🤔 לא בטוח</option>
+                  <option value="declined">❌ לא מגיע</option>
                 </select>
               </div>
               <div class="form-group">
-                <label class="label">מספר נפשות</label>
-                <input v-model.number="guestForm.numPeople" type="number" class="input" min="1" max="20" />
+                <label class="label">נפשות</label>
+                <input v-model.number="form.numPeople" type="number" class="input" min="1" max="20" />
               </div>
             </div>
             <div class="form-group">
               <label class="label">הערות</label>
-              <input v-model="guestForm.notes" class="input" placeholder="הערה נוספת..." />
+              <input v-model="form.notes" class="input" placeholder="הערות נוספות..." />
             </div>
-            <p v-if="guestFormError" class="form-error">{{ guestFormError }}</p>
+            <p v-if="formError" class="form-error">{{ formError }}</p>
           </div>
           <div class="modal-footer">
             <button class="btn btn-ghost" @click="closeGuestModal">ביטול</button>
-            <button class="btn btn-primary" @click="submitGuestForm" :disabled="guestFormLoading">
-              {{ guestFormLoading ? 'שומר...' : (editingGuest ? 'שמור שינויים' : 'הוסף אורח') }}
+            <button class="btn btn-primary" @click="submitForm" :disabled="formLoading">
+              {{ formLoading ? 'שומר...' : (editingGuest ? 'שמור שינויים' : 'הוסף אורח') }}
             </button>
           </div>
         </div>
       </div>
     </Teleport>
 
-    <!-- Bulk Import Modal -->
+    <!-- ─── Bulk Import Modal ──────────────────────────────────────────────── -->
     <Teleport to="body">
       <div v-if="showImportModal" class="modal-backdrop" @click.self="showImportModal = false">
         <div class="modal modal-wide pop-in" dir="rtl">
@@ -287,7 +288,7 @@
             <button class="btn btn-ghost btn-icon" @click="showImportModal = false">✕</button>
           </div>
           <div class="modal-body">
-            <p class="import-hint">הדבק רשימת אורחים — שם, טלפון וצד (מופרדים בפסיק), כל אורח בשורה נפרדת:</p>
+            <p class="import-hint">הדבק רשימת אורחים — שם, טלפון, צד — כל אורח בשורה נפרדת, מופרדים בפסיק:</p>
             <pre class="import-example">ישראל ישראלי, 050-1234567, חתן
 שרה לוי, 052-9876543, כלה
 דוד כהן, 053-1112233, משותף</pre>
@@ -297,9 +298,7 @@
               placeholder="ישראל ישראלי, 050-1234567, חתן&#10;שרה לוי, 052-9876543, כלה"
               rows="8"
             ></textarea>
-            <p v-if="importResult" class="import-result" :class="importResult.ok ? 'result-ok' : 'result-err'">
-              {{ importResult.msg }}
-            </p>
+            <p v-if="importMsg" class="import-msg" :class="importOk ? 'msg-ok' : 'msg-err'">{{ importMsg }}</p>
           </div>
           <div class="modal-footer">
             <button class="btn btn-ghost" @click="showImportModal = false">ביטול</button>
@@ -318,49 +317,59 @@
 import { ref, computed, onMounted } from 'vue'
 import api from '@/composables/useApi'
 
-const loading = ref(true)
-const error = ref(null)
-const guests = ref([])
-const stats = ref(null)
+// ── State ─────────────────────────────────────────────────────────────────────
+const loading   = ref(true)
+const error     = ref(null)
+const guests    = ref([])
+const stats     = ref(null)
 
-const search = ref('')
+const search      = ref('')
 const activeFilter = ref('all')
-const activeSide = ref('all')
-let searchTimer = null
+const activeSide   = ref('all')
 
 const showGuestModal = ref(false)
-const editingGuest = ref(null)
-const guestForm = ref(emptyForm())
-const guestFormLoading = ref(false)
-const guestFormError = ref(null)
-const deletingId = ref(null)
+const editingGuest   = ref(null)
+const form           = ref(emptyForm())
+const formLoading    = ref(false)
+const formError      = ref(null)
+const deletingId     = ref(null)
 
 const showImportModal = ref(false)
-const importText = ref('')
-const importLoading = ref(false)
-const importResult = ref(null)
+const importText      = ref('')
+const importLoading   = ref(false)
+const importMsg       = ref('')
+const importOk        = ref(false)
 
+// ── Config ────────────────────────────────────────────────────────────────────
 const filterTabs = [
-  { value: 'all', label: 'הכל' },
+  { value: 'all',       label: 'הכל' },
   { value: 'confirmed', label: '✅ מגיעים' },
-  { value: 'maybe', label: '🤔 לא בטוחים' },
-  { value: 'declined', label: '❌ לא מגיעים' },
-  { value: 'pending', label: '⏳ ממתינים' }
+  { value: 'maybe',     label: '🤔 לא בטוחים' },
+  { value: 'declined',  label: '❌ לא מגיעים' },
+  { value: 'pending',   label: '⏳ ממתינים' }
 ]
 
 const sideFilters = [
-  { value: 'all', label: 'הכל' },
-  { value: 'חתן', label: 'צד חתן' },
-  { value: 'כלה', label: 'צד כלה' },
+  { value: 'all',    label: 'כולם' },
+  { value: 'חתן',   label: 'צד חתן' },
+  { value: 'כלה',   label: 'צד כלה' },
   { value: 'משותף', label: 'משותף' }
 ]
 
-// Computed filtered list (client-side filter)
+const statTabs = [
+  { key: 'total',     label: 'הכל',        cls: '',          filter: 'all' },
+  { key: 'confirmed', label: 'מגיעים',     cls: 'confirmed', filter: 'confirmed' },
+  { key: 'maybe',     label: 'לא בטוחים',  cls: 'maybe',     filter: 'maybe' },
+  { key: 'declined',  label: 'לא מגיעים',  cls: 'declined',  filter: 'declined' },
+  { key: 'pending',   label: 'ממתינים',    cls: 'pending',   filter: 'pending' }
+]
+
+// ── Computed ──────────────────────────────────────────────────────────────────
 const filteredGuests = computed(() => {
   let list = guests.value
 
   if (search.value.trim()) {
-    const q = search.value.toLowerCase().trim()
+    const q = search.value.toLowerCase()
     list = list.filter(g =>
       g.name.toLowerCase().includes(q) ||
       (g.phone && g.phone.includes(q)) ||
@@ -380,80 +389,68 @@ const filteredGuests = computed(() => {
   return list
 })
 
+const totalFilteredPeople = computed(() =>
+  filteredGuests.value.reduce((s, g) => s + g.numPeople, 0)
+)
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
 function emptyForm() {
   return { name: '', phone: '', email: '', groupName: '', side: 'חתן', rsvpStatus: 'pending', numPeople: 1, notes: '' }
 }
 
 function initials(name) {
   if (!name) return '?'
-  const parts = name.trim().split(' ')
+  const parts = name.trim().split(/\s+/)
   if (parts.length === 1) return parts[0].charAt(0)
   return parts[0].charAt(0) + parts[parts.length - 1].charAt(0)
 }
 
-const AVATAR_COLORS = ['#E91E8C22', '#1A1F3622', '#22C55E22', '#3B82F622', '#F59E0B22', '#EF444422']
-function avatarBg(name) {
-  if (!name) return AVATAR_COLORS[0]
-  const code = name.charCodeAt(0) % AVATAR_COLORS.length
-  return AVATAR_COLORS[code]
+const AVATAR_PALETTES = [
+  { bg: '#FDE8F4', color: '#E91E8C' },
+  { bg: '#DBEAFE', color: '#1D4ED8' },
+  { bg: '#DCFCE7', color: '#15803D' },
+  { bg: '#FEF3C7', color: '#B45309' },
+  { bg: '#EDE9FE', color: '#7C3AED' },
+  { bg: '#FFE4E6', color: '#BE123C' }
+]
+
+function palette(name) {
+  const idx = name ? Math.abs(name.charCodeAt(0)) % AVATAR_PALETTES.length : 0
+  return AVATAR_PALETTES[idx]
 }
+function avatarBg(name)    { return palette(name).bg }
+function avatarColor(name) { return palette(name).color }
 
 function sideClass(side) {
-  if (side === 'חתן') return 'side-groom'
   if (side === 'כלה') return 'side-bride'
-  return 'side-mutual'
+  if (side === 'משותף') return 'side-mutual'
+  return 'side-groom'
 }
 
 function rsvpClass(status) {
-  const map = {
-    confirmed: 'rsvp-confirmed',
-    declined: 'rsvp-declined',
-    maybe: 'rsvp-maybe',
-    pending: 'rsvp-pending'
-  }
-  return map[status] || 'rsvp-pending'
+  return { confirmed: 'rsvp-confirmed', declined: 'rsvp-declined', maybe: 'rsvp-maybe', pending: 'rsvp-pending' }[status] || 'rsvp-pending'
 }
 
 function rsvpLabel(status) {
-  const map = {
-    confirmed: '✅ מגיע',
-    declined: '❌ לא מגיע',
-    maybe: '🤔 לא בטוח',
-    pending: '⏳ ממתין'
-  }
-  return map[status] || status
+  return { confirmed: '✅ מגיע', declined: '❌ לא מגיע', maybe: '🤔 לא בטוח', pending: '⏳ ממתין' }[status] || status
 }
 
-function setFilter(val) {
-  activeFilter.value = val
-}
-
-function setSide(val) {
-  activeSide.value = val
-}
-
-function clearSearch() {
-  search.value = ''
-}
-
-function onSearchInput() {
-  clearTimeout(searchTimer)
-  searchTimer = setTimeout(() => {}, 300)
-}
+function setFilter(val) { activeFilter.value = val }
 
 function openWhatsApp(guest) {
-  const phone = guest.phone.replace(/\D/g, '')
-  const normalized = phone.startsWith('0') ? '972' + phone.slice(1) : phone
-  window.open(`https://wa.me/${normalized}`, '_blank')
+  const raw = (guest.phone || '').replace(/\D/g, '')
+  const intl = raw.startsWith('0') ? '972' + raw.slice(1) : raw
+  window.open(`https://wa.me/${intl}`, '_blank')
 }
 
+// ── API ───────────────────────────────────────────────────────────────────────
 async function fetchGuests() {
   loading.value = true
   error.value = null
   try {
     const res = await api.get('/guests')
     guests.value = res.data.guests
-    stats.value = res.data.stats
+    stats.value  = res.data.stats
   } catch (e) {
     error.value = e?.response?.data?.message || 'שגיאה בטעינת האורחים'
   } finally {
@@ -463,57 +460,56 @@ async function fetchGuests() {
 
 function openAddModal() {
   editingGuest.value = null
-  guestForm.value = emptyForm()
-  guestFormError.value = null
+  form.value = emptyForm()
+  formError.value = null
   showGuestModal.value = true
 }
 
 function openEditModal(guest) {
   editingGuest.value = guest
-  guestForm.value = {
-    name: guest.name,
-    phone: guest.phone || '',
-    email: guest.email || '',
-    groupName: guest.groupName || '',
-    side: guest.side || 'חתן',
+  form.value = {
+    name:       guest.name,
+    phone:      guest.phone || '',
+    email:      guest.email || '',
+    groupName:  guest.groupName || '',
+    side:       guest.side || 'חתן',
     rsvpStatus: guest.rsvpStatus || 'pending',
-    numPeople: guest.numPeople || 1,
-    notes: guest.notes || ''
+    numPeople:  guest.numPeople || 1,
+    notes:      guest.notes || ''
   }
-  guestFormError.value = null
+  formError.value = null
   showGuestModal.value = true
 }
 
 function closeGuestModal() {
   showGuestModal.value = false
   editingGuest.value = null
-  guestFormError.value = null
 }
 
-async function submitGuestForm() {
-  guestFormError.value = null
-  if (!guestForm.value.name.trim()) {
-    guestFormError.value = 'נא להזין שם אורח'
+async function submitForm() {
+  formError.value = null
+  if (!form.value.name.trim()) {
+    formError.value = 'נא להזין שם אורח'
     return
   }
-  guestFormLoading.value = true
+  formLoading.value = true
   try {
     if (editingGuest.value) {
-      const res = await api.put(`/guests/${editingGuest.value.id}`, guestForm.value)
+      const res = await api.put(`/guests/${editingGuest.value.id}`, form.value)
       const idx = guests.value.findIndex(g => g.id === editingGuest.value.id)
       if (idx !== -1) guests.value[idx] = res.data
-      // Update stats
-      await refreshStats()
     } else {
-      const res = await api.post('/guests', guestForm.value)
+      const res = await api.post('/guests', form.value)
       guests.value.unshift(res.data)
-      await refreshStats()
     }
+    // Refresh stats
+    const statsRes = await api.get('/guests')
+    stats.value = statsRes.data.stats
     closeGuestModal()
   } catch (e) {
-    guestFormError.value = e?.response?.data?.message || 'שגיאה בשמירה'
+    formError.value = e?.response?.data?.message || 'שגיאה בשמירה'
   } finally {
-    guestFormLoading.value = false
+    formLoading.value = false
   }
 }
 
@@ -523,7 +519,8 @@ async function deleteGuest(id) {
   try {
     await api.delete(`/guests/${id}`)
     guests.value = guests.value.filter(g => g.id !== id)
-    await refreshStats()
+    const statsRes = await api.get('/guests')
+    stats.value = statsRes.data.stats
   } catch {
     // silent
   } finally {
@@ -531,36 +528,26 @@ async function deleteGuest(id) {
   }
 }
 
-async function refreshStats() {
-  try {
-    const res = await api.get('/guests')
-    stats.value = res.data.stats
-    guests.value = res.data.guests
-  } catch {}
-}
-
 async function submitImport() {
-  importResult.value = null
+  importMsg.value = ''
   if (!importText.value.trim()) return
   importLoading.value = true
   try {
     const lines = importText.value.trim().split('\n').filter(l => l.trim())
-    const list = lines.map(line => {
-      const parts = line.split(',').map(p => p.trim())
-      return {
-        name: parts[0] || '',
-        phone: parts[1] || '',
-        side: parts[2] || 'חתן'
-      }
+    const list  = lines.map(line => {
+      const [name, phone, side] = line.split(',').map(p => p.trim())
+      return { name: name || '', phone: phone || '', side: side || 'חתן' }
     }).filter(g => g.name)
 
     const res = await api.post('/guests/bulk', { guests: list })
-    importResult.value = { ok: true, msg: res.data.message }
-    await fetchGuests()
+    importMsg.value = res.data.message
+    importOk.value  = true
     importText.value = ''
-    setTimeout(() => { showImportModal.value = false }, 1500)
+    await fetchGuests()
+    setTimeout(() => { showImportModal.value = false; importMsg.value = '' }, 1800)
   } catch (e) {
-    importResult.value = { ok: false, msg: e?.response?.data?.message || 'שגיאה בייבוא' }
+    importMsg.value = e?.response?.data?.message || 'שגיאה בייבוא'
+    importOk.value  = false
   } finally {
     importLoading.value = false
   }
@@ -572,7 +559,7 @@ onMounted(fetchGuests)
 <style scoped>
 .guests-list { padding: var(--space-4) 0; }
 
-/* Page Header */
+/* Header */
 .page-header {
   display: flex;
   align-items: flex-start;
@@ -583,105 +570,72 @@ onMounted(fetchGuests)
 }
 .page-title { font-size: var(--font-size-2xl); font-weight: 800; color: var(--color-navy); line-height: 1.2; }
 .page-subtitle { font-size: var(--font-size-sm); color: var(--color-text-muted); margin-top: var(--space-1); }
-.page-actions { display: flex; gap: var(--space-2); align-items: center; flex-wrap: wrap; }
+.page-actions { display: flex; gap: var(--space-2); flex-wrap: wrap; }
 
-/* Stats Row */
+/* Stats Badges */
 .stats-row {
   display: flex;
   gap: var(--space-2);
-  margin-bottom: var(--space-5);
   flex-wrap: wrap;
+  margin-bottom: var(--space-5);
 }
 .stat-badge {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  display: flex; flex-direction: column; align-items: center;
   padding: var(--space-2) var(--space-4);
   border-radius: var(--radius-lg);
   background: var(--color-bg-card);
   border: 1.5px solid var(--color-border);
   cursor: pointer;
   transition: all var(--transition);
-  min-width: 70px;
+  min-width: 68px;
 }
-.stat-badge:hover { border-color: var(--color-primary); }
+.stat-badge:not(.people-total):hover { border-color: var(--color-primary); background: var(--color-primary-bg); }
 .stat-badge.active { background: var(--color-primary-light); border-color: var(--color-primary); }
 .stat-badge.confirmed.active { background: var(--color-success-bg); border-color: var(--color-success); }
 .stat-badge.maybe.active { background: var(--color-warning-bg); border-color: var(--color-warning); }
 .stat-badge.declined.active { background: var(--color-error-bg); border-color: var(--color-error); }
-.stat-badge.people-total { cursor: default; background: var(--color-bg-subtle); }
+.stat-badge.people-total { cursor: default; background: var(--color-bg-subtle); border-style: dashed; }
 .sb-num { font-size: var(--font-size-xl); font-weight: 800; color: var(--color-navy); line-height: 1; }
 .sb-label { font-size: var(--font-size-xs); color: var(--color-text-muted); margin-top: 2px; white-space: nowrap; }
 
 /* Toolbar */
 .toolbar { margin-bottom: var(--space-4); }
-.toolbar-body {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
-.search-wrap {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-.search-icon {
-  position: absolute;
-  right: var(--space-3);
-  font-size: 1rem;
-  pointer-events: none;
-}
-.search-input {
-  padding-right: var(--space-10) !important;
-  padding-left: var(--space-8) !important;
-}
+.toolbar-body { display: flex; flex-direction: column; gap: var(--space-3); }
+.search-wrap { position: relative; display: flex; align-items: center; }
+.search-icon { position: absolute; right: var(--space-3); font-size: 1rem; pointer-events: none; }
+.search-input { padding-right: calc(var(--space-3) + 1.5rem) !important; }
 .clear-search {
-  position: absolute;
-  left: var(--space-3);
-  background: none;
-  border: none;
-  color: var(--color-text-muted);
-  cursor: pointer;
-  font-size: 0.85rem;
-  line-height: 1;
-  padding: 4px;
+  position: absolute; left: var(--space-3);
+  background: none; border: none; color: var(--color-text-muted);
+  cursor: pointer; font-size: 0.85rem; line-height: 1; padding: 4px;
 }
 .clear-search:hover { color: var(--color-text); }
 
+.filter-row { display: flex; align-items: center; gap: var(--space-4); flex-wrap: wrap; }
 .filter-pills { display: flex; gap: var(--space-2); flex-wrap: wrap; }
 .filter-pill {
-  padding: 6px 14px;
-  border-radius: var(--radius-full);
-  font-size: var(--font-size-xs);
-  font-weight: 600;
-  color: var(--color-text-muted);
-  background: var(--color-bg-subtle);
-  border: 1.5px solid transparent;
-  cursor: pointer;
+  padding: 5px 14px; border-radius: var(--radius-full);
+  font-size: var(--font-size-xs); font-weight: 600;
+  color: var(--color-text-muted); background: var(--color-bg-subtle);
+  border: 1.5px solid transparent; cursor: pointer;
   transition: all var(--transition);
 }
 .filter-pill:hover { background: var(--color-bg-card); border-color: var(--color-border); }
 .filter-pill.active { background: var(--color-primary-light); color: var(--color-primary); border-color: var(--color-primary); }
 
-.side-filters { display: flex; gap: var(--space-2); flex-wrap: wrap; }
+.side-pills { display: flex; gap: var(--space-2); flex-wrap: wrap; }
 .side-pill {
-  padding: 4px 12px;
-  border-radius: var(--radius-full);
-  font-size: var(--font-size-xs);
-  font-weight: 600;
-  color: var(--color-text-muted);
-  background: var(--color-bg-subtle);
-  border: 1.5px solid transparent;
-  cursor: pointer;
+  padding: 4px 12px; border-radius: var(--radius-full);
+  font-size: var(--font-size-xs); font-weight: 600;
+  color: var(--color-text-muted); background: transparent;
+  border: 1.5px solid var(--color-border); cursor: pointer;
   transition: all var(--transition);
 }
-.side-pill.active { background: var(--color-navy); color: #fff; }
+.side-pill.active { background: var(--color-navy); color: #fff; border-color: var(--color-navy); }
 
 /* Skeleton */
 .skeleton-row-guest {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
+  display: flex; align-items: center; gap: var(--space-3);
   padding: var(--space-4) var(--space-5);
   border-bottom: 1px solid var(--color-border);
 }
@@ -691,11 +645,11 @@ onMounted(fetchGuests)
 .guests-table { overflow: hidden; }
 .table-header {
   display: grid;
-  grid-template-columns: 2fr 80px 120px 100px 70px 120px;
+  grid-template-columns: 2.5fr 90px 130px 100px 70px 120px;
   gap: var(--space-2);
   padding: var(--space-3) var(--space-5);
   background: var(--color-bg-subtle);
-  border-bottom: 1px solid var(--color-border);
+  border-bottom: 1.5px solid var(--color-border);
   font-size: var(--font-size-xs);
   font-weight: 700;
   color: var(--color-text-muted);
@@ -704,7 +658,7 @@ onMounted(fetchGuests)
 }
 .guest-row {
   display: grid;
-  grid-template-columns: 2fr 80px 120px 100px 70px 120px;
+  grid-template-columns: 2.5fr 90px 130px 100px 70px 120px;
   gap: var(--space-2);
   align-items: center;
   padding: var(--space-3) var(--space-5);
@@ -712,44 +666,36 @@ onMounted(fetchGuests)
   transition: background var(--transition);
 }
 .guest-row:last-child { border-bottom: none; }
-.guest-row:hover { background: var(--color-bg-subtle); }
-.guest-row.row-alt { background: var(--color-bg-subtle); }
-.guest-row.row-alt:hover { background: var(--color-primary-bg); }
+.guest-row:hover { background: var(--color-primary-bg) !important; }
+.guest-row.row-even { background: var(--color-bg-subtle); }
 
-/* Guest identity */
+/* Identity */
 .guest-identity { display: flex; align-items: center; gap: var(--space-3); min-width: 0; }
-.guest-avatar {
-  color: var(--color-primary);
-  font-weight: 800;
-  flex-shrink: 0;
-  font-size: var(--font-size-xs);
-  border: 2px solid rgba(233,30,140,0.15);
-}
+.guest-avatar { flex-shrink: 0; font-size: var(--font-size-xs); font-weight: 800; }
 .guest-info { min-width: 0; }
-.guest-name { display: block; font-size: var(--font-size-sm); font-weight: 700; color: var(--color-navy); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.guest-phone { display: block; font-size: var(--font-size-xs); color: var(--color-text-muted); direction: ltr; text-align: right; }
-.text-light { color: var(--color-text-light); }
-.text-sm { font-size: var(--font-size-xs); }
+.guest-name {
+  display: block; font-size: var(--font-size-sm); font-weight: 700;
+  color: var(--color-navy); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.guest-phone {
+  display: block; font-size: var(--font-size-xs); color: var(--color-text-muted);
+  direction: ltr; text-align: right; text-decoration: none;
+}
+.guest-phone:hover { color: var(--color-primary); }
+.no-phone { color: var(--color-text-light); }
 
 /* Badges */
 .side-badge {
-  display: inline-flex; align-items: center; justify-content: center;
-  padding: 3px 10px;
-  border-radius: var(--radius-full);
-  font-size: var(--font-size-xs);
-  font-weight: 700;
-  white-space: nowrap;
+  display: inline-flex; align-items: center; padding: 3px 10px;
+  border-radius: var(--radius-full); font-size: var(--font-size-xs); font-weight: 700;
 }
-.side-groom { background: #EFF6FF; color: #1D4ED8; }
-.side-bride { background: var(--color-primary-light); color: var(--color-primary); }
+.side-groom  { background: #EFF6FF; color: #1D4ED8; }
+.side-bride  { background: var(--color-primary-light); color: var(--color-primary); }
 .side-mutual { background: var(--color-bg-subtle); color: var(--color-text-muted); }
 
 .rsvp-badge {
-  display: inline-flex; align-items: center;
-  padding: 3px 10px;
-  border-radius: var(--radius-full);
-  font-size: var(--font-size-xs);
-  font-weight: 700;
+  display: inline-flex; align-items: center; padding: 3px 10px;
+  border-radius: var(--radius-full); font-size: var(--font-size-xs); font-weight: 700;
   white-space: nowrap;
 }
 .rsvp-confirmed { background: var(--color-success-bg); color: #15803D; }
@@ -759,26 +705,22 @@ onMounted(fetchGuests)
 
 .table-chip {
   display: inline-flex; align-items: center; gap: 4px;
-  font-size: var(--font-size-xs);
-  font-weight: 600;
-  color: var(--color-navy);
-  background: var(--color-bg-subtle);
-  border-radius: var(--radius);
-  padding: 3px 8px;
+  font-size: var(--font-size-xs); font-weight: 600;
+  color: var(--color-navy); background: var(--color-bg-subtle);
+  border-radius: var(--radius); padding: 3px 8px;
 }
+.no-data { color: var(--color-text-light); font-size: var(--font-size-xs); }
 .people-num { font-size: var(--font-size-sm); font-weight: 700; color: var(--color-navy); text-align: center; }
 
 /* Actions */
-.td-actions { display: flex; gap: 4px; justify-content: flex-end; }
-.action-wa:hover { color: #25D366 !important; }
+.td-actions { display: flex; gap: 2px; justify-content: flex-end; }
+.action-wa:hover  { color: #25D366 !important; }
 .action-del:hover { color: var(--color-error) !important; }
 
-/* Bottom count */
-.bottom-count {
-  text-align: center;
-  font-size: var(--font-size-xs);
-  color: var(--color-text-muted);
-  padding: var(--space-3);
+/* Result count */
+.result-count {
+  text-align: center; font-size: var(--font-size-xs);
+  color: var(--color-text-muted); padding: var(--space-3);
 }
 
 /* Modal */
@@ -786,32 +728,24 @@ onMounted(fetchGuests)
   position: fixed; inset: 0; z-index: 1000;
   background: rgba(26,31,54,0.5);
   display: flex; align-items: center; justify-content: center;
-  padding: var(--space-4);
-  backdrop-filter: blur(4px);
+  padding: var(--space-4); backdrop-filter: blur(4px);
 }
 .modal {
-  background: var(--color-bg-card);
-  border-radius: var(--radius-2xl);
-  width: 100%; max-width: 520px;
-  box-shadow: var(--shadow-xl);
-  overflow: hidden;
-  max-height: 90vh;
-  overflow-y: auto;
+  background: var(--color-bg-card); border-radius: var(--radius-2xl);
+  width: 100%; max-width: 520px; box-shadow: var(--shadow-xl);
+  max-height: 90vh; overflow-y: auto;
 }
-.modal-wide { max-width: 580px; }
+.modal-wide { max-width: 560px; }
 .modal-header {
   display: flex; align-items: center; justify-content: space-between;
-  padding: var(--space-5) var(--space-6);
-  border-bottom: 1px solid var(--color-border);
+  padding: var(--space-5) var(--space-6); border-bottom: 1px solid var(--color-border);
   position: sticky; top: 0; background: var(--color-bg-card); z-index: 1;
 }
 .modal-header h3 { font-size: var(--font-size-lg); font-weight: 800; color: var(--color-navy); }
 .modal-body { padding: var(--space-6); }
 .modal-footer {
   display: flex; justify-content: flex-end; gap: var(--space-2);
-  padding: var(--space-4) var(--space-6);
-  border-top: 1px solid var(--color-border);
-  background: var(--color-bg-subtle);
+  padding: var(--space-4) var(--space-6); border-top: 1px solid var(--color-border);
   position: sticky; bottom: 0; background: var(--color-bg-card); z-index: 1;
 }
 .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); }
@@ -822,42 +756,38 @@ onMounted(fetchGuests)
 /* Import */
 .import-hint { font-size: var(--font-size-sm); color: var(--color-text-muted); margin-bottom: var(--space-2); }
 .import-example {
-  background: var(--color-bg-subtle);
-  border-radius: var(--radius);
-  padding: var(--space-3);
-  font-size: var(--font-size-xs);
-  color: var(--color-text-muted);
-  direction: rtl;
-  margin-bottom: var(--space-3);
-  white-space: pre-wrap;
-  font-family: monospace;
+  background: var(--color-bg-subtle); border-radius: var(--radius);
+  padding: var(--space-3); font-size: var(--font-size-xs); color: var(--color-text-muted);
+  direction: rtl; margin-bottom: var(--space-3); white-space: pre-wrap;
+  font-family: monospace; border: 1px solid var(--color-border);
 }
 .import-textarea { resize: vertical; min-height: 160px; font-family: monospace; direction: rtl; }
-.import-result { margin-top: var(--space-3); padding: var(--space-3); border-radius: var(--radius); font-size: var(--font-size-sm); font-weight: 600; }
-.result-ok { background: var(--color-success-bg); color: #15803D; }
-.result-err { background: var(--color-error-bg); color: #DC2626; }
+.import-msg { margin-top: var(--space-3); padding: var(--space-3); border-radius: var(--radius); font-size: var(--font-size-sm); font-weight: 600; }
+.msg-ok  { background: var(--color-success-bg); color: #15803D; }
+.msg-err { background: var(--color-error-bg); color: #DC2626; }
 
-/* Empty State */
+/* Empty state */
 .empty-state { text-align: center; padding: var(--space-12) var(--space-8); }
 
+/* Responsive */
 @media (max-width: 768px) {
   .table-header { display: none; }
   .guest-row {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr auto;
+    grid-template-rows: auto auto;
     gap: var(--space-2);
     padding: var(--space-4);
-    position: relative;
   }
-  .td-side, .td-table, .td-people { display: none; }
-  .td-rsvp { position: absolute; top: var(--space-4); left: var(--space-4); }
-  .td-actions { justify-content: flex-start; }
-  .form-row-2 { grid-template-columns: 1fr; }
-  .form-row-3 { grid-template-columns: 1fr 1fr; }
+  .guest-identity { grid-column: 1; grid-row: 1; }
+  .td-rsvp { grid-column: 2; grid-row: 1; }
+  .td-side { grid-column: 1; grid-row: 2; }
+  .td-actions { grid-column: 2; grid-row: 2; justify-content: flex-end; }
+  .td-table, .td-people { display: none; }
+  .form-row-2, .form-row-3 { grid-template-columns: 1fr; }
 }
 @media (max-width: 480px) {
+  .page-header { flex-direction: column; }
   .stats-row { gap: var(--space-1); }
   .stat-badge { min-width: 56px; padding: var(--space-2); }
-  .page-header { flex-direction: column; }
-  .form-row-3 { grid-template-columns: 1fr; }
 }
 </style>
