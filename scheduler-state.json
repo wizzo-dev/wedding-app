@@ -163,8 +163,9 @@
     },
     {
       "name": "Account",
-      "status": "pending",
-      "branch": null
+      "status": "pushed",
+      "branch": "feat/page/account",
+      "completedAt": "2026-04-02T23:52:06.347Z"
     },
     {
       "name": "Subscription",
