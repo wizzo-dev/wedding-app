@@ -117,12 +117,39 @@ export default async function guestRoutes(app) {
       return reply.code(400).send({ error: 'VALIDATION', message: 'רשימת אורחים נדרשת' })
     }
 
-    const created = await prisma.guest.createMany({
-      data: list
-        .filter(g => g.name && g.name.trim())
-        .map(g => ({
+    // Rate limit: 3 imports per hour per user
+    if (!checkBulkImportRateLimit(userId)) {
+      return reply.code(429).send({ error: 'RATE_LIMIT', message: 'ניתן לבצע עד 3 ייבואים בשעה' })
+    }
+
+    // Hard cap: 500 guests per import
+    if (list.length > 500) {
+      return reply.code(400).send({ error: 'VALIDATION', message: 'ניתן לייבא עד 500 אורחים בבת אחת' })
+    }
+
+    const valid = []
+    const invalid = []
+
+    for (let i = 0; i < list.length; i++) {
+      const g = list[i]
+      const rowErrors = []
+
+      // Name is required
+      if (!g.name || String(g.name).trim().length === 0) {
+        rowErrors.push('שם חובה')
+      }
+
+      // Phone regex if provided
+      if (g.phone && !PHONE_REGEX.test(String(g.phone))) {
+        rowErrors.push('מספר טלפון לא תקין')
+      }
+
+      if (rowErrors.length > 0) {
+        invalid.push({ row: i + 1, name: g.name || '', errors: rowErrors })
+      } else {
+        valid.push({
           userId,
-          name: g.name.trim(),
+          name: String(g.name).trim(),
           phone: g.phone || null,
           email: g.email || null,
           side: g.side && SIDES.includes(g.side) ? g.side : 'חתן',
@@ -130,10 +157,21 @@ export default async function guestRoutes(app) {
           rsvpStatus: g.rsvpStatus && RSVP_STATUSES.includes(g.rsvpStatus) ? g.rsvpStatus : 'pending',
           numPeople: Number(g.numPeople) || 1,
           notes: g.notes || null
-        }))
-    })
+        })
+      }
+    }
 
-    return { count: created.count, message: `${created.count} אורחים נוספו בהצלחה` }
+    let created = { count: 0 }
+    if (valid.length > 0) {
+      created = await prisma.guest.createMany({ data: valid })
+    }
+
+    return {
+      count: created.count,
+      message: `${created.count} אורחים נוספו בהצלחה`,
+      skipped: invalid.length,
+      invalidRows: invalid
+    }
   })
 
   // ── GET /api/guests/:id ───────────────────────────────────────────────────────
