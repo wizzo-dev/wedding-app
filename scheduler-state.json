@@ -1,17 +1,18 @@
 {
   "paused": true,
-  "currentIndex": 2,
-  "lastCompleted": "Landing",
-  "lastCompletedAt": "2026-04-02T20:05:00Z",
-  "waitingForApproval": ["AppLayout", "Landing"],
+  "pauseReason": "hamevaker-round4: CRITICAL bugs in budget-overview (API mismatches) + HIGH bugs in guests-list. Fixes required before proceeding.",
+  "currentIndex": 7,
+  "lastCompleted": "GuestsList",
+  "lastCompletedAt": "2026-04-02T21:00:00Z",
+  "waitingForApproval": ["AppLayout", "Landing", "Dashboard", "BudgetOverview", "BudgetCategory", "GuestsList"],
   "pages": [
-    { "name": "Landing",           "status": "pushed",   "branch": "feat/page/landing",      "completedAt": "2026-04-02T20:05:00Z" },
-    { "name": "Login",             "status": "pending",  "branch": null },
-    { "name": "Register",          "status": "pending",  "branch": null },
-    { "name": "Dashboard",         "status": "pending",  "branch": null },
-    { "name": "BudgetOverview",    "status": "pushed",   "branch": "feat/page/budget-overview", "completedAt": "2026-04-02T20:30:00Z" },
-    { "name": "BudgetCategory",    "status": "pushed",   "branch": "feat/page/budget-overview", "completedAt": "2026-04-02T20:30:00Z" },
-    { "name": "GuestsList",        "status": "pending",  "branch": null },
+    { "name": "Landing",           "status": "pushed",   "branch": "feat/page/landing",         "completedAt": "2026-04-02T20:05:00Z", "hamevaker": "round1" },
+    { "name": "Login",             "status": "pushed",   "branch": "feat/page/login",            "completedAt": "2026-04-02T20:15:00Z", "hamevaker": "round3" },
+    { "name": "Register",          "status": "pushed",   "branch": "feat/page/register",         "completedAt": "2026-04-02T20:20:00Z", "hamevaker": "round3" },
+    { "name": "Dashboard",         "status": "pushed",   "branch": "feat/page/dashboard",        "completedAt": "2026-04-02T20:30:00Z", "hamevaker": "round3" },
+    { "name": "BudgetOverview",    "status": "pushed",   "branch": "feat/page/budget-overview",  "completedAt": "2026-04-02T20:30:00Z", "hamevaker": "round4", "issues": "CRITICAL-1,2,3,4 — API mismatches, field name mismatches" },
+    { "name": "BudgetCategory",    "status": "pushed",   "branch": "feat/page/budget-overview",  "completedAt": "2026-04-02T20:30:00Z", "hamevaker": "round4", "issues": "CRIT-4 — expenses always 404" },
+    { "name": "GuestsList",        "status": "pushed",   "branch": "feat/page/guests-list",      "completedAt": "2026-04-02T21:00:00Z", "hamevaker": "round4", "issues": "HIGH-4 silent delete failure, HIGH-3 bulk import no validation" },
     { "name": "GuestCard",         "status": "pending",  "branch": null },
     { "name": "GuestImport",       "status": "pending",  "branch": null },
     { "name": "GuestStats",        "status": "pending",  "branch": null },
@@ -47,6 +48,14 @@
   "appLayout": {
     "status": "pushed",
     "branch": "feat/page/app-layout",
-    "completedAt": "2026-04-02T20:00:00Z"
+    "completedAt": "2026-04-02T20:00:00Z",
+    "hamevaker": "round1"
+  },
+  "criticalAuth": {
+    "status": "pushed",
+    "branch": "feat/fix/critical-auth",
+    "completedAt": "2026-04-02T20:45:00Z",
+    "hamevaker": "round4",
+    "issues": "HIGH-1 refresh loop, HIGH-3 updateRsvp missing 'maybe', HIGH-4 side field stripped"
   }
 }

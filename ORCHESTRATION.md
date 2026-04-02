@@ -1,90 +1,93 @@
 # ORCHESTRATION.md — Wedding App Build Status
 
-**Last updated:** 2026-04-02T20:41Z (Watchdog check)
+_Last updated by watchdog: 2026-04-02T21:11Z_
 
 ---
 
-## 🏗️ Active Agents
+## 📊 Current Status: ⚠️ PAUSED — FIXES REQUIRED
 
-| Agent | Status | Runtime | Doing |
-|-------|--------|---------|-------|
-| **freddy** | ✅ Running | 19m | Building next pages (post-Dashboard) |
-| **hamevaker** | ✅ Done (Round 3) | 1m | Reviewed Login / Register / Dashboard |
-
----
-
-## 📦 PM2
-
-| Service | Status | PID | Uptime | Memory |
-|---------|--------|-----|--------|--------|
-| yalla-api | ✅ online | 723967 | 20m | 90.4 MB |
+**Scheduler:** PAUSED (`paused: true`)  
+**Reason:** Hamevaker Round 4 found CRITICAL bugs that must be fixed before new pages are built.  
+**PM2 `yalla-api`:** ✅ ONLINE (pid 726554, uptime ~2m, 13 restarts total)  
+**Active Subagents:** None (Freddy + Hamevaker both completed)
 
 ---
 
-## 🌿 Git Branches (Remote)
+## 🏗️ Pages Completed (7/38 pages + AppLayout + CriticalAuth fix)
 
-| Branch | Status |
-|--------|--------|
-| origin/feat/page/app-layout | ✅ Pushed + Merged to main |
-| origin/feat/page/landing | ✅ Pushed + Merged to main |
-| origin/feat/page/login | ✅ Pushed + Merged to main |
-| origin/feat/page/register | ⚠️ Pushed + Merged — but branch HEAD is a STUB (implementation in main, not on branch) |
-| origin/feat/page/dashboard | ✅ Pushed + Merged to main |
-
----
-
-## 📋 Scheduler State (⚠️ STALE)
-
-- `paused: true`, `currentIndex: 2`, `lastCompleted: "Landing"`
-- **Reality:** 5 pages built (AppLayout + Landing + Login + Register + Dashboard)
-- Scheduler JSON has not been updated since Landing completed — needs resync
-- 34 pages remain pending
+| Page | Branch | Status | Hamevaker |
+|------|--------|--------|-----------|
+| AppLayout | feat/page/app-layout | pushed | round1 ✅ |
+| Landing | feat/page/landing | pushed | round1 ✅ |
+| Login | feat/page/login | pushed | round3 ✅ |
+| Register | feat/page/register | pushed | round3 ✅ |
+| Dashboard | feat/page/dashboard | pushed | round3 ✅ |
+| BudgetOverview | feat/page/budget-overview | pushed | round4 🔴 CRITICALs |
+| BudgetCategory | feat/page/budget-overview | pushed | round4 🔴 CRITICALs |
+| GuestsList | feat/page/guests-list | pushed | round4 🟠 HIGHs |
+| CriticalAuth fix | feat/fix/critical-auth | pushed | round4 🟡 Conditional |
 
 ---
 
-## 🔴 Blockers Found — Hamevaker Round 3
+## 🔴 Blocking Issues (from Hamevaker Round 4)
 
-> All branches: REQUEST_CHANGES
+### Budget Pages — CRITICAL (must fix before merge)
+1. **CRIT-1:** Frontend calls `/budget/expenses` and `/budget/categories` — endpoints don't exist. Backend uses `/:categoryId/expenses` paths. All write operations → 404.
+2. **CRIT-2:** Field name mismatch: frontend reads `totalBudget`/`remaining`, backend sends `budgetTotal`/`totalRemaining`. Donut chart permanently 0%.
+3. **CRIT-3:** `saveTotal()` sends `{ totalBudget }`, backend expects `{ budgetTotal }`. Every save zeros the budget.
+4. **CRIT-4:** CategoryView fetches expenses via `/budget/expenses?categoryId=` → 404. Expenses list always empty.
 
-### CRITICAL
-1. **JWT in localStorage** (auth.js:7,14,18,24) — XSS attack vector. Access token should be memory-only; refresh via httpOnly cookie. Affects ALL authenticated pages.
-2. **Auth race condition** (auth.js:10 + router/index.js:62) — Hard refresh on any `/app/*` route redirects to `/login` because `user.value` is null until `fetchMe()` resolves. isLoggedIn computed is false on page load. Breaks all protected routes.
-3. **Register branch HEAD is a stub** — `feat/page/register` tip contains 14-line placeholder. Actual implementation was committed on wrong branch (merged to main via app-layout lineage). Branch name is completely misleading.
+### Guests Page — HIGH
+- **HIGH-4:** Silent delete failure — guest removed from UI on API error, no re-fetch, user confused.
+- **HIGH-3:** Bulk import: no Zod validation, no record limit, can import 10k guests in one shot.
 
-### HIGH
-4. **validate.js swallows non-ZodError exceptions** — middleware `catch` has no re-throw. Any non-Zod error in schema.parse() silently passes through to route handler with unvalidated body.
-5. **weddingDate format mismatch** — `<input type="date">` produces `"YYYY-MM-DD"`, Zod expects `datetime()`. Registration with a wedding date fails with 400.
-6. **Dashboard stat cards not keyboard accessible** — `<div @click>` with no role/tabindex/keydown. Keyboard and screen reader users cannot use.
-7. **RSVP "maybe" status inconsistency** — guests.js allows `maybe`, validate.js rsvpStatus enum rejects it. Guests set to `maybe` via full update can never be updated via RSVP endpoint.
-
-### Cross-cutting (all branches)
-- Issues 1, 2, 4, 5 affect every authenticated feature built from now on.
-
----
-
-## 📊 Pages Progress
-
-| Total | Built | Merged | Pending |
-|-------|-------|--------|---------|
-| 38 | 5 | 5 | 33 |
-
-Built: AppLayout, Landing, Login, Register, Dashboard
+### Critical Auth — HIGH  
+- **HIGH-1:** 401 refresh interceptor can infinite-loop if `/auth/refresh` itself returns 401.
+- **HIGH-3:** `updateRsvp` schema missing `'maybe'` enum value → RSVP updates for "לא בטוח" rejected.
+- **HIGH-4:** `createGuest` schema missing `side` field → field silently stripped when validate middleware applied.
 
 ---
 
-## 🔁 Watchdog Actions This Run
+## 📋 Hamevaker Review History
 
-- No new spawn needed (Freddy running, PM2 healthy)
-- No hamevaker spawn needed (just finished Round 3)
-- ⚠️ WhatsApp alert sent to Amitai — CRITICAL blockers in auth architecture
+| Round | Branches | Verdict |
+|-------|----------|---------|
+| Round 1 | app-layout, landing | approved (with fixes applied in round 1) |
+| Round 2 | app-layout + landing post-fixes | approved |
+| Round 3 | login, register, dashboard | reviewed |
+| Round 4 | budget-overview, guests-list, critical-auth | 🔴 REQUEST_CHANGES |
 
 ---
 
-## 📝 Next Recommended Actions
+## 🚦 Watchdog Decision Log
 
-1. **Amitai decision needed:** Migrate JWT to memory-only or accept localStorage? Affects all pages.
-2. **Fix auth race condition** before building more app pages — broken on hard refresh.
-3. **Resync scheduler-state.json** — advance Login/Register/Dashboard to `pushed`.
-4. **Fix register branch** — tag correct commit or recreate branch from correct base.
-5. **Fix validate.js** — add `else { throw err }` after ZodError check.
-6. **Fix weddingDate** — change Zod to `z.string().regex(/^\d{4}-\d{2}-\d{2}$/)` or coerce to datetime.
+### 2026-04-02T21:11Z
+- **Freddy:** Done, not running. Scheduler `paused: true` → **NOT spawned** (paused for approval/fixes)
+- **Hamevaker:** Done (round 4 just completed). No new unreviewed branches → **NOT spawned**
+- **PM2:** Online ✅ — no restart needed
+- **Scheduler state:** Updated — Dashboard + GuestsList were marked pending but are actually pushed
+- **Next action:** Freddy needs to spawn a **fix branch** (`feat/fix/budget-api-contract`) to address CRITICALs in budget-overview before building new pages
+
+---
+
+## ⏭️ Next Steps (when Amitai approves)
+
+1. **Fix sprint** (Freddy): Branch `feat/fix/budget-api-contract` — fix all 4 CRITICALs in budget pages + 2 HIGHs in guests + 3 HIGHs in critical-auth
+2. **Hamevaker Round 5**: Verify fixes are correct
+3. **Resume building**: GuestCard → GuestImport → GuestStats → WhatsApp flow → Seating → ...
+
+---
+
+## 🏗️ Remote Branches (git branch -r | grep feat)
+
+```
+origin/feat/fix/critical-auth
+origin/feat/page/app-layout
+origin/feat/page/budget
+origin/feat/page/budget-overview
+origin/feat/page/dashboard
+origin/feat/page/guests-list
+origin/feat/page/landing
+origin/feat/page/login
+origin/feat/page/register
+```
