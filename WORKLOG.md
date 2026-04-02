@@ -1,3 +1,71 @@
+## 2026-04-02T22:15Z | WaHistory + SeatingMap + HallSettings | main
+
+**Summary:** Implemented 3 full production-quality pages for yalla-wedding.
+
+### Pages Built
+
+#### 1. WaHistory — `/app/whatsapp/history`
+- **Frontend:** `HistoryView.vue` — full paginated history view
+  - Date range filter (from/to) + status filter (all/sent/partial/failed)
+  - Expandable per-guest results table with filter tabs (all/sent/failed)
+  - Re-send failed button per batch with loading state
+  - Pagination with smart page number rendering
+  - Loading skeleton states, error state with retry, empty state with CTA
+  - Hebrew RTL, mobile responsive
+- **Backend:** Enhanced `/api/whatsapp/history` with pagination + date/status filters
+  - New `POST /api/whatsapp/resend/:batchId` endpoint (mock 80% success re-send)
+
+#### 2. SeatingMap — `/app/seating`
+- **Frontend:** `SeatingMapView.vue` — full drag-and-drop seating assignment
+  - Visual grid of table cards (responsive, auto-fill layout)
+  - Sidebar: unassigned guests list (searchable), draggable guest chips
+  - Native HTML5 drag-and-drop: drag guest → drop on table → assigned
+  - Guest chips on table with status colors (confirmed/declined/maybe/pending)
+  - Remove guest from table (optimistic UI update)
+  - Add table modal (name, capacity), edit table, delete table with confirmation
+  - Table drag-and-drop to reorder
+  - Loading skeleton, error state, empty state
+- **Backend:** Full `seating.js` route implementation:
+  - `GET /api/seating/tables` — tables with nested guests + unassigned list
+  - `POST /api/seating/tables` — create table
+  - `PUT /api/seating/tables/:id` — update table
+  - `DELETE /api/seating/tables/:id` — delete + unassign guests
+  - `PUT /api/seating/assign` — assign/unassign guest to table
+
+#### 3. HallSettings — `/app/seating/settings`
+- **Frontend:** `HallSettingsView.vue` — hall configuration page
+  - Hall name + total capacity settings
+  - Auto-generate tables: count stepper, seats per table, naming style
+  - Naming styles: numbers (שולחן 1), Hebrew letters (שולחן א), custom prefix
+  - Live preview of total capacity math
+  - Warning dialog when overwriting existing tables
+  - Success modal with CTA to go to seating map
+  - Summary card: total tables, seats, assigned, unassigned + occupancy bar
+- **Backend:** Settings endpoints:
+  - `GET /api/seating/settings` — hall settings from HallLayout model
+  - `PUT /api/seating/settings` — save hall name + capacity
+  - `POST /api/seating/generate-tables` — auto-generate N tables in grid layout
+
+### Router Updates
+- `/app/seating` → `@/views/app/SeatingMapView.vue`
+- `/app/seating/settings` → `@/views/app/HallSettingsView.vue`
+
+### Schema Changes
+- `WaTemplate.type String @default("custom")` — added for template type tracking
+- `prisma db push` applied to dev.db
+
+### Quality
+- ✅ Full Hebrew RTL (`dir="rtl"`, `text-align: right`)
+- ✅ Mobile responsive (breakpoints at 640px, 900px)
+- ✅ Loading skeleton states
+- ✅ Error state with retry button
+- ✅ Empty state with CTA
+- ✅ All API errors shown via toast/inline
+- ✅ `npm run build` — 0 errors, 0 warnings
+- ✅ `pm2 restart yalla-api` — `/health` responds OK
+
+---
+
 # WORKLOG - Freddy Dev Agent
 
 ## 2026-04-02T22:11Z | WA Schema+Route Fixes | feat/fix/wa-schema-and-routes
