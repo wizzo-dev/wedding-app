@@ -11,7 +11,7 @@
     { "name": "Dashboard",         "status": "pending",  "branch": null },
     { "name": "BudgetOverview",    "status": "pushed",   "branch": "feat/page/budget-overview", "completedAt": "2026-04-02T20:30:00Z" },
     { "name": "BudgetCategory",    "status": "pushed",   "branch": "feat/page/budget-overview", "completedAt": "2026-04-02T20:30:00Z" },
-    { "name": "GuestsList",        "status": "pending",  "branch": null },
+    { "name": "GuestsList",        "status": "pushed",   "branch": "feat/page/guests-list", "completedAt": "2026-04-02T21:00:00Z" },
     { "name": "GuestCard",         "status": "pending",  "branch": null },
     { "name": "GuestImport",       "status": "pending",  "branch": null },
     { "name": "GuestStats",        "status": "pending",  "branch": null },
