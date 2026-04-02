@@ -34,7 +34,7 @@ const routes = [
       { path: 'guests/stats',           name: 'GuestStats',     component: () => import('@/views/app/guests/StatsView.vue') },
 
       // WhatsApp
-      { path: 'whatsapp',               redirect: '/app/whatsapp/connect' },
+      { path: 'whatsapp',               name: 'Whatsapp',       component: () => import('@/views/app/whatsapp/WhatsappView.vue') },
       { path: 'whatsapp/connect',       name: 'WaConnect',      component: () => import('@/views/app/whatsapp/WhatsAppConnectView.vue') },
       { path: 'whatsapp/templates',     name: 'WaTemplates',    component: () => import('@/views/app/whatsapp/TemplatesView.vue') },
       { path: 'whatsapp/send',          name: 'WaSend',         component: () => import('@/views/app/whatsapp/SendView.vue') },
