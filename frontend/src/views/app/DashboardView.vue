@@ -56,10 +56,10 @@
         </div>
         <div class="stat-card card card-hover" @click="$router.push('/app/guests')">
           <div class="stat-card-body">
-            <div class="stat-icon stat-icon-warning">🤔</div>
+            <div class="stat-icon stat-icon-warning">⏳</div>
             <div>
-              <div class="stat-num">{{ data.guests.maybe }}</div>
-              <div class="stat-lbl">לא בטוחים</div>
+              <div class="stat-num">{{ data.guests.pending }}</div>
+              <div class="stat-lbl">ממתינים לאישור</div>
             </div>
           </div>
         </div>
@@ -271,7 +271,6 @@ function formatRelativeTime(dateStr) {
 function rsvpLabel(status) {
   const map = {
     confirmed: 'מגיע ✅',
-    maybe:     'לא בטוח 🤔',
     declined:  'לא מגיע ❌',
     pending:   'ממתין ⏳'
   }
@@ -281,7 +280,6 @@ function rsvpLabel(status) {
 function rsvpBadgeClass(status) {
   const map = {
     confirmed: 'badge-success',
-    maybe:     'badge-warning',
     declined:  'badge-error',
     pending:   'badge-neutral'
   }

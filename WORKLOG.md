@@ -1,5 +1,60 @@
 # WORKLOG - Freddy Dev Agent
 
+## 2026-04-02T20:30Z | BudgetOverview + BudgetCategory | feat/page/budget-overview
+
+**Summary:** Full Hebrew RTL budget management pages with Prisma migrations, complete backend CRUD, and polished Vue 3 UI.
+
+**What was built:**
+
+### Backend
+- Updated `schema.prisma`: added `budgetTotal` to User, `isPaid` to BudgetExpense
+- Applied migration `20260402202132_add_budget_total` + created `20260402202653_add_budget_fields_expense_paid`
+- Full budget routes (`backend/src/routes/budget.js`):
+  - `GET /api/budget` — categories with spent/allocated/pct + totals
+  - `POST /api/budget` — create category
+  - `PUT /api/budget/total` — update total wedding budget
+  - `GET /api/budget/:categoryId` — detail + expenses list
+  - `PUT /api/budget/:categoryId` — update name/allocated amount
+  - `DELETE /api/budget/:categoryId` — delete category
+  - `POST /api/budget/:categoryId/expenses` — add expense
+  - `PUT /api/budget/:categoryId/expenses/:id` — edit expense
+  - `DELETE /api/budget/:categoryId/expenses/:id` — delete expense
+
+### BudgetOverviewView.vue
+- 4 stat cards: total budget / allocated / spent / remaining
+- Pink gradient progress bar with pct
+- Category cards grid: icon, name, allocated, spent, % bar, over-budget alert
+- Color-coded status (red = over budget, amber = near limit, green = ok)
+- Add category modal with icon picker
+- Edit total budget modal
+- Loading skeleton, error state, empty state CTA
+- Hebrew RTL, fully responsive
+
+### BudgetCategoryView.vue
+- Category header: inline name edit, inline allocated amount edit
+- Stats row: spent, remaining, % mini progress bar
+- Add expense form: vendor name, amount, date, isPaid toggle, notes
+- Expense list: paid status dot, vendor name, amount, date, notes, badge
+- Inline expense edit mode (per-row)
+- Delete with confirm
+- Loading skeleton, error state, empty state
+- Hebrew RTL, fully responsive
+
+**Files changed:**
+- `backend/prisma/schema.prisma`
+- `backend/prisma/migrations/20260402202653_*/migration.sql`
+- `backend/src/routes/budget.js`
+- `frontend/src/router/index.js` (updated to use new file paths)
+- `frontend/src/views/app/BudgetOverviewView.vue` (new, 380 lines)
+- `frontend/src/views/app/BudgetCategoryView.vue` (new, 520 lines)
+
+**Branch:** `feat/page/budget-overview`
+**Build:** ✅ Passes (BudgetOverviewView: 10.49kB, BudgetCategoryView: 12.69kB)
+**Routes:** `/app/budget` → BudgetOverview, `/app/budget/:categoryId` → BudgetCategory
+
+---
+
+
 ## 2026-04-02T19:55Z | AppLayout | feat/page/app-layout
 
 **Summary:** Full sidebar navigation layout with RTL support for the wedding app.
@@ -98,5 +153,48 @@
 **Branch:** `feat/page/dashboard`
 **Build:** ✅ Passes (DashboardView-*.js: 8.88 kB gzip:3.08 kB)
 **Test URL:** http://localhost:3001/app/dashboard (requires auth)
+
+---
+
+## 2026-04-02T20:45Z | Critical Security + Auth Fixes | feat/fix/critical-auth
+
+**Summary:** Addressed 5 security and correctness issues before continuing feature development.
+
+### CRITICAL FIX 1: JWT memory-only (XSS mitigation)
+- **Problem:** `accessToken` was stored in `localStorage` — exposed to XSS attacks.
+- **Fix:** Removed all `localStorage.setItem/getItem/removeItem` for `access_token` from `auth.js` and `useApi.js`.
+- **Architecture:** Created `frontend/src/lib/tokenRegistry.js` — a tiny in-memory module that holds the token without circular dependency issues.
+  - `auth.js` imports `tokenRegistry` to keep the Pinia ref and registry in sync via `_setToken()`.
+  - `useApi.js` imports `tokenRegistry` to attach the token to outgoing requests.
+- The httpOnly `refresh_token` cookie is still used for silent refresh.
+
+### CRITICAL FIX 2: Auth race condition on hard reload
+- **Problem:** Direct navigation to `/app/dashboard` redirected to `/login` because `router.beforeEach` evaluated `isLoggedIn` before `init()` completed.
+- **Fix:** Added `authReady = ref(false)` to auth store + exported it.
+- Added `async init()` to auth store: tries `/auth/refresh` then `/auth/me`, sets `authReady = true` in `finally`.
+- `App.vue`: `onMounted(async () => { await auth.init() })`.
+- `router/index.js`: `beforeEach` now awaits `authReady` via a one-shot `watch()` before evaluating guards.
+
+### CRITICAL FIX 3: weddingDate Zod validation
+- **Problem:** `weddingDate: z.string().datetime()` rejected `input[type=date]` values (`YYYY-MM-DD`).
+- **Fix:** Changed to `z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable()`.
+
+### HIGH FIX 4: validate.js swallowing non-ZodError exceptions
+- **Problem:** `catch(err)` only handled `ZodError` — other exceptions were silently swallowed.
+- **Fix:** Added `else { throw err }` to re-throw non-validation errors to Fastify's error handler.
+
+### HIGH FIX 5: RSVP 'maybe' → 'pending' consistency
+- **Problem:** `dashboard.js` computed a `maybe` counter that could never be populated (DB uses `'pending'`).
+- **Fix:** Removed `maybe` from `guestCounts` in `dashboard.js`; all non-confirmed/non-declined guests accumulate in `pending`.
+- Updated `DashboardView.vue`: replaced `{{ data.guests.maybe }}` stat card with `{{ data.guests.pending }}` ("ממתינים לאישור").
+- Removed `maybe` entries from `rsvpLabel` and `rsvpBadgeClass` maps.
+
+### Build & Verification
+- `npm run build` → ✅ 0 errors, 157 modules transformed
+- `pm2 restart yalla-api` → ✅ online
+- `GET /health` → `{"status":"ok"}`
+
+**Branch:** `feat/fix/critical-auth`
+**PR:** https://github.com/wizzo-dev/wedding-app/pull/new/feat/fix/critical-auth
 
 ---

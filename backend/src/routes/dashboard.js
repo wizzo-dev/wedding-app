@@ -58,10 +58,9 @@ export default async function dashboardRoutes(app) {
       daysUntilWedding = Math.ceil((wedding - today) / (1000 * 60 * 60 * 24))
     }
 
-    // Build guest counts
+    // Build guest counts — valid statuses: 'pending' | 'confirmed' | 'declined'
     const guestCounts = {
       confirmed: 0,
-      maybe:     0,
       declined:  0,
       pending:   0,
       total:     0
@@ -70,10 +69,9 @@ export default async function dashboardRoutes(app) {
       const cnt = g._count.id
       const ppl = g._sum.numPeople || cnt
       guestCounts.total += ppl
-      if (g.rsvpStatus === 'confirmed') guestCounts.confirmed = ppl
-      else if (g.rsvpStatus === 'maybe')     guestCounts.maybe = ppl
-      else if (g.rsvpStatus === 'declined')  guestCounts.declined = ppl
-      else                                   guestCounts.pending += ppl
+      if (g.rsvpStatus === 'confirmed')     guestCounts.confirmed += ppl
+      else if (g.rsvpStatus === 'declined') guestCounts.declined  += ppl
+      else                                  guestCounts.pending   += ppl
     }
 
     // Budget totals

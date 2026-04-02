@@ -24,6 +24,8 @@ export const validate = (schema) => async (req, reply) => {
           message: e.message
         }))
       })
+    } else {
+      throw err  // re-throw non-validation errors so Fastify handles them
     }
   }
 }
@@ -36,7 +38,8 @@ export const schemas = {
       password: z.string().min(8, 'סיסמה חייבת להיות לפחות 8 תווים'),
       name1: z.string().min(1).max(50).trim(),
       name2: z.string().min(1).max(50).trim(),
-      weddingDate: z.string().datetime().optional()
+      // input type="date" returns "YYYY-MM-DD" — not ISO datetime
+      weddingDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'תאריך לא תקין (YYYY-MM-DD)').optional().nullable()
     })
   }),
 

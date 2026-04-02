@@ -11,7 +11,10 @@ import { onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 
 const auth = useAuthStore()
-onMounted(() => {
-  if (auth.accessToken) auth.fetchMe()
+
+onMounted(async () => {
+  // Initialize auth: attempt silent refresh + fetchMe.
+  // Sets auth.authReady = true when done so the router guard can proceed.
+  await auth.init()
 })
 </script>

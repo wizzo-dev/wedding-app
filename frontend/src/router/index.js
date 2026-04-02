@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { watch } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 
 const routes = [
@@ -27,7 +28,7 @@ const routes = [
       { path: 'budget/category/:id',    name: 'BudgetCategory', component: () => import('@/views/app/budget/CategoryView.vue') },
 
       // Guests
-      { path: 'guests',                 name: 'Guests',         component: () => import('@/views/app/guests/GuestsView.vue') },
+      { path: 'guests',                 name: 'Guests',         component: () => import('@/views/app/GuestsListView.vue') },
       { path: 'guests/:id',             name: 'GuestCard',      component: () => import('@/views/app/guests/GuestView.vue') },
       { path: 'guests/import',          name: 'GuestImport',    component: () => import('@/views/app/guests/ImportView.vue') },
       { path: 'guests/stats',           name: 'GuestStats',     component: () => import('@/views/app/guests/StatsView.vue') },
@@ -76,8 +77,21 @@ const router = createRouter({
   scrollBehavior: () => ({ top: 0 })
 })
 
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   const auth = useAuthStore()
+
+  // Wait until auth.init() has completed (prevents redirect to /login on hard reload)
+  if (!auth.authReady) {
+    await new Promise(resolve => {
+      const stop = watch(
+        () => auth.authReady,
+        (ready) => {
+          if (ready) { stop(); resolve() }
+        }
+      )
+    })
+  }
+
   if (to.meta.requiresAuth && !auth.isLoggedIn) return next('/login')
   if (to.meta.guest && auth.isLoggedIn) return next('/app/dashboard')
   next()

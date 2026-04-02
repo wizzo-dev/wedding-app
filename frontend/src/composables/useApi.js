@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { tokenRegistry } from '@/lib/tokenRegistry'
 
 const api = axios.create({
   baseURL: '/api',
@@ -6,14 +7,14 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' }
 })
 
-// Request interceptor - מוסיף access token
+// Request interceptor — מוסיף access token מהזיכרון (לא מ-localStorage)
 api.interceptors.request.use(config => {
-  const token = localStorage.getItem('access_token')
+  const token = tokenRegistry.get()
   if (token) config.headers.Authorization = `Bearer ${token}`
   return config
 })
 
-// Response interceptor - refresh token אוטומטי
+// Response interceptor — automatic token refresh on 401
 let refreshing = false
 let queue = []
 
@@ -37,7 +38,10 @@ api.interceptors.response.use(
       try {
         const res = await api.post('/auth/refresh')
         const token = res.data.accessToken
-        localStorage.setItem('access_token', token)
+
+        // Store in memory only (no localStorage)
+        tokenRegistry.set(token)
+
         queue.forEach(p => p.resolve(token))
         queue = []
         original.headers.Authorization = `Bearer ${token}`
@@ -45,7 +49,7 @@ api.interceptors.response.use(
       } catch (refreshErr) {
         queue.forEach(p => p.reject(refreshErr))
         queue = []
-        localStorage.removeItem('access_token')
+        tokenRegistry.clear()
         window.location.href = '/login'
         return Promise.reject(refreshErr)
       } finally {
