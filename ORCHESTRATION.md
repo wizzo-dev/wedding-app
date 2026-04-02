@@ -1,7 +1,8 @@
 # Wedding App יאללה — Orchestration State
 
+_Last updated: 2026-04-02T21:58Z by Watchdog_
+
 ## Status: ACTIVE 🟢
-## Amitai: SLEEPING — wants full update at 06:00 Israel time
 ## Goal: all pages done by morning
 
 ---
@@ -9,79 +10,85 @@
 ## Server
 - URL: http://187.77.80.103:3001
 - PM2: yalla-api (online)
-- Redis: localhost:6379
 - DB: SQLite (dev.db)
 - Repo: https://github.com/wizzo-dev/wedding-app
 
 ---
 
-## Pages Status
-
-### ✅ Done & merged to main (7 pages + layout + auth fix):
-- AppLayout (sidebar RTL, mobile, countdown)
-- Landing page
-- Login
-- Register
-- Dashboard (real Prisma data)
-- BudgetOverview
-- BudgetCategory
-- GuestsList
-- Critical Auth Fix (JWT memory-only, race condition, weddingDate)
-
-### 🔧 In fix sprint now:
-- feat/fix/budget-api-contract (freddy-fix agent running)
-  Fixes: budget endpoints, guests delete/import, auth loop, validation
-
-### ⏳ Pending pages (in order):
-1. GuestCard
-2. GuestImport (Excel wizard)
-3. GuestStats
-4. WhatsAppConnect (QR)
-5. WaTemplates
-6. WaSend
-7. WaHistory
-8. SeatingMap (Konva canvas drag & drop)
-9. HallSettings
-10. CardsGallery
-11. CardPreview + PDF export
-12. GiftsList
-13. GiftStats
-14. VendorsList
-15. VendorDetail
-16. MyVendors
-17. Tasks + checklist
-18. Timeline (wedding day)
-19. Settings
-20. Account
-21. Subscription (premium)
-22. RSVP Public (/rsvp/:token + /rsvp/:token/:guestToken)
-23. Gift Public (/gift/:token - WhatsApp button only)
-24. 404 page
+## Active Agents
+| Agent | Status | Task |
+|-------|--------|------|
+| **Freddy** | 🟢 RUNNING | WaHistory + SeatingMap + HallSettings |
+| **Hamevaker** | ✅ Round 5 DONE | Reviewed WhatsApp branches |
 
 ---
 
-## Watchdog Rules (runs every 10 min)
-- If freddy-fix is done + pages pending → spawn Freddy for next 4 pages
-- If Freddy is done → spawn hamevaker to review new branches
-- If hamevaker approves → merge to main, rebuild, spawn Freddy for next batch
-- If hamevaker finds CRITICAL → spawn freddy-fix, pause Freddy
+## Pages Status (14 pushed / ~38 total)
+
+### ✅ Pushed branches
+| Page | Branch | Hamevaker |
+|------|--------|-----------|
+| AppLayout | feat/page/app-layout | round1 ✅ |
+| Landing | feat/page/landing | round1 ✅ |
+| Login | feat/page/login | round3 ✅ |
+| Register | feat/page/register | round3 ✅ |
+| Dashboard | feat/page/dashboard | round3 ✅ |
+| BudgetOverview | feat/page/budget-overview | round4 ⚠️ CRITICAL |
+| BudgetCategory | feat/page/budget-overview | round4 ⚠️ CRITICAL |
+| GuestsList | feat/page/guests-list-new | round4 ⚠️ HIGH |
+| GuestCard | feat/page/guest-card | round4 ✅ |
+| GuestImport | feat/page/guest-import | round4 ⚠️ CRITICAL |
+| GuestStats | feat/page/guest-stats | round4 ✅ |
+| WhatsAppConnect | feat/page/whatsapp-connect | round5 ⚠️ CRITICAL |
+| WaTemplates | feat/page/wa-templates | round5 ⚠️ CRITICAL |
+| WaSend | feat/page/wa-send | round5 ⚠️ CRITICAL |
+
+### 🔧 In progress (Freddy, spawned 21:50Z)
+- WaHistory → `feat/page/wa-history`
+- SeatingMap → `feat/page/seating-map`
+- HallSettings → `feat/page/hall-settings`
+
+### ⏳ Pending (after current batch)
+CardsGallery → CardPreview → GiftsList → GiftStats → VendorsList → VendorDetail → MyVendors → Tasks → Timeline → Settings → Account → Subscription → RSVP → GiftPublic → CardsExport → DashboardStats → Notifications → Profile → VendorSuggestions → PaymentStubs → PublicLanding → NotFound
+
+---
+
+## 🚨 Open Issues
+
+### From Round 4 (unresolved):
+- **[CRITICAL]** Auth logout doesn't invalidate refresh tokens (cookie path bug)
+- **[CRITICAL]** ImportView calls `/guests/preview` + `/guests/import` — backend endpoints missing
+- **[HIGH]** Budget API backend is still a stub
+- **[HIGH]** Prisma schema drift across branches
+- **[HIGH]** CSV formula injection risk on import
+
+### From Round 5 (WhatsApp branches):
+- **[CRITICAL]** Schema drift — `WaTemplate.type`, `WaMessage.message/results` missing from `schema.prisma` → POST /templates and POST /send crash at runtime
+- **[HIGH]** HTTP 200 returned on 400/404 errors across all WhatsApp routes — frontend never catches failures
+- **[HIGH]** No batch size cap on bulk send — no rate limiting
+- **[HIGH]** `parseInt` without NaN validation on template ID routes — crashes on non-numeric input
+- **[MEDIUM]** Hardcoded demo data instead of pulling from user settings
+- **[MEDIUM]** `/app/whatsapp` and `/app/whatsapp/history` UI stubs
+
+---
+
+## Watchdog Rules
+- Only 1 Freddy at a time, only 1 hamevaker at a time
+- Check subagents(action=list) before spawning anything
+- If Freddy done + pages pending → spawn Freddy for next 3 pages
+- If Freddy done → spawn hamevaker-roundN for new branches
 - If PM2 down → restart immediately
-- DO NOT message Amitai unless: blocker found, or major milestone
+- Message Amitai only on: new batch complete, blocker found, or PM2 crash
 
-## Watchdog: DO NOT spawn multiple Freddy instances
-- Only 1 Freddy at a time
-- Only 1 hamevaker at a time
-- Check subagents(action=list) before spawning
+## Morning Report
+- Cron: wedding-morning-report
+- Target: 04:00 UTC (06:00 Israel)
+- WhatsApp to +972545852206
 
-## Design Rules for Freddy:
-- ALWAYS use CSS vars: --color-primary #E91E8C, --color-navy #1A1F36
+## Design Rules
+- CSS vars: --color-primary #E91E8C, --color-navy #1A1F36
 - Heebo font, RTL, Hebrew
 - No localStorage for tokens
 - Prisma for ALL DB access
-- npm run build must pass 0 errors before commit
-- pm2 restart yalla-api after backend changes
-
-## Morning Report (04:00 UTC = 06:00 Israel):
-- Cron: wedding-morning-report
-- Report pages done, server URL, any blockers
-- WhatsApp to +972545852206
+- `npm run build` must pass 0 errors before commit
+- `pm2 restart yalla-api` after backend changes

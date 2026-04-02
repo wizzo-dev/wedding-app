@@ -151,6 +151,7 @@ model WaMessage {
   sentAt       DateTime?     @map("sent_at")
   status       String @default("pending")
   error        String?
+  results      String?
   createdAt    DateTime      @default(now()) @map("created_at")
 
   user     User        @relation(fields: [userId], references: [id], onDelete: Cascade)

@@ -35,13 +35,14 @@ const routes = [
 
       // WhatsApp
       { path: 'whatsapp',               name: 'Whatsapp',       component: () => import('@/views/app/whatsapp/WhatsappView.vue') },
+      { path: 'whatsapp/connect',       name: 'WaConnect',      component: () => import('@/views/app/whatsapp/WhatsAppConnectView.vue') },
       { path: 'whatsapp/templates',     name: 'WaTemplates',    component: () => import('@/views/app/whatsapp/TemplatesView.vue') },
       { path: 'whatsapp/send',          name: 'WaSend',         component: () => import('@/views/app/whatsapp/SendView.vue') },
       { path: 'whatsapp/history',       name: 'WaHistory',      component: () => import('@/views/app/whatsapp/HistoryView.vue') },
 
       // Seating
-      { path: 'seating',                name: 'Seating',        component: () => import('@/views/app/seating/SeatingView.vue') },
-      { path: 'seating/settings',       name: 'HallSettings',   component: () => import('@/views/app/seating/HallSettingsView.vue') },
+      { path: 'seating',                name: 'Seating',        component: () => import('@/views/app/SeatingMapView.vue') },
+      { path: 'seating/settings',       name: 'HallSettings',   component: () => import('@/views/app/HallSettingsView.vue') },
 
       // Cards
       { path: 'cards',                  name: 'Cards',          component: () => import('@/views/app/cards/CardsView.vue') },
