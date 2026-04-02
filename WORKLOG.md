@@ -155,3 +155,46 @@
 **Test URL:** http://localhost:3001/app/dashboard (requires auth)
 
 ---
+
+## 2026-04-02T20:45Z | Critical Security + Auth Fixes | feat/fix/critical-auth
+
+**Summary:** Addressed 5 security and correctness issues before continuing feature development.
+
+### CRITICAL FIX 1: JWT memory-only (XSS mitigation)
+- **Problem:** `accessToken` was stored in `localStorage` — exposed to XSS attacks.
+- **Fix:** Removed all `localStorage.setItem/getItem/removeItem` for `access_token` from `auth.js` and `useApi.js`.
+- **Architecture:** Created `frontend/src/lib/tokenRegistry.js` — a tiny in-memory module that holds the token without circular dependency issues.
+  - `auth.js` imports `tokenRegistry` to keep the Pinia ref and registry in sync via `_setToken()`.
+  - `useApi.js` imports `tokenRegistry` to attach the token to outgoing requests.
+- The httpOnly `refresh_token` cookie is still used for silent refresh.
+
+### CRITICAL FIX 2: Auth race condition on hard reload
+- **Problem:** Direct navigation to `/app/dashboard` redirected to `/login` because `router.beforeEach` evaluated `isLoggedIn` before `init()` completed.
+- **Fix:** Added `authReady = ref(false)` to auth store + exported it.
+- Added `async init()` to auth store: tries `/auth/refresh` then `/auth/me`, sets `authReady = true` in `finally`.
+- `App.vue`: `onMounted(async () => { await auth.init() })`.
+- `router/index.js`: `beforeEach` now awaits `authReady` via a one-shot `watch()` before evaluating guards.
+
+### CRITICAL FIX 3: weddingDate Zod validation
+- **Problem:** `weddingDate: z.string().datetime()` rejected `input[type=date]` values (`YYYY-MM-DD`).
+- **Fix:** Changed to `z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable()`.
+
+### HIGH FIX 4: validate.js swallowing non-ZodError exceptions
+- **Problem:** `catch(err)` only handled `ZodError` — other exceptions were silently swallowed.
+- **Fix:** Added `else { throw err }` to re-throw non-validation errors to Fastify's error handler.
+
+### HIGH FIX 5: RSVP 'maybe' → 'pending' consistency
+- **Problem:** `dashboard.js` computed a `maybe` counter that could never be populated (DB uses `'pending'`).
+- **Fix:** Removed `maybe` from `guestCounts` in `dashboard.js`; all non-confirmed/non-declined guests accumulate in `pending`.
+- Updated `DashboardView.vue`: replaced `{{ data.guests.maybe }}` stat card with `{{ data.guests.pending }}` ("ממתינים לאישור").
+- Removed `maybe` entries from `rsvpLabel` and `rsvpBadgeClass` maps.
+
+### Build & Verification
+- `npm run build` → ✅ 0 errors, 157 modules transformed
+- `pm2 restart yalla-api` → ✅ online
+- `GET /health` → `{"status":"ok"}`
+
+**Branch:** `feat/fix/critical-auth`
+**PR:** https://github.com/wizzo-dev/wedding-app/pull/new/feat/fix/critical-auth
+
+---
