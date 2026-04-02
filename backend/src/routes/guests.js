@@ -3,6 +3,21 @@ import { prisma } from '../models/db.js'
 const RSVP_STATUSES = ['pending', 'confirmed', 'declined', 'maybe']
 const SIDES = ['חתן', 'כלה', 'משותף']
 
+// In-memory rate limit tracker for bulk import (userId → [timestamps])
+const bulkImportRateMap = new Map()
+const PHONE_REGEX = /^[+\d\s\-()\u200f]{7,20}$/
+
+function checkBulkImportRateLimit(userId) {
+  const now = Date.now()
+  const windowMs = 60 * 60 * 1000 // 1 hour
+  const maxImports = 3
+  const history = (bulkImportRateMap.get(userId) || []).filter(t => now - t < windowMs)
+  if (history.length >= maxImports) return false
+  history.push(now)
+  bulkImportRateMap.set(userId, history)
+  return true
+}
+
 export default async function guestRoutes(app) {
 
   // ── GET /api/guests — list with optional filters ─────────────────────────────

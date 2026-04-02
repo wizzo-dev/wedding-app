@@ -249,3 +249,109 @@
 **PR:** https://github.com/wizzo-dev/wedding-app/pull/new/feat/fix/critical-auth
 
 ---
+
+---
+
+## 2026-04-02T21:55Z | Budget + All Guest Pages | feat/page/budget + feat/page/guest-*
+
+**Summary:** Built all 6 remaining pages (budget overview, budget category, guests list, guest card, guest import, guest stats) with full backend and polished Vue 3 UI.
+
+### feat/page/budget
+
+**Backend (budget.js):**
+- Prisma migration: `budgetTotal` on User + `isPaid` on BudgetExpense
+- `GET /api/budget` — overview with all categories + computed spent/pct/remaining
+- `PUT /api/budget/total` — update total wedding budget
+- `POST /api/budget/categories` — create category with icon/color
+- `GET /api/budget/categories/:id` — category detail with all expenses
+- `PUT /api/budget/categories/:id` — update name/allocated/icon/color
+- `DELETE /api/budget/categories/:id` — cascade delete
+- `POST /api/budget/categories/:id/expenses` — add expense
+- `PUT /api/budget/categories/:id/expenses/:eid` — edit expense
+- `DELETE /api/budget/categories/:id/expenses/:eid` — delete expense
+- `GET /api/budget/expenses/recent` — cross-category recent expenses
+
+**BudgetView.vue (~600 lines):**
+- 4 stats cards: total/allocated/spent/remaining
+- SVG donut chart with conic segments (% of allocated per category)
+- Interactive legend → navigates to category
+- Recent expenses list with category icons + paid badges
+- Categories grid: icon, progress bar, spent/allocated, % with color states
+- Delete category modal with confirmation
+- Add category modal: icon picker (16 icons) + color palette (10 colors)
+- Edit total budget modal
+- Add expense modal (cross-category)
+- Loading skeleton, error state, empty state
+
+**CategoryView.vue (~500 lines):**
+- Category hero: inline name edit (click to edit), inline allocated amount edit
+- Stats pills: spent / remaining / paid
+- Progress bar with over-budget alert
+- Full expenses table: vendor, amount, date, isPaid toggle, notes, delete
+- Per-row inline edit mode (click ✏️ → edit fields in-table)
+- Add expense modal
+- All Hebrew RTL
+
+### feat/page/guests-list-new
+
+**Backend additions:**
+- `PATCH /api/guests/:id/rsvp` — quick RSVP status update
+- `GET /api/guests/stats` — aggregated stats (sides, groups, gifts)
+- `POST /api/guests/import` — xlsx/CSV import with column mapping
+- `POST /api/guests/preview` — parse xlsx → return headers + 20 row preview (no DB write)
+
+**GuestsView.vue (~600 lines):**
+- Stats bar: clickable chips (all/confirmed/maybe/pending/declined/people)
+- Search input with clear button
+- Side filter pills (חתן/כלה/משותף)
+- Tabs row: הכל / מגיעים / לא בטוחים / לא מגיעים / ממתינים
+- Table: avatar (color-coded initials), name+email, phone link, group, side badge, RSVP select (inline update), numPeople, table name, actions
+- Row actions: WhatsApp 💬, Edit ✏️, Delete 🗑️
+- Add/Edit guest modal with all fields
+- Confirm delete modal
+- Client-side pagination (20/page)
+- Loading skeleton, error state, empty state with CTA
+- Router update: import/stats routes before :id dynamic segment
+
+### feat/page/guest-card
+
+**GuestView.vue (~480 lines):**
+- Hero card with dark navy gradient: large avatar, name, side/RSVP badges, contact links
+- WhatsApp and phone links in hero
+- 4 info cards (read mode): contact, wedding, gift/notes, quick-actions
+- Quick actions grid: WhatsApp, call, email, edit
+- Quick RSVP buttons (4 options with active state)
+- Edit form (full 2-col grid): all fields inline
+- Delete with confirmation modal + warning
+- Timestamps (created/updated)
+- Loading skeleton, error/404 handling
+
+### feat/page/guest-import
+
+**ImportView.vue (3-step wizard, ~440 lines):**
+- Step 1: Drag & drop file upload (xlsx/xls/csv), file validation, CSV template download
+- Step 2: Column mapping UI — maps file headers to system fields, auto-detects Hebrew/English column names; preview table (first 5 rows)
+- Step 3: Confirm with mapping summary → calls `/api/guests/import` with mapped rows JSON → results screen
+- Results: imported count, skipped count, error list
+- Step indicator with active/done states
+- Animated step transitions
+
+### feat/page/guest-stats
+
+**StatsView.vue (~350 lines):**
+- 4 big number cards: total guests / confirmed (with people) / declined (with people) / pending
+- CSS conic-gradient pie chart (RSVP breakdown) with donut hole effect + legend with progress bars
+- Sides breakdown: 3 horizontal bars with icons (🤵🏻/👰/💑) + percentage
+- Gift stats: total ₪ / count with gift / average ₪ per gift
+- Groups grid: icon + name + count + mini progress bar
+- All responsive (2-col → 1-col on mobile)
+
+**Build:** ✅ 0 errors, 157 modules
+**Server:** ✅ pm2 online, /health OK
+**Branches pushed:**
+- `feat/page/budget`
+- `feat/page/guests-list-new`
+- `feat/page/guest-card`
+- `feat/page/guest-import`
+- `feat/page/guest-stats`
+

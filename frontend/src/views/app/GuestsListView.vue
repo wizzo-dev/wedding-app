@@ -521,8 +521,9 @@ async function deleteGuest(id) {
     guests.value = guests.value.filter(g => g.id !== id)
     const statsRes = await api.get('/guests')
     stats.value = statsRes.data.stats
-  } catch {
-    // silent
+  } catch (e) {
+    const msg = e?.response?.data?.message || 'שגיאה במחיקת אורח'
+    alert(msg)
   } finally {
     deletingId.value = null
   }
