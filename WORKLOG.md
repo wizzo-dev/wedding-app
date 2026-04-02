@@ -1,5 +1,60 @@
 # WORKLOG - Freddy Dev Agent
 
+## 2026-04-02T20:30Z | BudgetOverview + BudgetCategory | feat/page/budget-overview
+
+**Summary:** Full Hebrew RTL budget management pages with Prisma migrations, complete backend CRUD, and polished Vue 3 UI.
+
+**What was built:**
+
+### Backend
+- Updated `schema.prisma`: added `budgetTotal` to User, `isPaid` to BudgetExpense
+- Applied migration `20260402202132_add_budget_total` + created `20260402202653_add_budget_fields_expense_paid`
+- Full budget routes (`backend/src/routes/budget.js`):
+  - `GET /api/budget` — categories with spent/allocated/pct + totals
+  - `POST /api/budget` — create category
+  - `PUT /api/budget/total` — update total wedding budget
+  - `GET /api/budget/:categoryId` — detail + expenses list
+  - `PUT /api/budget/:categoryId` — update name/allocated amount
+  - `DELETE /api/budget/:categoryId` — delete category
+  - `POST /api/budget/:categoryId/expenses` — add expense
+  - `PUT /api/budget/:categoryId/expenses/:id` — edit expense
+  - `DELETE /api/budget/:categoryId/expenses/:id` — delete expense
+
+### BudgetOverviewView.vue
+- 4 stat cards: total budget / allocated / spent / remaining
+- Pink gradient progress bar with pct
+- Category cards grid: icon, name, allocated, spent, % bar, over-budget alert
+- Color-coded status (red = over budget, amber = near limit, green = ok)
+- Add category modal with icon picker
+- Edit total budget modal
+- Loading skeleton, error state, empty state CTA
+- Hebrew RTL, fully responsive
+
+### BudgetCategoryView.vue
+- Category header: inline name edit, inline allocated amount edit
+- Stats row: spent, remaining, % mini progress bar
+- Add expense form: vendor name, amount, date, isPaid toggle, notes
+- Expense list: paid status dot, vendor name, amount, date, notes, badge
+- Inline expense edit mode (per-row)
+- Delete with confirm
+- Loading skeleton, error state, empty state
+- Hebrew RTL, fully responsive
+
+**Files changed:**
+- `backend/prisma/schema.prisma`
+- `backend/prisma/migrations/20260402202653_*/migration.sql`
+- `backend/src/routes/budget.js`
+- `frontend/src/router/index.js` (updated to use new file paths)
+- `frontend/src/views/app/BudgetOverviewView.vue` (new, 380 lines)
+- `frontend/src/views/app/BudgetCategoryView.vue` (new, 520 lines)
+
+**Branch:** `feat/page/budget-overview`
+**Build:** ✅ Passes (BudgetOverviewView: 10.49kB, BudgetCategoryView: 12.69kB)
+**Routes:** `/app/budget` → BudgetOverview, `/app/budget/:categoryId` → BudgetCategory
+
+---
+
+
 ## 2026-04-02T19:55Z | AppLayout | feat/page/app-layout
 
 **Summary:** Full sidebar navigation layout with RTL support for the wedding app.

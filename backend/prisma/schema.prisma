@@ -95,6 +95,7 @@ model Guest {
   phone      String?
   email      String?
   groupName  String?    @map("group_name")
+  side       String     @default("חתן") @map("side")
   rsvpStatus String @default("pending") @map("rsvp_status")
   numPeople  Int        @default(1) @map("num_people")
   giftAmount Float?     @map("gift_amount")
