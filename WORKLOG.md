@@ -249,3 +249,91 @@
 **PR:** https://github.com/wizzo-dev/wedding-app/pull/new/feat/fix/critical-auth
 
 ---
+
+---
+
+## 2026-04-02T21:27Z | WhatsAppConnect | feat/page/whatsapp-connect
+
+**Summary:** WhatsApp Business connection page with QR code display, mock connect/disconnect flow, and message statistics.
+
+### Backend
+- Full `whatsapp.js` rewrite with all routes:
+  - `GET /api/whatsapp/status` → connection status + mock QR SVG + stats
+  - `POST /api/whatsapp/connect` → mock connect (stores WaSession)
+  - `POST /api/whatsapp/disconnect` → disconnects and clears session
+- Updated Prisma schema: added `type` field to WaTemplate, added `message` and `results` to WaMessage
+- `prisma db push` applied
+
+### WhatsAppConnectView.vue (`/app/whatsapp/connect`)
+- Page header with live connection status badge (pulsing green dot when connected)
+- QR code display area (mock SVG placeholder) with scanning animation
+- "סרוק עם WhatsApp" 3-step instruction guide
+- Mock connect button (simulates 2s scan delay, then connects)
+- Connected state: phone number, status, last active, disconnect button
+- Quick links sidebar: Templates / Send / History
+- Tips card with best practices
+- Stats row: sent / delivered / failed / delivery rate %
+- Full Hebrew RTL, mobile responsive, loading skeleton, error state
+- Added route `/app/whatsapp/connect` → `WhatsAppConnectView.vue` to router
+
+---
+
+## 2026-04-02T21:28Z | WaTemplates | feat/page/wa-templates
+
+**Summary:** WhatsApp template manager with full CRUD, character counter, live WhatsApp bubble preview, and variable insertion toolbar.
+
+### Backend
+- `GET /api/whatsapp/templates` → list user's templates
+- `POST /api/whatsapp/templates` → create (with auto-extracted variables)
+- `PUT /api/whatsapp/templates/:id` → update
+- `DELETE /api/whatsapp/templates/:id` → delete
+
+### TemplatesView.vue (`/app/whatsapp/templates`)
+- Two-column layout: template list + sticky preview pane
+- Template list: name, type badge (RSVP invite/reminder/thank you/custom), content preview, char count
+- Active template highlighted with pink border + shadow
+- Per-template action buttons: copy 📋, edit ✏️, delete 🗑️
+- WhatsApp phone mockup preview with green header, bubble, time
+- Variables extracted from content shown as clickable tags
+- Variable quick-insert buttons in preview sidebar
+- Add/Edit modal with:
+  - Name input
+  - Type dropdown
+  - Variable insert toolbar (click to insert at cursor position)
+  - Textarea with 1000-char limit + counter (orange when >800)
+  - Live preview with sample data (ישראל ישראלי)
+- Delete with confirm dialog
+- Copy button with toast notification
+- Empty state with CTA
+- Loading skeleton, error state, mobile responsive
+
+---
+
+## 2026-04-02T21:29Z | WaSend | feat/page/wa-send
+
+**Summary:** WhatsApp message sender with searchable guest multiselect, template picker, live preview, mock send with progress bar, results table, and batch history.
+
+### Backend
+- `POST /api/whatsapp/send` → mock send to selected guests, stores WaMessage with results JSON
+- `GET /api/whatsapp/history` → last 10 send batches with per-guest results
+
+### SendView.vue (`/app/whatsapp/send`)
+- Two-column layout: form (left) + preview/results (right)
+- **Guest selector** (Step 1):
+  - Search input (name/phone)
+  - Filter dropdowns: RSVP status, side
+  - Scrollable checklist with select-all / clear buttons
+  - Guests without phone shown dimmed with warning
+  - Selected count badge
+- **Template picker** (Step 2):
+  - Dropdown with all saved templates
+  - Falls back to custom message textarea if no template selected
+- **שלח ל-X אורחים** button (disabled until guests + message selected)
+- Progress bar animation during mock send
+- **Results table** after send: name / phone / status (sent ✅ / failed ❌)
+- **Live preview** panel with WhatsApp bubble filled with first selected guest's data
+- **History section** (last 5 batches):
+  - Each batch: template name, type badge, timestamp, sent/failed counts
+  - Expandable to show per-guest results table
+  - Refresh button
+- Loading skeleton, empty states, error handling, mobile responsive
