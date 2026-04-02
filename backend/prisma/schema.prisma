@@ -1,0 +1,330 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DB_URL")
+}
+
+enum Plan {
+  free
+  premium
+}
+
+enum RsvpStatus {
+  pending
+  confirmed
+  declined
+}
+
+enum WaStatus {
+  disconnected
+  connecting
+  connected
+}
+
+enum TableType {
+  round
+  square
+  rectangle
+}
+
+enum HallElementType {
+  bar
+  stage
+  dancefloor
+  entrance
+  other
+}
+
+enum MessageStatus {
+  pending
+  sent
+  failed
+  cancelled
+}
+
+model User {
+  id              Int      @id @default(autoincrement())
+  email           String   @unique
+  passwordHash    String   @map("password_hash")
+  name1           String
+  name2           String
+  weddingDate     DateTime? @map("wedding_date")
+  venue           String?
+  venueAddress    String?  @map("venue_address")
+  profileImageUrl String?  @map("profile_image_url")
+  rsvpToken       String   @unique @default(uuid()) @map("rsvp_token")
+  emailVerified   Boolean  @default(false) @map("email_verified")
+  plan            Plan     @default(free)
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  budgetCategories  BudgetCategory[]
+  budgetExpenses    BudgetExpense[]
+  guests            Guest[]
+  waSession         WaSession?
+  waTemplates       WaTemplate[]
+  waMessages        WaMessage[]
+  hallLayouts       HallLayout[]
+  cardTemplates     CardTemplate[]
+  cardExports       CardExport[]
+  userVendors       UserVendor[]
+  subscription      Subscription?
+  refreshTokens     RefreshToken[]
+
+  @@map("users")
+}
+
+model RefreshToken {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  token     String   @unique
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
+}
+
+model BudgetCategory {
+  id               Int     @id @default(autoincrement())
+  userId           Int     @map("user_id")
+  name             String
+  allocatedPercent Float   @map("allocated_percent")
+  allocatedAmount  Float   @map("allocated_amount")
+  icon             String?
+  color            String?
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  user     User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expenses BudgetExpense[]
+
+  @@map("budget_categories")
+}
+
+model BudgetExpense {
+  id           Int      @id @default(autoincrement())
+  userId       Int      @map("user_id")
+  categoryId   Int      @map("category_id")
+  vendorName   String   @map("vendor_name")
+  amount       Float
+  note         String?
+  date         DateTime @default(now())
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  user     User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category BudgetCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@map("budget_expenses")
+}
+
+model Guest {
+  id         Int        @id @default(autoincrement())
+  userId     Int        @map("user_id")
+  name       String
+  phone      String?
+  email      String?
+  groupName  String?    @map("group_name")
+  rsvpStatus RsvpStatus @default(pending) @map("rsvp_status")
+  numPeople  Int        @default(1) @map("num_people")
+  giftAmount Float?     @map("gift_amount")
+  notes      String?
+  tableId    Int?       @map("table_id")
+  createdAt  DateTime   @default(now()) @map("created_at")
+  updatedAt  DateTime   @updatedAt @map("updated_at")
+
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  table            Table?            @relation(fields: [tableId], references: [id])
+  tableAssignments TableAssignment[]
+
+  @@map("guests")
+}
+
+model WaSession {
+  id                   Int      @id @default(autoincrement())
+  userId               Int      @unique @map("user_id")
+  sessionDataEncrypted String?  @db.Text @map("session_data_encrypted")
+  status               WaStatus @default(disconnected)
+  phoneNumber          String?  @map("phone_number")
+  createdAt            DateTime @default(now()) @map("created_at")
+  lastActive           DateTime? @map("last_active")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("wa_sessions")
+}
+
+model WaTemplate {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  name      String
+  content   String   @db.Text
+  variables Json     @default("[]")
+  isDefault Boolean  @default(false) @map("is_default")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user     User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages WaMessage[]
+
+  @@map("wa_templates")
+}
+
+model WaMessage {
+  id           Int           @id @default(autoincrement())
+  userId       Int           @map("user_id")
+  templateId   Int?          @map("template_id")
+  recipientIds Json          @map("recipient_ids")
+  scheduledAt  DateTime?     @map("scheduled_at")
+  sentAt       DateTime?     @map("sent_at")
+  status       MessageStatus @default(pending)
+  error        String?
+  createdAt    DateTime      @default(now()) @map("created_at")
+
+  user     User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  template WaTemplate? @relation(fields: [templateId], references: [id])
+
+  @@map("wa_messages")
+}
+
+model HallLayout {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  name      String   @default("האולם שלי")
+  width     Int      @default(1200)
+  height    Int      @default(800)
+  bgColor   String   @default("#f9f5f0") @map("bg_color")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tables   Table[]
+  elements HallElement[]
+
+  @@map("hall_layouts")
+}
+
+model Table {
+  id        Int       @id @default(autoincrement())
+  layoutId  Int       @map("layout_id")
+  userId    Int       @map("user_id")
+  type      TableType @default(round)
+  x         Float
+  y         Float
+  seats     Int       @default(8)
+  name      String?
+  rotation  Float     @default(0)
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  layout      HallLayout        @relation(fields: [layoutId], references: [id], onDelete: Cascade)
+  assignments TableAssignment[]
+  guests      Guest[]
+
+  @@map("tables")
+}
+
+model TableAssignment {
+  id          Int @id @default(autoincrement())
+  tableId     Int @map("table_id")
+  guestId     Int @map("guest_id")
+  seatNumber  Int? @map("seat_number")
+
+  table Table @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  guest Guest @relation(fields: [guestId], references: [id], onDelete: Cascade)
+
+  @@unique([tableId, guestId])
+  @@map("table_assignments")
+}
+
+model HallElement {
+  id       Int             @id @default(autoincrement())
+  layoutId Int             @map("layout_id")
+  type     HallElementType
+  x        Float
+  y        Float
+  width    Float
+  height   Float
+  label    String?
+  rotation Float           @default(0)
+
+  layout HallLayout @relation(fields: [layoutId], references: [id], onDelete: Cascade)
+
+  @@map("hall_elements")
+}
+
+model CardTemplate {
+  id         Int      @id @default(autoincrement())
+  userId     Int?     @map("user_id")
+  name       String
+  designJson Json     @map("design_json")
+  isDefault  Boolean  @default(false) @map("is_default")
+  previewUrl String?  @map("preview_url")
+  isPremium  Boolean  @default(false) @map("is_premium")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  user    User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  exports CardExport[]
+
+  @@map("card_templates")
+}
+
+model CardExport {
+  id         Int      @id @default(autoincrement())
+  userId     Int      @map("user_id")
+  layoutId   Int      @map("layout_id")
+  templateId Int      @map("template_id")
+  pdfUrl     String?  @map("pdf_url")
+  status     String   @default("pending")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  user     User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  template CardTemplate @relation(fields: [templateId], references: [id])
+
+  @@map("card_exports")
+}
+
+model Vendor {
+  id           Int     @id @default(autoincrement())
+  category     String
+  name         String
+  phone        String?
+  website      String?
+  priceRange   String? @map("price_range")
+  rating       Float?
+  city         String?
+  isFeatured   Boolean @default(false) @map("is_featured")
+  description  String? @db.Text
+
+  userVendors UserVendor[]
+
+  @@map("vendors")
+}
+
+model UserVendor {
+  id            Int     @id @default(autoincrement())
+  userId        Int     @map("user_id")
+  vendorId      Int     @map("vendor_id")
+  status        String  @default("considering")
+  priceAgreed   Float?  @map("price_agreed")
+  notes         String? @db.Text
+  contractUrl   String? @map("contract_url")
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vendor Vendor @relation(fields: [vendorId], references: [id])
+
+  @@map("user_vendors")
+}
+
+model Subscription {
+  id         Int      @id @default(autoincrement())
+  userId     Int      @unique @map("user_id")
+  plan       Plan     @default(free)
+  startsAt   DateTime @default(now()) @map("starts_at")
+  endsAt     DateTime? @map("ends_at")
+  paymentRef String?  @map("payment_ref")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("subscriptions")
+}
