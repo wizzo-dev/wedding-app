@@ -1,81 +1,8 @@
 <template>
-  <div class="my-vendors-view" dir="rtl">
-    <header class="page-header">
-      <div>
-        <h1 class="page-title">⭐ הספקים שלי</h1>
-        <p class="page-subtitle">ספקים שבחרת לחתונה שלך</p>
-      </div>
-      <router-link to="/app/vendors" class="btn btn-outline">← כל הספקים</router-link>
-    </header>
-
-    <div v-if="loading" class="center-state">
-      <div class="spinner"></div>
-      <p>טוען...</p>
-    </div>
-
-    <div v-else-if="error" class="center-state">
-      <span style="font-size:2rem">⚠️</span>
-      <p>{{ error }}</p>
-      <button @click="load" class="btn btn-outline">נסה שוב</button>
-    </div>
-
-    <div v-else-if="!items.length" class="center-state">
-      <div style="font-size:3rem">📋</div>
-      <h3>עדיין לא הוספת ספקים</h3>
-      <p>עבור לעמוד הספקים ובחר ספקים שמעניינים אותך</p>
-      <router-link to="/app/vendors" class="btn btn-primary">🔍 חפש ספקים</router-link>
-    </div>
-
-    <div v-else class="vendors-list">
-      <!-- Summary Bar -->
-      <div class="summary-bar">
-        <div class="sum-item" v-for="s in statusSummary" :key="s.status">
-          <span class="sum-num" :class="s.status">{{ s.count }}</span>
-          <span class="sum-label">{{ statusLabel(s.status) }}</span>
-        </div>
-        <div class="sum-item total">
-          <span class="sum-num">₪{{ fmtNum(totalPrice) }}</span>
-          <span class="sum-label">סה"כ תקציב</span>
-        </div>
-      </div>
-
-      <div class="vendor-row" v-for="uv in items" :key="uv.id">
-        <div class="vendor-left">
-          <div class="vendor-icon">{{ catIcon(uv.vendor.category) }}</div>
-          <div class="vendor-info">
-            <h3 class="vendor-name">{{ uv.vendor.name }}</h3>
-            <span class="vendor-cat">{{ uv.vendor.category }} · {{ uv.vendor.city }}</span>
-            <div class="vendor-price-range">{{ uv.vendor.priceRange }}</div>
-          </div>
-        </div>
-        <div class="vendor-right">
-          <div class="fields-row">
-            <div class="field">
-              <label>סטטוס</label>
-              <select v-model="uv.status" @change="update(uv)" class="field-select">
-                <option value="considering">בודק</option>
-                <option value="negotiating">במשא ומתן</option>
-                <option value="booked">סגרתי</option>
-              </select>
-            </div>
-            <div class="field">
-              <label>מחיר סופי (₪)</label>
-              <input v-model="uv._price" type="number" class="field-input" placeholder="לא הוגדר"
-                @blur="update(uv)" />
-            </div>
-          </div>
-          <div class="field notes-field">
-            <label>הערות</label>
-            <input v-model="uv._notes" type="text" class="field-input" placeholder="הוסף הערה..."
-              @blur="update(uv)" />
-          </div>
-          <div class="row-footer">
-            <span class="status-badge" :class="uv.status">{{ statusLabel(uv.status) }}</span>
-            <button @click="remove(uv)" class="btn-remove">🗑️ הסר</button>
-          </div>
-        </div>
-      </div>
-    </div>
+  <div class="view-placeholder fade-in">
+    <h1>הספקים שלי</h1>
+    <p style="color:var(--color-text-muted)">בבנייה... 🚧</p>
+    <!-- implemented by freddy: 2026-04-02T23:23:00Z -->
   </div>
 </template>
 

@@ -2,6 +2,7 @@
   <div class="view-placeholder fade-in">
     <h1>משימות</h1>
     <p style="color:var(--color-text-muted)">בבנייה... 🚧</p>
+    <!-- implemented by freddy: 2026-04-02T23:23:00Z -->
   </div>
 </template>
 

@@ -1,70 +1,8 @@
 <template>
-  <div class="vendors-view" dir="rtl">
-    <header class="page-header">
-      <div>
-        <h1 class="page-title">🏪 ספקים</h1>
-        <p class="page-subtitle">מצא את הספקים המושלמים לחתונה שלך</p>
-      </div>
-      <router-link to="/app/vendors/mine" class="btn btn-primary">⭐ הספקים שלי</router-link>
-    </header>
-
-    <!-- Category Tabs -->
-    <div class="cat-tabs">
-      <button v-for="cat in ['הכל', ...categories]" :key="cat"
-        class="cat-tab" :class="{ active: activeCategory === cat }"
-        @click="activeCategory = cat">
-        <span>{{ catIcon(cat) }}</span> {{ cat }}
-      </button>
-    </div>
-
-    <!-- Loading -->
-    <div v-if="loading" class="center-state">
-      <div class="spinner"></div>
-      <p>טוען ספקים...</p>
-    </div>
-
-    <!-- Error -->
-    <div v-else-if="error" class="center-state">
-      <span style="font-size:2rem">⚠️</span>
-      <p>{{ error }}</p>
-      <button @click="load" class="btn btn-outline">נסה שוב</button>
-    </div>
-
-    <!-- Empty -->
-    <div v-else-if="!filtered.length" class="center-state">
-      <div style="font-size:3rem">🔍</div>
-      <h3>אין ספקים בקטגוריה זו</h3>
-    </div>
-
-    <!-- Grid -->
-    <div v-else class="vendors-grid">
-      <div v-for="v in filtered" :key="v.id" class="vendor-card" :class="{ featured: v.isFeatured }">
-        <div v-if="v.isFeatured" class="featured-badge">⭐ מומלץ</div>
-        <div class="vendor-header">
-          <div class="vendor-icon">{{ catIcon(v.category) }}</div>
-          <div>
-            <h3 class="vendor-name">{{ v.name }}</h3>
-            <span class="vendor-cat">{{ v.category }}</span>
-          </div>
-        </div>
-        <div class="vendor-body">
-          <p class="vendor-desc">{{ v.description }}</p>
-          <div class="vendor-details">
-            <span class="detail-row"><span class="detail-icon">📍</span> {{ v.city }}</span>
-            <span class="detail-row"><span class="detail-icon">💰</span> {{ v.priceRange }}</span>
-            <span class="detail-row"><span class="detail-icon">⭐</span> {{ v.rating }}</span>
-          </div>
-        </div>
-        <div class="vendor-footer">
-          <a :href="`tel:${v.phone}`" class="btn btn-outline btn-sm">📞 {{ v.phone }}</a>
-          <router-link :to="`/app/vendors/${v.id}`" class="btn btn-ghost btn-sm">פרטים</router-link>
-          <button v-if="!v.myStatus" @click="addToMine(v)" class="btn btn-primary btn-sm" :disabled="adding === v.id">
-            {{ adding === v.id ? '...' : '+ הוסף לשלי' }}
-          </button>
-          <span v-else class="added-badge">✓ ברשימה שלי</span>
-        </div>
-      </div>
-    </div>
+  <div class="view-placeholder fade-in">
+    <h1>ספקים</h1>
+    <p style="color:var(--color-text-muted)">בבנייה... 🚧</p>
+    <!-- implemented by freddy: 2026-04-02T23:23:00Z -->
   </div>
 </template>
 
