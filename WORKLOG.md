@@ -46,3 +46,57 @@
 **Test URL:** http://localhost:3001/
 
 ---
+
+## 2026-04-02T20:25Z | FIX ROUND 1 APPLIED | feat/page/app-layout + feat/page/landing
+
+**Summary:** Applied all fixes identified by המבקר (code reviewer) in both branches.
+
+**AppLayout fixes (feat/page/app-layout):**
+- [HIGH] Logout redirect: added `handleLogout()` that calls `auth.logout()` then `router.push('/login')`
+- [MEDIUM-RTL] Active nav indicator: changed `border-right` → `border-left` on `.nav-item.router-link-active`
+- [MEDIUM-A11Y] Collapse button: added `aria-label` (dynamic) + `aria-expanded` (dynamic)
+- [MEDIUM-A11Y] Hamburger button: added `aria-label` (dynamic) + `aria-expanded` (dynamic)
+
+**Landing fixes (feat/page/landing):**
+- [HIGH] Footer links: removed dead `<a href="/privacy">` and `<a href="/terms">` (routes don't exist)
+- [MEDIUM] Pricing CTA: fixed `plan.featured ? '/register' : '/register'` → `plan.featured ? '/register?plan=premium' : '/register'`
+- [MEDIUM] Added `<main>` landmark wrapper around page content (between nav and footer)
+- [MEDIUM] Added `@media (prefers-reduced-motion: reduce) { * { animation-duration: 0.01ms !important; } }`
+- [LOW] Removed dead code: deleted 2 divs with `class="step-arrow"` (display:none)
+
+**Build:** ✅ 0 errors (feat/page/landing - both AppLayout + LandingView bundled)
+
+---
+
+## 2026-04-02T20:30Z | Dashboard Page | feat/page/dashboard
+
+**Summary:** Full real-data dashboard with backend update.
+
+**Backend updated:**
+- `backend/src/routes/dashboard.js`: GET /api/dashboard — real Prisma queries
+  - User info (name1, name2, weddingDate)
+  - Guest stats grouped by rsvpStatus (confirmed/maybe/declined/pending)
+  - Budget totals (allocatedAmount sum vs expenses sum)
+  - Last 5 guests as recent activity feed
+  - Wedding countdown computed in days
+
+**Frontend built:**
+- Greeting: "שלום [חתן] ו[כלה]! 💍" with dynamic subtitle
+- Big countdown badge (pink gradient) — pulses when ≤30 days
+- "הגדר תאריך חתונה" CTA if no date set
+- 4-card stats row: אורחים מאושרים / לא בטוחים / לא מגיעים / סה"כ
+- Budget card: big remaining number + progress bar + overspent state
+- Quick-actions grid: 8 navigation shortcuts
+- Recent activity feed: last 5 guests with avatar, RSVP badge, relative time
+- Loading skeleton + error state
+- Mobile responsive
+
+**Files changed:**
+- `backend/src/routes/dashboard.js` (real Prisma data)
+- `frontend/src/views/app/DashboardView.vue` (complete rewrite, ~450 lines)
+
+**Branch:** `feat/page/dashboard`
+**Build:** ✅ Passes (DashboardView-*.js: 8.88 kB gzip:3.08 kB)
+**Test URL:** http://localhost:3001/app/dashboard (requires auth)
+
+---
