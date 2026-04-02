@@ -1,8 +1,8 @@
 {
   "paused": false,
-  "currentIndex": 16,
-  "lastCompleted": "HallSettings",
-  "lastCompletedAt": "2026-04-02T22:15:00Z",
+  "currentIndex": 20,
+  "lastCompleted": "Subscription",
+  "lastCompletedAt": "2026-04-02T23:53:54.688Z",
   "waitingForApproval": [],
   "pages": [
     {
@@ -169,8 +169,9 @@
     },
     {
       "name": "Subscription",
-      "status": "pending",
-      "branch": null
+      "status": "pushed",
+      "branch": "feat/page/subscription",
+      "completedAt": "2026-04-02T23:53:54.688Z"
     },
     {
       "name": "RSVP",

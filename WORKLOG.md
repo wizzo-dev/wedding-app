@@ -363,3 +363,65 @@
 **PR:** https://github.com/wizzo-dev/wedding-app/pull/new/feat/fix/critical-auth
 
 ---
+
+---
+
+## 2026-04-03T00:01Z | Timeline + Settings + Account + Subscription | feat/page/*
+
+**Summary:** Implemented 4 full pages (previously stubs), all with Hebrew RTL, Heebo font, brand colors, functional backends where needed. All builds pass 0 errors.
+
+### Pages Built
+
+#### 1. Timeline — `/app/timeline` | Branch: `feat/page/timeline`
+- **Frontend:** `tasks/TimelineView.vue` — full CRUD timeline/schedule page
+  - Visual timeline: pink dots, gradient line, time labels on right, event cards
+  - Add/Edit modal with time picker, title, description
+  - Delete confirmation modal
+  - Loading skeleton, empty state, error state
+  - Events auto-sorted chronologically
+- **Backend:** New `timeline.js` route + Prisma `TimelineEvent` model
+  - `GET /api/timeline` — list sorted events
+  - `POST /api/timeline` — create event
+  - `PUT /api/timeline/:id` — update (ownership check)
+  - `DELETE /api/timeline/:id` — delete (ownership check)
+  - `PATCH /api/timeline/reorder` — bulk reorder
+
+#### 2. Settings — `/app/settings` | Branch: `feat/page/settings`
+- **Frontend:** `settings/SettingsView.vue` — wedding settings form
+  - Sub-nav tabs: Settings / Account / Subscription
+  - Couple names, wedding date (with live countdown), venue + address
+  - Save button with success/error feedback
+  - Loading skeleton; uses existing `GET/PUT /api/users/profile`
+- **Backend:** No changes needed (endpoints existed)
+
+#### 3. Account — `/app/settings/account` | Branch: `feat/page/account`
+- **Frontend:** `settings/AccountView.vue` — full account management
+  - Email display with verified badge
+  - Change password form: show/hide toggles, strength meter, match validation
+  - Danger Zone: delete account with password confirmation modal
+  - On delete: auth.logout() + redirect to landing
+- **Backend:** Extended `users.js` with:
+  - `POST /api/users/change-password` — validates + rehashes, invalidates refresh tokens
+  - `DELETE /api/users/account` — password auth + cascade deletion
+
+#### 4. Subscription — `/app/settings/subscription` | Branch: `feat/page/subscription`
+- **Frontend:** `settings/SubscriptionView.vue` — plan comparison page
+  - Current plan banner (dynamic from auth store)
+  - Free vs. Premium plan cards with feature checklists
+  - "Most Popular" ribbon on Premium
+  - Upgrade → contact modal (stub, no payment)
+  - FAQ accordion (4 items)
+  - Responsive 2→1 column layout
+- **Backend:** None (frontend-only)
+
+### Build Results
+| Page | Build | Time |
+|------|-------|------|
+| Timeline | ✅ 0 errors | 747ms |
+| Settings | ✅ 0 errors | 615ms |
+| Account | ✅ 0 errors | 672ms |
+| Subscription | ✅ 0 errors | 638ms |
+
+### pm2
+- Restarted after Timeline (new Prisma model + route)
+- Restarted after Account (new endpoints)
