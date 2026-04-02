@@ -407,7 +407,7 @@ function initials(name) {
 
 const AVATAR_PALETTES = [
   { bg: '#FDE8F4', color: '#E91E8C' },
-  { bg: '#DBEAFE', color: '#1D4ED8' },
+  { bg: 'var(--color-info-bg)', color: 'var(--color-info)' },
   { bg: '#DCFCE7', color: '#15803D' },
   { bg: '#FEF3C7', color: '#B45309' },
   { bg: '#EDE9FE', color: '#7C3AED' },
@@ -689,7 +689,7 @@ onMounted(fetchGuests)
   display: inline-flex; align-items: center; padding: 3px 10px;
   border-radius: var(--radius-full); font-size: var(--font-size-xs); font-weight: 700;
 }
-.side-groom  { background: #EFF6FF; color: #1D4ED8; }
+.side-groom  { background: var(--color-info-bg); color: var(--color-info); }
 .side-bride  { background: var(--color-primary-light); color: var(--color-primary); }
 .side-mutual { background: var(--color-bg-subtle); color: var(--color-text-muted); }
 
@@ -726,7 +726,7 @@ onMounted(fetchGuests)
 /* Modal */
 .modal-backdrop {
   position: fixed; inset: 0; z-index: 1000;
-  background: rgba(26,31,54,0.5);
+  background: var(--color-overlay);
   display: flex; align-items: center; justify-content: center;
   padding: var(--space-4); backdrop-filter: blur(4px);
 }
