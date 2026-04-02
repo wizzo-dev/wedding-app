@@ -271,31 +271,85 @@ export default async function whatsappRoutes(app) {
     }
   })
 
-  // ── GET /api/whatsapp/history ────────────────────────────────────────────────
+  // ── GET /api/whatsapp/history ─────────────────────────────────────────────────
   app.get('/history', { preHandler: [app.authenticate] }, async (req) => {
-    const userId = req.user.userId
+    const userId   = req.user.userId
+    const { page = 1, limit = 20, status, dateFrom, dateTo } = req.query
 
-    const batches = await prisma.waMessage.findMany({
-      where: { userId, sentAt: { not: null } },
-      include: { template: { select: { name: true, type: true } } },
-      orderBy: { sentAt: 'desc' },
-      take: 10
-    })
+    const pageNum  = Math.max(1, parseInt(page))
+    const pageSize = Math.min(100, Math.max(1, parseInt(limit)))
+    const skip     = (pageNum - 1) * pageSize
 
-    return batches.map(b => {
-      const results = b.results ? JSON.parse(b.results) : []
+    const where = { userId, sentAt: { not: null } }
+    if (status === 'sent')    where.status = 'sent'
+    if (status === 'failed')  where.status = 'failed'
+    if (status === 'partial') where.status = 'partial'
+
+    if (dateFrom || dateTo) {
+      where.sentAt = {}
+      if (dateFrom) where.sentAt.gte = new Date(dateFrom)
+      if (dateTo)   where.sentAt.lte = new Date(dateTo + 'T23:59:59.999Z')
+    }
+
+    const [total, batches] = await Promise.all([
+      prisma.waMessage.count({ where }),
+      prisma.waMessage.findMany({
+        where,
+        include: { template: { select: { name: true, type: true } } },
+        orderBy: { sentAt: 'desc' },
+        skip,
+        take: pageSize
+      })
+    ])
+
+    const items = batches.map(b => {
+      const results      = b.results      ? JSON.parse(b.results)      : []
       const recipientIds = b.recipientIds ? JSON.parse(b.recipientIds) : []
       return {
-        id: b.id,
-        sentAt: b.sentAt,
+        id:           b.id,
+        sentAt:       b.sentAt,
         templateName: b.template?.name || 'הודעה מותאמת',
         templateType: b.template?.type || 'custom',
-        total: recipientIds.length,
-        sent: results.filter(r => r.status === 'sent').length,
-        failed: results.filter(r => r.status === 'failed').length,
-        status: b.status,
+        total:        recipientIds.length,
+        sent:         results.filter(r => r.status === 'sent').length,
+        failed:       results.filter(r => r.status === 'failed').length,
+        status:       b.status,
         results
       }
     })
+
+    return { total, page: pageNum, pageSize, totalPages: Math.ceil(total / pageSize), items }
+  })
+
+  // ── POST /api/whatsapp/resend/:batchId ────────────────────────────────────────
+  app.post('/resend/:batchId', { preHandler: [app.authenticate] }, async (req, reply) => {
+    const userId  = req.user.userId
+    const batchId = parseInt(req.params.batchId)
+
+    const batch = await prisma.waMessage.findFirst({ where: { id: batchId, userId } })
+    if (!batch) return reply.code(404).send({ error: 'אצווה לא נמצאה' })
+
+    const oldResults  = batch.results ? JSON.parse(batch.results) : []
+    const failedItems = oldResults.filter(r => r.status === 'failed')
+    if (failedItems.length === 0) return reply.code(400).send({ error: 'אין הודעות שנכשלו' })
+
+    const newResults  = failedItems.map(r => ({ ...r, status: Math.random() > 0.2 ? 'sent' : 'failed' }))
+    const resent      = newResults.filter(r => r.status === 'sent').length
+    const stillFailed = newResults.filter(r => r.status === 'failed').length
+    const newStatus   = stillFailed === 0 ? 'sent' : resent === 0 ? 'failed' : 'partial'
+
+    const newBatch = await prisma.waMessage.create({
+      data: {
+        userId,
+        templateId:   batch.templateId,
+        recipientIds: JSON.stringify(failedItems.map(r => r.guestId)),
+        message:      batch.message,
+        results:      JSON.stringify(newResults),
+        status:       newStatus,
+        sentAt:       new Date()
+      }
+    })
+
+    return { batchId: newBatch.id, resent, stillFailed, total: failedItems.length, status: newStatus }
   })
 }
