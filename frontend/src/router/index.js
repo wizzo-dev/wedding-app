@@ -35,6 +35,7 @@ const routes = [
 
       // WhatsApp
       { path: 'whatsapp',               name: 'Whatsapp',       component: () => import('@/views/app/whatsapp/WhatsappView.vue') },
+      { path: 'whatsapp/connect',       name: 'WaConnect',      component: () => import('@/views/app/whatsapp/WhatsAppConnectView.vue') },
       { path: 'whatsapp/templates',     name: 'WaTemplates',    component: () => import('@/views/app/whatsapp/TemplatesView.vue') },
       { path: 'whatsapp/send',          name: 'WaSend',         component: () => import('@/views/app/whatsapp/SendView.vue') },
       { path: 'whatsapp/history',       name: 'WaHistory',      component: () => import('@/views/app/whatsapp/HistoryView.vue') },
