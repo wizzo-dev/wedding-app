@@ -28,10 +28,10 @@ const routes = [
       { path: 'budget/category/:id',    name: 'BudgetCategory', component: () => import('@/views/app/budget/CategoryView.vue') },
 
       // Guests
-      { path: 'guests',                 name: 'Guests',         component: () => import('@/views/app/GuestsListView.vue') },
-      { path: 'guests/:id',             name: 'GuestCard',      component: () => import('@/views/app/guests/GuestView.vue') },
+      { path: 'guests',                 name: 'Guests',         component: () => import('@/views/app/guests/GuestsView.vue') },
       { path: 'guests/import',          name: 'GuestImport',    component: () => import('@/views/app/guests/ImportView.vue') },
       { path: 'guests/stats',           name: 'GuestStats',     component: () => import('@/views/app/guests/StatsView.vue') },
+      { path: 'guests/:id',             name: 'GuestCard',      component: () => import('@/views/app/guests/GuestView.vue') },
 
       // WhatsApp
       { path: 'whatsapp',               name: 'Whatsapp',       component: () => import('@/views/app/whatsapp/WhatsappView.vue') },

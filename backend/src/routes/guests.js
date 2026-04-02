@@ -174,4 +174,73 @@ export default async function guestRoutes(app) {
     await prisma.guest.delete({ where: { id } })
     return { success: true }
   })
+
+  // ── PATCH /api/guests/:id/rsvp — quick RSVP status update ───────────────────
+  app.patch('/:id/rsvp', { preHandler: [app.authenticate] }, async (req, reply) => {
+    const userId = req.user.userId
+    const id = Number(req.params.id)
+    const { rsvpStatus } = req.body
+
+    if (!rsvpStatus || !RSVP_STATUSES.includes(rsvpStatus)) {
+      return reply.code(400).send({ error: 'VALIDATION', message: 'סטטוס RSVP לא תקין' })
+    }
+
+    const existing = await prisma.guest.findFirst({ where: { id, userId } })
+    if (!existing) return reply.code(404).send({ error: 'NOT_FOUND', message: 'אורח לא נמצא' })
+
+    const updated = await prisma.guest.update({
+      where: { id },
+      data: { rsvpStatus }
+    })
+    return { id: updated.id, rsvpStatus: updated.rsvpStatus }
+  })
+
+  // ── GET /api/guests/stats — aggregated stats ─────────────────────────────────
+  app.get('/stats', { preHandler: [app.authenticate] }, async (req) => {
+    const userId = req.user.userId
+
+    const all = await prisma.guest.findMany({
+      where: { userId },
+      select: { rsvpStatus: true, numPeople: true, giftAmount: true, side: true, groupName: true }
+    })
+
+    const confirmed = all.filter(g => g.rsvpStatus === 'confirmed')
+    const declined  = all.filter(g => g.rsvpStatus === 'declined')
+    const pending   = all.filter(g => g.rsvpStatus === 'pending')
+    const maybe     = all.filter(g => g.rsvpStatus === 'maybe')
+
+    // Groups breakdown
+    const groupMap = {}
+    all.forEach(g => {
+      const key = g.groupName || 'ללא קבוצה'
+      if (!groupMap[key]) groupMap[key] = { name: key, count: 0, people: 0 }
+      groupMap[key].count++
+      groupMap[key].people += g.numPeople
+    })
+
+    // Side breakdown
+    const sides = { חתן: 0, כלה: 0, משותף: 0 }
+    all.forEach(g => { if (sides[g.side] !== undefined) sides[g.side]++ })
+
+    const totalGifts = all.reduce((s, g) => s + (g.giftAmount || 0), 0)
+    const giftedCount = all.filter(g => g.giftAmount && g.giftAmount > 0).length
+
+    return {
+      total: all.length,
+      totalPeople: all.reduce((s, g) => s + g.numPeople, 0),
+      confirmed: confirmed.length,
+      confirmedPeople: confirmed.reduce((s, g) => s + g.numPeople, 0),
+      declined: declined.length,
+      declinedPeople: declined.reduce((s, g) => s + g.numPeople, 0),
+      pending: pending.length,
+      maybe: maybe.length,
+      sides,
+      groups: Object.values(groupMap).sort((a, b) => b.count - a.count),
+      gifts: {
+        total: totalGifts,
+        count: giftedCount,
+        average: giftedCount > 0 ? Math.round(totalGifts / giftedCount) : 0
+      }
+    }
+  })
 }
