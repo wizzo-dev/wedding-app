@@ -42,6 +42,7 @@ model User {
   userVendors       UserVendor[]
   subscription      Subscription?
   refreshTokens     RefreshToken[]
+  timelineEvents    TimelineEvent[]
 
   @@map("users")
 }
@@ -301,4 +302,19 @@ model Subscription {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("subscriptions")
+}
+
+model TimelineEvent {
+  id          Int      @id @default(autoincrement())
+  userId      Int      @map("user_id")
+  time        String
+  title       String
+  description String?
+  sortOrder   Int      @default(0) @map("sort_order")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("timeline_events")
 }

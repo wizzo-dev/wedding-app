@@ -1,6 +1,6 @@
 # Wedding App יאללה — Orchestration State
 
-_Last updated: 2026-04-02T22:15Z by Watchdog_
+_Last updated: 2026-04-02T23:42Z by Watchdog_
 
 ## Status: ACTIVE 🟢
 ## Goal: all pages done by morning
@@ -18,13 +18,12 @@ _Last updated: 2026-04-02T22:15Z by Watchdog_
 ## Active Agents
 | Agent | Status | Task |
 |-------|--------|------|
-| **Freddy** | 🟢 RUNNING | WaHistory + SeatingMap + HallSettings |
-| **freddy-fix** | ✅ DONE + MERGED | feat/fix/wa-schema-and-routes → main (22:15Z) |
-| **Hamevaker** | ✅ Round 5 DONE | Reviewed WhatsApp branches |
+| **Freddy** | 🟢 SPAWNING | Timeline + Settings + Account + Subscription |
+| **Hamevaker** | ✅ Round 6 DONE | No CRITICALs — all recent branches PASS |
 
 ---
 
-## Pages Status (14 pushed / ~38 total)
+## Pages Status (25 pushed / ~38 total)
 
 ### ✅ Pushed branches
 | Page | Branch | Hamevaker |
@@ -40,48 +39,58 @@ _Last updated: 2026-04-02T22:15Z by Watchdog_
 | GuestCard | feat/page/guest-card | round4 ✅ |
 | GuestImport | feat/page/guest-import | round4 ⚠️ CRITICAL |
 | GuestStats | feat/page/guest-stats | round4 ✅ |
-| WhatsAppConnect | feat/page/whatsapp-connect | round5 ⚠️ CRITICAL |
-| WaTemplates | feat/page/wa-templates | round5 ⚠️ CRITICAL |
-| WaSend | feat/page/wa-send | round5 ⚠️ CRITICAL |
+| WhatsAppConnect | feat/page/whatsapp-connect | round5 → fixed ✅ |
+| WaTemplates | feat/page/wa-templates | round5 → fixed ✅ |
+| WaSend | feat/page/wa-send | round5 → fixed ✅ |
+| WaHistory | feat/page/wa-history | round6 ✅ |
+| SeatingMap | (merged to main) | round6 ✅ |
+| HallSettings | feat/page/hall-settings | round6 ✅ |
+| CardsGallery | feat/page/cards-gallery | round6 ✅ |
+| CardPreview | feat/page/card-preview | round6 ⚠️ WARN (transient build, rebuilt clean) |
+| GiftsList | feat/page/gifts-list | round6 ✅ |
+| GiftStats | feat/page/gift-stats | round6 ✅ |
+| VendorsList | feat/page/vendors-list | round6 ✅ |
+| VendorDetail | feat/page/vendor-detail | round6 ✅ |
+| MyVendors | feat/page/my-vendors | round6 ✅ |
+| Tasks | feat/page/tasks | round6 ✅ |
 
-### 🔧 In progress (Freddy, spawned 21:50Z)
-- WaHistory → `feat/page/wa-history`
-- SeatingMap → `feat/page/seating-map`
-- HallSettings → `feat/page/hall-settings`
+### 🔧 In progress (Freddy, spawned 23:42Z)
+- Timeline → `feat/page/timeline`
+- Settings → `feat/page/settings`
+- Account → `feat/page/account`
+- Subscription → `feat/page/subscription`
 
 ### ⏳ Pending (after current batch)
-CardsGallery → CardPreview → GiftsList → GiftStats → VendorsList → VendorDetail → MyVendors → Tasks → Timeline → Settings → Account → Subscription → RSVP → GiftPublic → CardsExport → DashboardStats → Notifications → Profile → VendorSuggestions → PaymentStubs → PublicLanding → NotFound
+RSVP → GiftPublic → CardsExport → DashboardStats → Notifications → Profile → VendorSuggestions → PaymentStubs → PublicLanding → NotFound
 
 ---
 
 ## 🚨 Open Issues
 
-### From Round 4 (unresolved):
+### From Round 4 (unresolved — pre-freddy-fix):
 - **[CRITICAL]** Auth logout doesn't invalidate refresh tokens (cookie path bug)
 - **[CRITICAL]** ImportView calls `/guests/preview` + `/guests/import` — backend endpoints missing
 - **[HIGH]** Budget API backend is still a stub
 - **[HIGH]** Prisma schema drift across branches
 - **[HIGH]** CSV formula injection risk on import
 
-### From Round 5 (WhatsApp branches):
-- ~~**[CRITICAL]** Schema drift — `WaTemplate.type`, `WaMessage.message/results` missing~~ ✅ FIXED in `feat/fix/wa-schema-and-routes`
-- ~~**[HIGH]** HTTP 200 returned on 400/404 errors across all WhatsApp routes~~ ✅ FIXED in `feat/fix/wa-schema-and-routes`
-- ~~**[HIGH]** No batch size cap on bulk send~~ ✅ FIXED in `feat/fix/wa-schema-and-routes` (cap: 200)
-- ~~**[HIGH]** `parseInt` without NaN validation on template ID routes~~ ✅ FIXED in `feat/fix/wa-schema-and-routes`
-- ~~**[HIGH]** `/app/whatsapp` UI stub~~ ✅ FIXED in `feat/fix/wa-schema-and-routes` (redirect to /connect)
-- **[MEDIUM]** Hardcoded demo data instead of pulling from user settings
-- **[MEDIUM]** `/app/whatsapp/history` UI stub (minor, low priority)
+### From Round 5 — ALL FIXED in `feat/fix/wa-schema-and-routes` (merged 22:15Z) ✅
 
-### Fix branch — MERGED to main (22:15Z):
-- `feat/fix/wa-schema-and-routes` — all 4 CRITICAL + 2 HIGH from Round 5 fixed, build ✅, PM2 restarted ✅
-- `feat/page/gifts` — spurious duplicate commit ef16ba3 reverted (1be981a) ✅
+### From Round 6 (no CRITICALs):
+- **[WARN]** CardPreview build transient failure — rebuilt clean, recommend CI re-run
+- **[WARN]** feat/page/vendors build transient install error — rebuilt clean
+- Visual/RTL smoke test recommended: VendorsView, CardPreview, GiftsView, MyVendors
+
+### Freddy build quality note:
+- Round 23:24Z — VendorsList/Detail/MyVendors/Tasks were placeholder stubs. Real implementation still needed.
+- Two branch divergences detected by Freddy (my-vendors, vendor-detail): local branches diverged from remote — needs reconcile before merge.
 
 ---
 
 ## Watchdog Rules
 - Only 1 Freddy at a time, only 1 hamevaker at a time
 - Check subagents(action=list) before spawning anything
-- If Freddy done + pages pending → spawn Freddy for next 3 pages
+- If Freddy done + pages pending → spawn Freddy for next 4 pages
 - If Freddy done → spawn hamevaker-roundN for new branches
 - If PM2 down → restart immediately
 - Message Amitai only on: new batch complete, blocker found, or PM2 crash

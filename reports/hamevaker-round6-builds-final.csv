@@ -1,0 +1,15 @@
+branch|install_exit|build_exit|install_log|build_log
+origin/main|0|0|/tmp/npm-main.log|/tmp/build-main.log
+origin/feat/page/vendors-list|0|0|/tmp/npm-feat--page--vendors-list.log|/tmp/build-feat--page--vendors-list.log
+origin/feat/page/vendorslist|0|0|/tmp/npm-feat--page--vendorslist.log|/tmp/build-feat--page--vendorslist.log
+origin/feat/page/vendor-detail|0|0|/tmp/npm-feat--page--vendor-detail.log|/tmp/build-feat--page--vendor-detail.log
+origin/feat/page/tasks|0|0|/tmp/npm-feat--page--tasks.log|/tmp/build-feat--page--tasks.log
+origin/feat/page/my-vendors|0|0|/tmp/npm-feat--page--my-vendors.log|/tmp/build-feat--page--my-vendors.log
+origin/feat/page/hall-settings|0|0|/tmp/npm-feat--page--hall-settings.log|/tmp/build-feat--page--hall-settings.log
+origin/feat/page/gift-stats|0|0|/tmp/npm-feat--page--gift-stats.log|/tmp/build-feat--page--gift-stats.log
+origin/feat/page/gifts-list|0|0|/tmp/npm-feat--page--gifts-list.log|/tmp/build-feat--page--gifts-list.log
+origin/feat/page/gifts|0|0|/tmp/npm-feat--page--gifts.log|/tmp/build-feat--page--gifts.log
+origin/feat/page/cards-gallery|0|0|/tmp/npm-feat--page--cards-gallery.log|/tmp/build-feat--page--cards-gallery.log
+origin/feat/page/card-preview|0|0|/tmp/npm-feat--page--card-preview.log|/tmp/build-feat--page--card-preview.log
+origin/feat/page/wa-history-seating|0|0|/tmp/npm-feat--page--wa-history-seating.log|/tmp/build-feat--page--wa-history-seating.log
+origin/feat/page/vendors|0|0|/tmp/npm-feat--page--vendors.log|/tmp/build-feat--page--vendors.log
