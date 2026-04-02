@@ -26,6 +26,7 @@
       </div>
     </nav>
 
+    <main>
     <!-- ── Hero ── -->
     <section class="hero">
       <div class="hero-inner">
@@ -177,8 +178,6 @@
             <h3 class="step-title">{{ step.title }}</h3>
             <p class="step-desc">{{ step.desc }}</p>
           </div>
-          <div class="step-arrow">←</div>
-          <div class="step-arrow second">←</div>
         </div>
       </div>
     </section>
@@ -205,7 +204,7 @@
                   <span class="feature-check">✓</span> {{ f }}
                 </li>
               </ul>
-              <RouterLink :to="plan.featured ? '/register' : '/register'" class="btn w-full" :class="plan.featured ? 'btn-primary' : 'btn-outline'">
+              <RouterLink :to="plan.featured ? '/register?plan=premium' : '/register'" class="btn w-full" :class="plan.featured ? 'btn-primary' : 'btn-outline'">
                 {{ plan.cta }}
               </RouterLink>
             </div>
@@ -251,6 +250,8 @@
       </div>
     </section>
 
+    </main>
+
     <!-- ── Footer ── -->
     <footer class="lfoot">
       <div class="lfoot-inner">
@@ -260,8 +261,6 @@
         </div>
         <p class="lfoot-tagline">ניהול חתונה חכם לזוגות ישראלים</p>
         <div class="lfoot-links">
-          <a href="/privacy" class="lfoot-link">פרטיות</a>
-          <a href="/terms" class="lfoot-link">תנאים</a>
           <RouterLink to="/login" class="lfoot-link">כניסה</RouterLink>
           <RouterLink to="/register" class="lfoot-link">הרשמה</RouterLink>
         </div>
@@ -1215,6 +1214,12 @@ const reviews = [
 
   .cta-h2 {
     font-size: var(--font-size-3xl);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
   }
 }
 </style>
