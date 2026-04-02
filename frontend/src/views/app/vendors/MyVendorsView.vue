@@ -1,14 +1,29 @@
 <template>
-  <div class="view-placeholder fade-in">
+  <div>
     <h1>הספקים שלי</h1>
-    <p style="color:var(--color-text-muted)">בבנייה... 🚧</p>
+    <div v-if="loading">טוען...</div>
+    <ul v-else>
+      <li v-for="it in items" :key="it.id">
+        <strong>{{ it.vendor.name }}</strong> — {{ it.status }} — {{ it.vendor.city }}
+      </li>
+    </ul>
   </div>
 </template>
 
 <script setup>
+import { ref, onMounted } from 'vue'
+const items = ref([])
+const loading = ref(false)
+async function load(){
+  loading.value = true
+  try{
+    const res = await fetch('/api/vendors/mine/list', { credentials: 'include' })
+    items.value = await res.json()
+  }finally{ loading.value=false }
+}
+onMounted(load)
 </script>
 
 <style scoped>
-.view-placeholder { padding: var(--space-8); text-align: center; }
-h1 { font-size: var(--font-size-2xl); font-weight: 800; color: var(--color-navy); }
+h1 { color: var(--color-navy) }
 </style>

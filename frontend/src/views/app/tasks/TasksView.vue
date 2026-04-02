@@ -1,14 +1,22 @@
 <template>
-  <div class="view-placeholder fade-in">
+  <div>
     <h1>משימות</h1>
-    <p style="color:var(--color-text-muted)">בבנייה... 🚧</p>
+    <p class="muted">ניהול המשימות נמצא בעבודה — כאן תוכל לראות רשימת משימות ותאריכי יעד</p>
+    <ul>
+      <li v-for="t in tasks" :key="t.id">{{ t.title }} — {{ t.due || 'ללא תאריך' }}</li>
+    </ul>
   </div>
 </template>
 
 <script setup>
+import { ref } from 'vue'
+const tasks = ref([
+  { id:1, title: 'בחירת אולם', due: '2026-06-01' },
+  { id:2, title: 'הזמנת צלם', due: null }
+])
 </script>
 
 <style scoped>
-.view-placeholder { padding: var(--space-8); text-align: center; }
-h1 { font-size: var(--font-size-2xl); font-weight: 800; color: var(--color-navy); }
+.muted { color: var(--color-text-muted) }
+h1 { color:var(--color-navy) }
 </style>
