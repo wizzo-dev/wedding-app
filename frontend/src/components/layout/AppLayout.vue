@@ -68,7 +68,7 @@
             <span v-if="!collapsed" class="nav-label">הגדרות</span>
           </Transition>
         </RouterLink>
-        <button class="nav-item logout-btn" @click="auth.logout">
+        <button class="nav-item logout-btn" @click="handleLogout">
           <span class="nav-icon">🚪</span>
           <Transition name="label">
             <span v-if="!collapsed" class="nav-label">יציאה</span>
@@ -84,7 +84,12 @@
     <div class="app-body">
       <!-- Top bar (mobile + breadcrumbs) -->
       <header class="topbar">
-        <button class="menu-btn btn btn-icon btn-ghost" @click="mobileOpen = !mobileOpen">
+        <button
+          class="menu-btn btn btn-icon btn-ghost"
+          @click="mobileOpen = !mobileOpen"
+          :aria-label="mobileOpen ? 'סגור תפריט' : 'פתח תפריט'"
+          :aria-expanded="mobileOpen"
+        >
           <span class="icon">☰</span>
         </button>
         <div class="topbar-title">
@@ -111,11 +116,12 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 
 const auth = useAuthStore()
 const route = useRoute()
+const router = useRouter()
 const collapsed = ref(false)
 const mobileOpen = ref(false)
 const isMobile = ref(false)
@@ -181,6 +187,11 @@ const daysUntilWedding = computed(() => {
   const diff = new Date(auth.user.weddingDate) - new Date()
   return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)))
 })
+
+async function handleLogout() {
+  await auth.logout()
+  router.push('/login')
+}
 
 function checkMobile() {
   isMobile.value = window.innerWidth < 768
@@ -371,7 +382,7 @@ onUnmounted(() => window.removeEventListener('resize', checkMobile))
 .nav-item.router-link-active {
   background: rgba(233,30,140,0.2);
   color: #fff;
-  border-right: 3px solid var(--color-primary);
+  border-left: 3px solid var(--color-primary);
 }
 
 .nav-icon {
