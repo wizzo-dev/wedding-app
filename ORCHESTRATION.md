@@ -1,6 +1,6 @@
 # Wedding App יאללה — Orchestration State
 
-_Last updated: 2026-04-02T22:22Z by Watchdog_
+_Last updated: 2026-04-02T22:34Z by Watchdog_
 
 ## Status: ACTIVE 🟢
 ## Goal: all pages done by morning
@@ -18,13 +18,13 @@ _Last updated: 2026-04-02T22:22Z by Watchdog_
 ## Active Agents
 | Agent | Status | Task |
 |-------|--------|------|
-| **Freddy** | 🟢 RUNNING (28m+) | CardsGallery ✅, CardPreview 🔧 in progress |
+| **Freddy** | ✅ DONE (Batch 6, 39m) | WaHistory, SeatingMap, HallSettings, CardsGallery ✅ pushed |
 | **freddy-fix** | ✅ DONE + MERGED | feat/fix/wa-schema-and-routes → main (22:15Z) |
-| **Hamevaker** | ✅ Round 5 DONE | Reviewed WhatsApp branches — Round 6 pending (when Freddy done) |
+| **Hamevaker** | 🟢 RUNNING Round 6 | Reviewing wa-history-seating, hall-settings, cards-gallery, card-preview, fix branches |
 
 ---
 
-## Pages Status (17 pushed / ~38 total)
+## Pages Status (18 pushed / ~38 total)
 
 ### ✅ Pushed
 | Page | Branch | Hamevaker |
