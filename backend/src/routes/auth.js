@@ -31,7 +31,7 @@ export default async function authRoutes(app) {
     }
 
     const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS)
-    const rsvpToken = crypto.randomBytes(32).toString('hex')
+    const rsvpToken = crypto.randomBytes(5).toString('hex') // 10 chars
 
     const user = await prisma.user.create({
       data: {
