@@ -131,6 +131,7 @@ model WaTemplate {
   id        Int      @id @default(autoincrement())
   userId    Int      @map("user_id")
   name      String
+  type      String   @default("custom")
   content   String  
   variables String     @default("[]")
   isDefault Boolean  @default(false) @map("is_default")
@@ -151,7 +152,8 @@ model WaMessage {
   sentAt       DateTime?     @map("sent_at")
   status       String @default("pending")
   error        String?
-  results      String?
+  message      String?
+  results      String?  @default("[]")
   createdAt    DateTime      @default(now()) @map("created_at")
 
   user     User        @relation(fields: [userId], references: [id], onDelete: Cascade)

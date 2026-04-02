@@ -147,13 +147,12 @@ export default async function whatsappRoutes(app) {
   })
 
   // ── POST /api/whatsapp/templates ─────────────────────────────────────────────
-  app.post('/templates', { preHandler: [app.authenticate] }, async (req) => {
+  app.post('/templates', { preHandler: [app.authenticate] }, async (req, reply) => {
     const userId = req.user.userId
     const { name, type, content } = req.body || {}
 
     if (!name || !content) {
-      return req.server.httpErrors?.badRequest('שם ותוכן הן שדות חובה') ||
-        { statusCode: 400, error: 'שם ותוכן הם שדות חובה' }
+      return reply.code(400).send({ error: 'שם ותוכן הם שדות חובה' })
     }
 
     const template = await prisma.waTemplate.create({
@@ -171,15 +170,15 @@ export default async function whatsappRoutes(app) {
   })
 
   // ── PUT /api/whatsapp/templates/:id ──────────────────────────────────────────
-  app.put('/templates/:id', { preHandler: [app.authenticate] }, async (req) => {
+  app.put('/templates/:id', { preHandler: [app.authenticate] }, async (req, reply) => {
     const userId = req.user.userId
     const id = parseInt(req.params.id)
+    if (isNaN(id)) return reply.code(400).send({ error: 'ID לא תקין' })
     const { name, type, content } = req.body || {}
 
     const existing = await prisma.waTemplate.findFirst({ where: { id, userId } })
     if (!existing) {
-      req.server.httpErrors?.notFound('תבנית לא נמצאה')
-      return { statusCode: 404, error: 'תבנית לא נמצאה' }
+      return reply.code(404).send({ error: 'תבנית לא נמצאה' })
     }
 
     const template = await prisma.waTemplate.update({
@@ -197,13 +196,14 @@ export default async function whatsappRoutes(app) {
   })
 
   // ── DELETE /api/whatsapp/templates/:id ───────────────────────────────────────
-  app.delete('/templates/:id', { preHandler: [app.authenticate] }, async (req) => {
+  app.delete('/templates/:id', { preHandler: [app.authenticate] }, async (req, reply) => {
     const userId = req.user.userId
     const id = parseInt(req.params.id)
+    if (isNaN(id)) return reply.code(400).send({ error: 'ID לא תקין' })
 
     const existing = await prisma.waTemplate.findFirst({ where: { id, userId } })
     if (!existing) {
-      return { statusCode: 404, error: 'תבנית לא נמצאה' }
+      return reply.code(404).send({ error: 'תבנית לא נמצאה' })
     }
 
     await prisma.waTemplate.delete({ where: { id } })
@@ -211,12 +211,16 @@ export default async function whatsappRoutes(app) {
   })
 
   // ── POST /api/whatsapp/send ──────────────────────────────────────────────────
-  app.post('/send', { preHandler: [app.authenticate] }, async (req) => {
+  app.post('/send', { preHandler: [app.authenticate] }, async (req, reply) => {
     const userId = req.user.userId
     const { guestIds = [], templateId, message } = req.body || {}
 
     if (guestIds.length === 0) {
-      return { statusCode: 400, error: 'יש לבחור לפחות אורח אחד' }
+      return reply.code(400).send({ error: 'יש לבחור לפחות אורח אחד' })
+    }
+
+    if (guestIds.length > 200) {
+      return reply.code(400).send({ error: 'מקסימום 200 אורחים בשליחה אחת' })
     }
 
     // Fetch guests to get names & phones
