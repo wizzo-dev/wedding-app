@@ -43,7 +43,7 @@ model User {
   userVendors       UserVendor[]
   subscription      Subscription?
   refreshTokens     RefreshToken[]
-  gifts             Gift[]
+  timelineEvents    TimelineEvent[]
 
   @@map("users")
 }
@@ -305,17 +305,17 @@ model Subscription {
   @@map("subscriptions")
 }
 
-model Gift {
+model TimelineEvent {
   id          Int      @id @default(autoincrement())
   userId      Int      @map("user_id")
-  giverName   String   @map("giver_name")
-  giverPhone  String?  @map("giver_phone")
-  amount      Float    @default(0)
-  message     String?
-  status      String   @default("new")
+  time        String
+  title       String
+  description String?
+  sortOrder   Int      @default(0) @map("sort_order")
   createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@map("gifts")
+  @@map("timeline_events")
 }
