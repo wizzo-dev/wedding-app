@@ -1,5 +1,5 @@
 <template>
-  <div class="view-placeholder fade-in">
+  <div class="view-placeholder fade-in" dir="rtl">
     <h1>הגדרות</h1>
     <p style="color:var(--color-text-muted)">בבנייה... 🚧</p>
   </div>
