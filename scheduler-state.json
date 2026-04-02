@@ -2,7 +2,7 @@
   "paused": false,
   "currentIndex": 20,
   "lastCompleted": "Subscription",
-  "lastCompletedAt": "2026-04-02T23:53:54.688Z",
+  "lastCompletedAt": "2026-04-02T23:55:17.871Z",
   "waitingForApproval": [],
   "pages": [
     {
@@ -153,25 +153,27 @@
     },
     {
       "name": "Timeline",
-      "status": "pending",
-      "branch": null
+      "status": "pushed",
+      "branch": "feat/page/timeline",
+      "completedAt": "2026-04-02T23:55:17.870Z"
     },
     {
       "name": "Settings",
-      "status": "pending",
-      "branch": null
+      "status": "pushed",
+      "branch": "feat/page/settings",
+      "completedAt": "2026-04-02T23:55:17.871Z"
     },
     {
       "name": "Account",
       "status": "pushed",
       "branch": "feat/page/account",
-      "completedAt": "2026-04-02T23:52:06.347Z"
+      "completedAt": "2026-04-02T23:55:17.871Z"
     },
     {
       "name": "Subscription",
       "status": "pushed",
       "branch": "feat/page/subscription",
-      "completedAt": "2026-04-02T23:53:54.688Z"
+      "completedAt": "2026-04-02T23:55:17.871Z"
     },
     {
       "name": "RSVP",
