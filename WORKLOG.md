@@ -1,3 +1,28 @@
+## 2026-04-03T03:00Z | Design Polish Pass | design-agent
+
+**Summary:** Final design polish across all key pages before go-live.
+
+### Changes
+
+- **LandingView:** Added `.step-connector` CSS (pink dashed line with dot endpoints between how-it-works steps). Feature card hover lift increased to `translateY(-4px)` + `shadow-lg`. Added redirect guard — logged-in users auto-redirect from `/` to `/app/dashboard` via `watch(auth.authReady)`.
+- **AppLayout:** Sidebar nav scrollbar styled with pink accent (3px, `rgba(233,30,140,0.35)`), brightens on hover.
+- **DashboardView:** Quick-action buttons upgraded to pink-outline-border → pink-fill-on-hover pattern. Mobile audit at 375px: tightened stat card padding at `≤420px` to prevent overflow.
+- **GuestsListView, SeatingMap:** Already production-ready; no changes needed.
+- **BudgetView:** Stub view — no actionable styling.
+
+### Commits
+- `main` `7c237a1`: style: landing step-connector, feature card lift, sidebar scrollbar, quick-action hover
+- `main` `9e9eea0`: fix(design): tighten stat card + quick-action padding on small screens (375px audit)
+- `feat/design/landing` `a171d45`: feat(design): redirect guard — logged-in users auto-redirect from / to /app/dashboard
+
+### Build
+✅ 0 errors — `npm run build` passes
+
+### Report
+`reports/design-agent-report.md`
+
+---
+
 ## 2026-04-03T02:42Z | PublicLanding + NotFound | freddy-round10
 
 **Summary:** Final batch — 2 pages built. All pages for יאללה חתונה are now complete.
