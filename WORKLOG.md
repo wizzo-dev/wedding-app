@@ -425,3 +425,69 @@
 ### pm2
 - Restarted after Timeline (new Prisma model + route)
 - Restarted after Account (new endpoints)
+
+---
+
+## Round 7 — Freddy — 2026-04-03
+
+### Pages Implemented
+
+#### 1. VendorsList (`feat/page/vendors-list`)
+- **Component:** `frontend/src/views/app/vendors/VendorsView.vue` — full vendors catalog
+  - Category filter pills (scrollable horizontal strip)
+  - Live search by name/city/description (computed, no extra API call)
+  - Vendors grid (auto-fill columns, responsive)
+  - Colorful category gradient card headers with emoji icons
+  - Featured star badge
+  - Rating display, price tag, city tag
+  - "Add to my list" / "Saved ✓" inline action buttons
+  - Links to `/app/vendors/:id` (VendorDetail)
+  - Link to `/app/vendors/mine` (MyVendors)
+- **Store:** `frontend/src/stores/vendors.js` — fetchVendors, fetchCategories, addToMyList, removeFromMyList
+- **Backend:** Existing `routes/vendors.js` (all routes already present)
+
+#### 2. VendorDetail (`feat/page/vendor-detail`)
+- **Component:** `frontend/src/views/app/vendors/VendorView.vue` — single vendor detail + management
+  - Hero with gradient bg, emoji icon, featured badge, rating
+  - Contact buttons (tel: phone, external website link)
+  - "My Vendor" panel:
+    - If not in list: status selection (4 options) + "Add to list" button
+    - If in list: current status badge, status selector buttons, price-agreed input, notes textarea, Save / Remove actions
+    - Remove with confirm modal
+  - Success message on save
+
+#### 3. MyVendors (`feat/page/my-vendors`)
+- **Component:** `frontend/src/views/app/vendors/MyVendorsView.vue` — personal vendor list
+  - Stats row (total, booked count, total budget agreed)
+  - Status filter tabs (All / Considering / Contacted / Booked / Rejected) with counts
+  - Vendor items list: category icon, name, status badge, city, price, notes
+  - Inline status select (dropdown, instant save)
+  - Edit modal (status + price + notes)
+  - Remove with confirm modal
+
+#### 4. Tasks (`feat/page/tasks`)
+- **DB:** Added `Task` model to `prisma/schema.prisma` + `prisma db push` migration
+- **Backend:** `backend/src/routes/tasks.js` — full CRUD: GET list (with status/category/priority filters), GET stats, GET categories, POST create, PATCH update, DELETE, PATCH bulk/reorder. Seeds 12 default wedding tasks for new users.
+- **Registered:** `backend/src/index.js` — `app.register(tasksRoutes, { prefix: '/api/tasks' })`
+- **Component:** `frontend/src/views/app/tasks/TasksView.vue`
+  - Progress bar with completion percentage
+  - Status filter tabs (All / Pending / In Progress / Done)
+  - Live search + category filter dropdown
+  - Task list: checkbox toggle, priority dot (red/yellow/green), category pill, due date (overdue in red), status badge
+  - Add/Edit modal: title, description, category (with datalist autocomplete), due date, priority selector, status
+  - Delete with confirm modal
+- **Store:** `frontend/src/stores/tasks.js` — fetchTasks, fetchStats, fetchCategories, createTask, updateTask, toggleDone, deleteTask
+
+### Build Results
+| Page | Build | Time |
+|------|-------|------|
+| VendorsList | ✅ 0 errors | 872ms |
+| VendorDetail | ✅ 0 errors | 789ms |
+| MyVendors | ✅ 0 errors | 762ms |
+| Tasks | ✅ 0 errors | 770ms |
+
+### pm2
+- Restarted after Tasks (new Prisma Task model + tasks route)
+
+### Notes
+- A concurrent agent was running during this round causing git branch confusion (commits landing on wrong local branches). Fixed with cherry-pick on my-vendors. VendorDetail branch has an extra rsvp-public commit from the concurrent agent (cosmetic issue only, does not affect the page).
