@@ -234,12 +234,19 @@ export default async function whatsappRoutes(app) {
           results.failed++
           continue
         }
-        const chatId = guest.phone.replace(/\D/g, '') + '@c.us'
+        // Normalize Israeli phone: 0XX → 972XX, +972XX → 972XX
+        let normalized = guest.phone.replace(/\D/g, '')
+        if (normalized.startsWith('0')) normalized = '972' + normalized.slice(1)
+        else if (normalized.startsWith('00972')) normalized = normalized.slice(2)
+        const chatId = normalized + '@c.us'
+        console.log(`[WA] Sending to ${chatId}`)
         await state.client.sendMessage(chatId, body)
         await prisma.waMessage.create({ data: { userId, templateId: template.id, recipientPhone: guest.phone, recipientName: guest.name, body, status: 'sent', sentAt: new Date() } })
         results.sent++
       } catch(e) {
-        await prisma.waMessage.create({ data: { userId, templateId: template.id, recipientPhone: guest.phone, recipientName: guest.name, body, status: 'failed', error: e.message } })
+        const errMsg = e?.message || String(e) || 'unknown error'
+        console.error(`[WA] Send failed to ${guest.phone}:`, errMsg)
+        await prisma.waMessage.create({ data: { userId, templateId: template.id, recipientPhone: guest.phone, recipientName: guest.name, body, status: 'failed', error: errMsg } })
         results.failed++
       }
     }
@@ -274,7 +281,10 @@ export default async function whatsappRoutes(app) {
     }
 
     try {
-      const chatId = original.recipientPhone.replace(/\D/g, '') + '@c.us'
+      let normalized = original.recipientPhone.replace(/\D/g, '')
+      if (normalized.startsWith('0')) normalized = '972' + normalized.slice(1)
+      else if (normalized.startsWith('00972')) normalized = normalized.slice(2)
+      const chatId = normalized + '@c.us'
       await state.client.sendMessage(chatId, original.body)
       await prisma.waMessage.update({ where: { id: msgId }, data: { status: 'sent', sentAt: new Date(), error: null } })
       return { ok: true, resent: 1 }
