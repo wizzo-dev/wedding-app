@@ -155,8 +155,9 @@ const navGroups = [
   {
     label: 'תקשורת',
     items: [
-      { to: '/app/whatsapp',   icon: '💬', label: 'WhatsApp' },
-      { to: '/app/vendors',    icon: '🏪', label: 'ספקים' },
+      { to: '/app/whatsapp',            icon: '💬', label: 'WhatsApp' },
+      { to: '/app/vendors',             icon: '🏪', label: 'ספקים' },
+      { to: '/app/vendors/suggestions', icon: '✨', label: 'הצעות ספקים' },
     ]
   }
 ]

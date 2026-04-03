@@ -26,7 +26,9 @@ import vendorRoutes from './routes/vendors.js'
 import dashboardRoutes from './routes/dashboard.js'
 import timelineRoutes from './routes/timeline.js'
 import statsRoutes from './routes/stats.js'
+
 import notificationRoutes from './routes/notifications.js'
+import vendorSuggestionsRoutes from './routes/vendorSuggestions.js'
 
 const app = Fastify({ logger: process.env.NODE_ENV === 'development' })
 
@@ -100,7 +102,8 @@ app.register(whatsappRoutes,  { prefix: '/api/whatsapp' })
 app.register(seatingRoutes,   { prefix: '/api/seating' })
 app.register(cardsRoutes,     { prefix: '/api/cards' })
 app.register(giftsRoutes,     { prefix: '/api/gifts' })
-app.register(vendorRoutes,    { prefix: '/api/vendors' })
+app.register(vendorRoutes,            { prefix: '/api/vendors' })
+app.register(vendorSuggestionsRoutes, { prefix: '/api/vendors' })
 app.register(dashboardRoutes, { prefix: '/api/dashboard' })
 app.register(timelineRoutes,        { prefix: '/api/timeline' })
 app.register(statsRoutes,           { prefix: '/api/stats' })
