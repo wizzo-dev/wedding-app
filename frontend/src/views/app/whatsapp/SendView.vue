@@ -79,9 +79,22 @@
           </div>
         </div>
 
-        <button class="btn btn-primary next-btn" @click="goToStep(2)">
+        <!-- Explicit confirmation required when vars are missing -->
+        <label v-if="missingVars.length > 0" class="confirm-missing-label">
+          <input type="checkbox" v-model="confirmMissingVars" />
+          <span>אני מודע/ת לפרטים החסרים ורוצה להמשיך בכל זאת</span>
+        </label>
+
+        <button
+          class="btn btn-primary next-btn"
+          :disabled="missingVars.length > 0 && !confirmMissingVars"
+          @click="goToStep(2)"
+        >
           המשך לבחירת נמענים ←
         </button>
+        <p v-if="missingVars.length > 0 && !confirmMissingVars" class="block-hint">
+          ✋ יש להשלים פרטים חסרים או לאשר המשך בכל זאת
+        </p>
       </div>
     </div>
 
@@ -294,6 +307,7 @@ const scheduleMode = ref('now')
 const scheduledAt = ref('')
 const sending = ref(false)
 const sendResult = ref(null)
+const confirmMissingVars = ref(false)
 
 // ── Constants ────────────────────────────────────────────────────────────────
 const steps = ['בחר תבנית', 'בחר נמענים', 'אישור ושליחה']
@@ -442,8 +456,8 @@ function deselectAll() {
 
 function selectTemplate(tmpl) {
   selectedTemplate.value = tmpl
-  // Small delay so user sees the selection highlight
-  setTimeout(() => goToStep(2), 300)
+  confirmMissingVars.value = false  // reset confirmation on template change
+  // Don't auto-advance — let user review preview + warnings before clicking "המשך"
 }
 
 function goToStep(n) {
@@ -458,6 +472,7 @@ function resetWizard() {
   scheduledAt.value = ''
   sendResult.value = null
   sending.value = false
+  confirmMissingVars.value = false
   goToStep(1)
 }
 
@@ -1092,6 +1107,37 @@ onMounted(async () => {
   margin-top: 16px;
   padding: 14px;
   font-size: 15px;
+}
+.next-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.confirm-missing-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 12px;
+  background: #FFF9E6;
+  border: 1.5px solid #F59E0B;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #92400E;
+  line-height: 1.4;
+}
+.confirm-missing-label input[type="checkbox"] {
+  margin-top: 2px;
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  accent-color: var(--color-primary);
+}
+.block-hint {
+  text-align: center;
+  color: #92400E;
+  font-size: 13px;
+  margin-top: 8px;
 }
 
 .send-btn {
