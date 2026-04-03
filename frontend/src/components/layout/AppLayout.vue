@@ -358,6 +358,18 @@ onUnmounted(() => window.removeEventListener('resize', checkMobile))
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(233,30,140,0.35) transparent;
+}
+
+.sidebar-nav::-webkit-scrollbar { width: 3px; }
+.sidebar-nav::-webkit-scrollbar-track { background: transparent; }
+.sidebar-nav::-webkit-scrollbar-thumb {
+  background: rgba(233,30,140,0.35);
+  border-radius: var(--radius-full);
+}
+.sidebar-nav::-webkit-scrollbar-thumb:hover {
+  background: rgba(233,30,140,0.6);
 }
 
 .nav-group {

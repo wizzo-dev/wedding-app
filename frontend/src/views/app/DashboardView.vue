@@ -555,20 +555,22 @@ function rsvpBadgeClass(status) {
   align-items: center;
   gap: var(--space-2);
   padding: var(--space-4) var(--space-2);
-  background: var(--color-bg-subtle);
+  background: var(--color-bg-card);
+  border: 1.5px solid var(--color-border);
   border-radius: var(--radius-lg);
   transition: all var(--transition);
   text-decoration: none;
-  color: var(--color-text);
+  color: var(--color-text-muted);
   font-size: var(--font-size-xs);
   font-weight: 600;
   cursor: pointer;
 }
 .quick-action-btn:hover {
-  background: var(--color-primary-bg);
-  color: var(--color-primary);
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #fff;
   transform: translateY(-2px);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-pink);
 }
 .qa-icon { font-size: 1.6rem; line-height: 1; }
 

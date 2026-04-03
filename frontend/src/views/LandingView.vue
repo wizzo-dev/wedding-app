@@ -979,6 +979,12 @@ const reviews = [
 
 .feature-card {
   height: 100%;
+  transition: box-shadow var(--transition), transform var(--transition);
+}
+
+.feature-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
 }
 
 .feature-icon-wrap {
@@ -1055,6 +1061,33 @@ const reviews = [
   border: 1px solid var(--color-border);
   position: relative;
 }
+
+/* Pink dashed connector between steps (RTL: placed at left edge spanning the gap) */
+.step-connector {
+  position: absolute;
+  top: 56px; /* center of the step number circle */
+  left: calc(-1 * var(--space-8));
+  width: var(--space-8);
+  height: 2px;
+  border-top: 2px dashed rgba(233, 30, 140, 0.45);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.step-connector::before,
+.step-connector::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  opacity: 0.5;
+}
+.step-connector::before { right: 0; }
+.step-connector::after  { left: 0; }
 
 .step-num {
   width: 40px;
@@ -1374,6 +1407,8 @@ const reviews = [
 }
 
 @media (max-width: 768px) {
+  .step-connector { display: none; }
+
   .hero-inner {
     grid-template-columns: 1fr;
     gap: var(--space-10);
