@@ -1,72 +1,74 @@
 import { prisma } from '../models/db.js'
 
 export default async function rsvpRoutes(app) {
+
+  // ── GET /api/rsvp/groups — list groups for the logged-in user ────────────
+  app.get('/groups', { preHandler: [app.authenticate] }, async (req) => {
+    const userId = req.user.userId
+    const groups = await prisma.guest.groupBy({
+      by: ['groupName'],
+      where: { userId, groupName: { not: null } }
+    })
+    return groups.map(g => g.groupName).filter(Boolean)
+  })
+
   // ── GET /api/rsvp/:code ─────────────────────────────────────────────────
   // Accepts either a couple's rsvpToken or a guest's guestToken
   app.get('/:code', async (req, reply) => {
     const { code } = req.params
 
     // First try: guestToken (personal RSVP code)
-    const guest = await prisma.guest.findFirst({
+    const guestRecord = await prisma.guest.findFirst({
       where: { guestToken: code },
-      select: {
-        id: true, name: true, phone: true, numPeople: true,
-        rsvpStatus: true, mealPref: true, rsvpMessage: true,
-        user: {
-          select: { name1: true, name2: true, weddingDate: true, venue: true, venueAddress: true }
-        }
-      }
+      include: { user: true }
     })
 
-    if (guest) {
-      // Try to get the user's id so we can look up their invitation
-      const hostUser = await prisma.user.findFirst({
-        where: { guests: { some: { guestToken: code } } },
-        select: { id: true }
-      })
-      let invitationId = null
-      if (hostUser) {
-        const latestInv = await prisma.userInvitation.findFirst({
-          where: { userId: hostUser.id },
-          orderBy: { updatedAt: 'desc' },
-          select: { id: true }
-        })
-        invitationId = latestInv?.id || null
+    let user = null
+    let prefilledGuest = null
+
+    if (guestRecord) {
+      user = guestRecord.user
+      prefilledGuest = {
+        id:          guestRecord.id,
+        name:        guestRecord.name,
+        phone:       guestRecord.phone,
+        groupName:   guestRecord.groupName,
+        numPeople:   guestRecord.numPeople,
+        rsvpStatus:  guestRecord.rsvpStatus,
+        mealPref:    guestRecord.mealPref,
+        rsvpMessage: guestRecord.rsvpMessage
       }
-      return {
-        type: 'guest',
-        couple: { ...guest.user, invitationId },
-        guest: {
-          id:          guest.id,
-          name:        guest.name,
-          phone:       guest.phone,
-          numPeople:   guest.numPeople,
-          rsvpStatus:  guest.rsvpStatus,
-          mealPref:    guest.mealPref,
-          rsvpMessage: guest.rsvpMessage
-        }
-      }
+    } else {
+      // Second try: rsvpToken (couple's public link)
+      user = await prisma.user.findUnique({ where: { rsvpToken: code } })
     }
-
-    // Second try: rsvpToken (couple's public link)
-    const user = await prisma.user.findUnique({
-      where: { rsvpToken: code },
-      select: { id: true, name1: true, name2: true, weddingDate: true, venue: true, venueAddress: true }
-    })
 
     if (!user) return reply.code(404).send({ error: 'NOT_FOUND', message: 'קוד RSVP לא נמצא' })
 
-    // Look up their latest invitation
+    // Get latest invitation with template
     const latestInv = await prisma.userInvitation.findFirst({
       where: { userId: user.id },
       orderBy: { updatedAt: 'desc' },
-      select: { id: true }
+      include: { template: true }
     })
 
     return {
-      type: 'couple',
-      couple: { ...user, invitationId: latestInv?.id || null },
-      guest: null
+      couple: {
+        name1:        user.name1,
+        name2:        user.name2,
+        weddingDate:  user.weddingDate,
+        weddingTime:  user.weddingTime,
+        venue:        user.venue,
+        venueAddress: user.venueAddress,
+        couplePhoto:  user.profileImageUrl,
+        invitationId: latestInv?.id || null  // kept for backward compat
+      },
+      prefilledGuest,
+      invitation: latestInv ? {
+        id:               latestInv.id,
+        templateImageUrl: latestInv.template.imageUrl,
+        fields:           JSON.parse(latestInv.fields || '{}')
+      } : null
     }
   })
 
@@ -120,18 +122,18 @@ export default async function rsvpRoutes(app) {
       return reply.code(400).send({ error: 'VALIDATION', message: 'שם נדרש' })
     }
 
-    let user = null
+    let hostUser = null
     if (coupleToken) {
-      user = await prisma.user.findUnique({ where: { rsvpToken: coupleToken } })
+      hostUser = await prisma.user.findUnique({ where: { rsvpToken: coupleToken } })
     }
 
     const nameClean  = name.trim()
     const phoneClean = phone?.trim() || null
 
-    if (user) {
+    if (hostUser) {
       const existing = await prisma.guest.findFirst({
         where: {
-          userId: user.id,
+          userId: hostUser.id,
           OR: [
             { name: { equals: nameClean } },
             ...(phoneClean ? [{ phone: { equals: phoneClean } }] : [])
@@ -156,15 +158,17 @@ export default async function rsvpRoutes(app) {
         })
       } else {
         // New walk-in guest
+        const { randomBytes } = await import('crypto')
         updatedGuest = await prisma.guest.create({
           data: {
-            userId: user.id,
+            userId: hostUser.id,
             name: nameClean,
             phone: phoneClean,
             rsvpStatus,
             mealPref:    mealPref || null,
             numPeople:   parseInt(numPeople) || 1,
-            rsvpMessage: message || null
+            rsvpMessage: message || null,
+            guestToken:  randomBytes(4).toString('hex')
           },
           select: {
             id: true, name: true, rsvpStatus: true, numPeople: true, mealPref: true,

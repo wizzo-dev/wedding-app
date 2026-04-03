@@ -78,6 +78,9 @@ const routes = [
       { path: 'invitations/builder/:templateId', name: 'InvitationBuilder', component: () => import('@/views/app/invitations/InvitationBuilderView.vue') },
       { path: 'invitations/edit/:id',   name: 'InvitationEdit',     component: () => import('@/views/app/invitations/InvitationBuilderView.vue') },
 
+      // RSVP Links
+      { path: 'rsvp-links', name: 'RsvpLinks', component: () => import('@/views/app/RsvpLinksView.vue') },
+
       // Settings
       { path: 'settings',               name: 'Settings',       component: () => import('@/views/app/settings/SettingsView.vue') },
       { path: 'settings/account',       name: 'Account',        component: () => import('@/views/app/settings/AccountView.vue') },

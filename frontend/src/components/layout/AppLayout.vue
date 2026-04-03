@@ -142,6 +142,7 @@ const navGroups = [
       { to: '/app/budget',     icon: '💰', label: 'תקציב' },
       { to: '/app/gifts',        icon: '🎁', label: 'מתנות' },
       { to: '/app/invitations',  icon: '💌', label: 'הזמנות' },
+      { to: '/app/rsvp-links',   icon: '🔗', label: 'לינקי RSVP' },
     ]
   },
   {
@@ -183,6 +184,7 @@ const routeTitles = {
   '/app/settings/subscription':'מנוי',
   '/app/invitations':           'הזמנות',
   '/app/invitations/new':       'בחר תבנית',
+  '/app/rsvp-links':            'לינקי RSVP',
 }
 
 const currentPageTitle = computed(() => {

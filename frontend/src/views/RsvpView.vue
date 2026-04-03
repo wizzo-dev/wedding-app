@@ -34,7 +34,38 @@
 
       <!-- RSVP Form -->
       <div v-else class="rsvp-card fade-in">
-        <!-- Invitation Banner (if couple has a digital invitation) -->
+
+        <!-- Hero section -->
+        <div class="rsvp-hero">
+          <!-- Has invitation template -->
+          <div v-if="eventData?.invitation" class="invitation-hero">
+            <img :src="eventData.invitation.templateImageUrl" class="invitation-bg" alt="הזמנה" />
+            <div class="invitation-overlay">
+              <p class="inv-names">{{ coupleData?.name1 }} ❤️ {{ coupleData?.name2 }}</p>
+              <p class="inv-date" v-if="coupleData?.weddingDate">
+                {{ new Date(coupleData.weddingDate).toLocaleDateString('he-IL', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) }}
+              </p>
+            </div>
+          </div>
+
+          <!-- Has couple photo, no invitation -->
+          <div v-else-if="coupleData?.couplePhoto" class="couple-photo-hero">
+            <img :src="coupleData.couplePhoto" alt="החתן והכלה" />
+          </div>
+
+          <!-- Default header with decor -->
+          <div v-else class="default-hero">
+            <div class="hero-emoji">💒</div>
+            <h1 class="hero-names" v-if="coupleData">{{ coupleData.name1 }} ❤️ {{ coupleData.name2 }}</h1>
+            <h1 class="hero-names" v-else>אישור הגעה</h1>
+            <p class="hero-date" v-if="coupleData?.weddingDate">
+              {{ new Date(coupleData.weddingDate).toLocaleDateString('he-IL', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) }}
+            </p>
+            <p class="hero-venue" v-if="coupleData?.venue">📍 {{ coupleData.venue }}</p>
+          </div>
+        </div>
+
+        <!-- Invitation Banner link (if has invitation) -->
         <div v-if="coupleData?.invitationId" class="invitation-banner">
           <a :href="`/invitation/${coupleData.invitationId}`" target="_blank" class="invitation-banner-inner">
             <span class="inv-banner-icon">💌</span>
@@ -43,14 +74,7 @@
           </a>
         </div>
 
-        <div class="rsvp-header">
-          <div class="header-decor">💍</div>
-          <h1 class="rsvp-couple" v-if="coupleData">{{ coupleData.name1 }} &amp; {{ coupleData.name2 }}</h1>
-          <h1 class="rsvp-couple" v-else>אישור הגעה</h1>
-          <div class="rsvp-meta" v-if="coupleData?.weddingDate || coupleData?.venue">
-            <span v-if="coupleData?.weddingDate" class="meta-item">📅 {{ formatDate(coupleData.weddingDate) }}</span>
-            <span v-if="coupleData?.venue" class="meta-item">📍 {{ coupleData.venue }}</span>
-          </div>
+        <div class="rsvp-sub-header">
           <p class="rsvp-invite">נשמח לדעת האם תוכלו להצטרף לשמחה שלנו ✨</p>
         </div>
 
@@ -160,6 +184,7 @@ const submitted   = ref(false)
 const submitError = ref('')
 const coupleData  = ref(null)
 const guestData   = ref(null)
+const eventData   = ref(null)
 
 const form = ref({ name: '', phone: '', code: '', rsvpStatus: '', numPeople: 1, mealPref: '', message: '' })
 const errors = ref({})
@@ -215,15 +240,19 @@ async function loadByCode(code) {
     const res = await fetch(`/api/rsvp/${encodeURIComponent(code)}`)
     if (!res.ok) { loadError.value = true; return }
     const data = await res.json()
+    eventData.value  = data
     coupleData.value = data.couple
-    if (data.type === 'guest' && data.guest) {
-      guestData.value      = data.guest
-      form.value.code      = code
-      form.value.name      = data.guest.name || ''
-      form.value.phone     = data.guest.phone || ''
-      form.value.numPeople = data.guest.numPeople || 1
-      form.value.mealPref  = data.guest.mealPref || ''
-      form.value.rsvpStatus = data.guest.rsvpStatus === 'pending' ? '' : data.guest.rsvpStatus
+
+    // Handle prefilledGuest (new format) or guest (old format backward compat)
+    const pf = data.prefilledGuest || (data.type === 'guest' ? data.guest : null)
+    if (pf) {
+      guestData.value       = pf
+      form.value.code       = code
+      form.value.name       = pf.name || ''
+      form.value.phone      = pf.phone || ''
+      form.value.numPeople  = pf.numPeople || 1
+      form.value.mealPref   = pf.mealPref || ''
+      form.value.rsvpStatus = pf.rsvpStatus === 'pending' ? '' : (pf.rsvpStatus || '')
     }
   } catch { loadError.value = true }
   finally  { loading.value = false }
@@ -354,6 +383,32 @@ function reset() { submitted.value = false; submitError.value = ''; form.value.r
   .rsvp-couple { font-size: var(--font-size-2xl); }
   .attendance-options { grid-template-columns: 1fr; }
 }
+/* Hero section */
+.rsvp-hero { margin-bottom: 0; overflow: hidden; }
+.invitation-hero { position: relative; max-height: 300px; overflow: hidden; }
+.invitation-hero img.invitation-bg { width: 100%; object-fit: cover; display: block; }
+.invitation-overlay {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  background: linear-gradient(transparent, rgba(0,0,0,0.65));
+  padding: 20px 16px 16px; color: white; text-align: center;
+}
+.inv-names { font-size: 22px; font-weight: 700; margin: 0 0 4px; }
+.inv-date  { font-size: 14px; opacity: 0.9; margin: 0; }
+.couple-photo-hero img {
+  width: 100%; max-height: 280px; object-fit: cover; display: block;
+}
+.default-hero {
+  background: linear-gradient(135deg, #FFF0F7 0%, #F0F4FF 100%);
+  text-align: center;
+  padding: 32px 16px;
+}
+.hero-emoji  { font-size: 48px; }
+.hero-names  { font-size: 24px; font-weight: 700; color: var(--color-navy); margin: 8px 0; }
+.hero-date   { color: var(--color-primary); font-size: 15px; margin: 0; }
+.hero-venue  { color: #666; font-size: 14px; margin-top: 4px; }
+.rsvp-sub-header { padding: var(--space-3) var(--space-6); text-align: center; background: var(--color-bg-card); }
+.rsvp-sub-header .rsvp-invite { font-size: var(--font-size-sm); color: var(--color-text-muted); margin: 0; }
+
 /* Invitation banner */
 .invitation-banner {
   margin-bottom: var(--space-4);
