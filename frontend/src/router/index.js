@@ -66,6 +66,8 @@ const routes = [
 
       // Notifications
       { path: 'notifications',          name: 'Notifications',  component: () => import('@/views/app/NotificationsView.vue') },
+      // Profile
+      { path: 'profile',                name: 'Profile',        component: () => import('@/views/app/ProfileView.vue') },
 
       // Settings
       { path: 'settings',               name: 'Settings',       component: () => import('@/views/app/settings/SettingsView.vue') },

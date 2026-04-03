@@ -137,6 +137,7 @@ const navGroups = [
     label: 'ניהול',
     items: [
       { to: '/app/dashboard',  icon: '🏠', label: 'דאשבורד' },
+      { to: '/app/profile',    icon: '💍', label: 'הפרופיל שלנו' },
       { to: '/app/guests',     icon: '👥', label: 'אורחים' },
       { to: '/app/budget',     icon: '💰', label: 'תקציב' },
       { to: '/app/gifts',      icon: '🎁', label: 'מתנות' },
@@ -172,7 +173,7 @@ const routeTitles = {
   '/app/whatsapp':             'WhatsApp',
   '/app/vendors':              'ספקים',
   '/app/notifications':        'התראות',
-  '/app/profile':              'פרופיל',
+  '/app/profile':              'הפרופיל שלנו',
   '/app/vendors/suggestions':  'הצעות ספקים',
   '/app/subscription/payment': 'תוכניות ומנוי',
   '/app/settings':             'הגדרות',
