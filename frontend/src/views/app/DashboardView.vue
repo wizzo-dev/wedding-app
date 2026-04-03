@@ -658,4 +658,14 @@ function rsvpBadgeClass(status) {
   .dash-header { flex-direction: column; align-items: flex-start; }
   .quick-actions-grid { grid-template-columns: repeat(4, 1fr); }
 }
+
+@media (max-width: 420px) {
+  /* Tighten stat cards so they don't overflow at 375px */
+  .stat-card-body { padding: var(--space-3); gap: var(--space-2); }
+  .stat-icon { width: 38px; height: 38px; font-size: 1.1rem; }
+  .stat-num { font-size: var(--font-size-2xl); }
+  /* Quick actions: 4-col is tight at 375px, keep icons visible */
+  .quick-action-btn { padding: var(--space-3) var(--space-1); }
+  .qa-icon { font-size: 1.3rem; }
+}
 </style>
