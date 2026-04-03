@@ -1,5 +1,4 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { watch } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 
 const routes = [
@@ -96,21 +95,9 @@ const router = createRouter({
   scrollBehavior: () => ({ top: 0 })
 })
 
-router.beforeEach(async (to, from, next) => {
+router.beforeEach((to, from, next) => {
   const auth = useAuthStore()
-
-  // Wait until auth.init() has completed (prevents redirect to /login on hard reload)
-  if (!auth.authReady) {
-    await new Promise(resolve => {
-      const stop = watch(
-        () => auth.authReady,
-        (ready) => {
-          if (ready) { stop(); resolve() }
-        }
-      )
-    })
-  }
-
+  // auth.init() runs in main.js before mount — authReady is always true here
   if (to.meta.requiresAuth && !auth.isLoggedIn) return next('/login')
   if (to.meta.guest && auth.isLoggedIn) return next('/app/dashboard')
   next()
