@@ -74,6 +74,11 @@ const CATEGORIES = [
 
 export default async function cardsRoutes(app) {
 
+  // GET /api/cards — alias for /templates
+  app.get('/', { preHandler: [app.authenticate] }, async (req) => {
+    return TEMPLATES
+  })
+
   // GET /api/cards/templates
   app.get('/templates', { preHandler: [app.authenticate] }, async (req) => {
     const { category, popular, premium } = req.query
