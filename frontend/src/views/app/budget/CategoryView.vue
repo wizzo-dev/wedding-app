@@ -58,7 +58,7 @@
           <div v-for="exp in expenses" :key="exp.id" class="expense-card card card-body">
             <div class="exp-main">
               <div class="exp-info">
-                <div class="exp-vendor">{{ exp.vendor || '—' }}</div>
+                <div class="exp-vendor">{{ exp.vendorName || exp.vendor || '—' }}</div>
                 <div class="exp-desc">{{ exp.description || '—' }}</div>
               </div>
               <div class="exp-right">
@@ -85,7 +85,7 @@
           <div class="modal-body">
             <div class="form-group">
               <label class="form-label">ספק</label>
-              <input v-model="newExp.vendor" type="text" class="form-input" placeholder="לדוגמה: פוטוגרפיה אבן" />
+              <input v-model="newExp.vendorName" type="text" class="form-input" placeholder="לדוגמה: פוטוגרפיה אבן" />
             </div>
             <div class="form-group">
               <label class="form-label">תיאור</label>
@@ -132,7 +132,7 @@ const expenses = ref([])
 const showAddModal = ref(false)
 const adding = ref(false)
 const addError = ref(null)
-const newExp = ref({ vendor: '', description: '', amount: '', isPaid: false })
+const newExp = ref({ vendorName: '', description: '', amount: '', isPaid: false })
 
 const totalSpent = computed(() => expenses.value.reduce((s, e) => s + (e.amount || 0), 0))
 const remaining = computed(() => (category.value?.allocatedAmount || 0) - totalSpent.value)
@@ -171,13 +171,13 @@ async function addExpense() {
   adding.value = true
   try {
     await api.post(`/budget/categories/${id}/expenses`, {
-      vendor: newExp.value.vendor,
+      vendorName: newExp.value.vendorName,
       description: newExp.value.description,
       amount: parseFloat(newExp.value.amount),
       isPaid: newExp.value.isPaid
     })
     showAddModal.value = false
-    newExp.value = { vendor: '', description: '', amount: '', isPaid: false }
+    newExp.value = { vendorName: '', description: '', amount: '', isPaid: false }
     await loadData()
   } catch (e) {
     addError.value = e.response?.data?.message || 'שגיאה בשמירה'

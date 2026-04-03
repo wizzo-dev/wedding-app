@@ -88,10 +88,10 @@ export default async function budgetRoutes(app) {
       where: { id: parseInt(req.params.id), userId: req.user.userId }
     })
     if (!cat) return reply.code(404).send({ error: 'NOT_FOUND' })
-    const { description, amount, vendor, paidAt, isPaid } = req.body
+    const { description, amount, vendor, vendorName, paidAt, isPaid } = req.body
     return prisma.budgetExpense.create({
       data: { categoryId: cat.id, description, amount: parseFloat(amount) || 0,
-        vendor, paidAt: paidAt ? new Date(paidAt) : null, isPaid: isPaid || false }
+        vendorName: vendorName || vendor || '', paidAt: paidAt ? new Date(paidAt) : null, isPaid: isPaid || false }
     })
   })
 
@@ -103,10 +103,11 @@ export default async function budgetRoutes(app) {
     })
     if (!exp || exp.category.userId !== req.user.userId)
       return reply.code(404).send({ error: 'NOT_FOUND' })
-    const { description, amount, vendor, paidAt, isPaid } = req.body
+    const { description, amount, vendor, vendorName, paidAt, isPaid } = req.body
     return prisma.budgetExpense.update({
       where: { id: exp.id },
-      data: { description, amount: parseFloat(amount) || 0, vendor,
+      data: { description, amount: parseFloat(amount) || 0,
+        vendorName: vendorName || vendor || '',
         paidAt: paidAt ? new Date(paidAt) : null, isPaid }
     })
   })
