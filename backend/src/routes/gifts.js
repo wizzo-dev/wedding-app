@@ -182,4 +182,102 @@ export default async function giftsRoutes(app) {
     await prisma.gift.delete({ where: { id } })
     return reply.code(204).send()
   })
+
+  // ── GET /api/gifts/public/:userId — public wish list (no auth) ───────────
+  app.get('/public/:userId', async (req, reply) => {
+    const userId = parseInt(req.params.userId, 10)
+    if (isNaN(userId)) return reply.code(400).send({ error: 'VALIDATION', message: 'מזהה לא תקין' })
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true, name1: true, name2: true,
+        weddingDate: true, venue: true,
+        bankInfo: true, bitPhone: true
+      }
+    })
+    if (!user) return reply.code(404).send({ error: 'NOT_FOUND', message: 'זוג לא נמצא' })
+
+    const wishes = await prisma.giftWish.findMany({
+      where: { userId },
+      orderBy: [{ isContributed: 'asc' }, { sortOrder: 'asc' }],
+      select: {
+        id: true, name: true, desiredAmount: true,
+        message: true, imageUrl: true, isContributed: true, sortOrder: true
+      }
+    })
+
+    return {
+      couple: {
+        id: user.id, name1: user.name1, name2: user.name2,
+        weddingDate: user.weddingDate, venue: user.venue
+      },
+      payment: {
+        bankInfo: user.bankInfo || null,
+        bitPhone: user.bitPhone || null
+      },
+      wishes
+    }
+  })
+
+  // ── GET /api/gifts/wishes — auth: list my wishes ─────────────────────────
+  app.get('/wishes', { preHandler: [app.authenticate] }, async (req) => {
+    const userId = req.user.userId
+    return prisma.giftWish.findMany({
+      where: { userId },
+      orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }]
+    })
+  })
+
+  // ── POST /api/gifts/wishes — auth: create wish ───────────────────────────
+  app.post('/wishes', { preHandler: [app.authenticate] }, async (req, reply) => {
+    const userId = req.user.userId
+    const { name, desiredAmount, message, imageUrl, sortOrder } = req.body || {}
+    if (!name?.trim()) return reply.code(400).send({ error: 'VALIDATION', message: 'שם מתנה נדרש' })
+    if (desiredAmount === undefined || isNaN(Number(desiredAmount)))
+      return reply.code(400).send({ error: 'VALIDATION', message: 'סכום לא תקין' })
+    const wish = await prisma.giftWish.create({
+      data: {
+        userId, name: name.trim(),
+        desiredAmount: parseFloat(desiredAmount),
+        message: message?.trim() || null,
+        imageUrl: imageUrl?.trim() || null,
+        sortOrder: parseInt(sortOrder) || 0
+      }
+    })
+    return reply.code(201).send(wish)
+  })
+
+  // ── PUT /api/gifts/wishes/:id — auth: update wish ────────────────────────
+  app.put('/wishes/:id', { preHandler: [app.authenticate] }, async (req, reply) => {
+    const userId = req.user.userId
+    const id = parseInt(req.params.id, 10)
+    if (isNaN(id)) return reply.code(400).send({ error: 'VALIDATION', message: 'מזהה לא תקין' })
+    const existing = await prisma.giftWish.findFirst({ where: { id, userId } })
+    if (!existing) return reply.code(404).send({ error: 'NOT_FOUND', message: 'פריט לא נמצא' })
+    const { name, desiredAmount, message, imageUrl, isContributed, contributedBy, sortOrder } = req.body || {}
+    return prisma.giftWish.update({
+      where: { id },
+      data: {
+        ...(name          !== undefined && { name: name.trim() }),
+        ...(desiredAmount !== undefined && { desiredAmount: parseFloat(desiredAmount) }),
+        ...(message       !== undefined && { message: message?.trim() || null }),
+        ...(imageUrl      !== undefined && { imageUrl: imageUrl?.trim() || null }),
+        ...(isContributed !== undefined && { isContributed: Boolean(isContributed) }),
+        ...(contributedBy !== undefined && { contributedBy: contributedBy?.trim() || null }),
+        ...(sortOrder     !== undefined && { sortOrder: parseInt(sortOrder) })
+      }
+    })
+  })
+
+  // ── DELETE /api/gifts/wishes/:id — auth: delete wish ────────────────────
+  app.delete('/wishes/:id', { preHandler: [app.authenticate] }, async (req, reply) => {
+    const userId = req.user.userId
+    const id = parseInt(req.params.id, 10)
+    if (isNaN(id)) return reply.code(400).send({ error: 'VALIDATION', message: 'מזהה לא תקין' })
+    const existing = await prisma.giftWish.findFirst({ where: { id, userId } })
+    if (!existing) return reply.code(404).send({ error: 'NOT_FOUND', message: 'פריט לא נמצא' })
+    await prisma.giftWish.delete({ where: { id } })
+    return reply.code(204).send()
+  })
 }
