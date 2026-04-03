@@ -1,3 +1,5 @@
+import { prisma } from '../models/db.js'
+
 // Static card templates — no DB required (phase 1)
 const TEMPLATES = [
   {
@@ -96,5 +98,116 @@ export default async function cardsRoutes(app) {
     const template = TEMPLATES.find(t => t.slug === req.params.slug)
     if (!template) return reply.code(404).send({ error: 'תבנית לא נמצאה' })
     return template
+  })
+
+  // ── GET /api/cards/export — check latest export job status (does NOT create) ─
+  app.get('/export', { preHandler: [app.authenticate] }, async (req, reply) => {
+    const userId = req.user.userId
+
+    const job = await prisma.cardExport.findFirst({
+      where: { userId },
+      orderBy: { createdAt: 'desc' }
+    })
+
+    if (!job) {
+      return { job: null, message: 'אין ייצוא קיים — לחץ על כפתור הייצוא להתחלה' }
+    }
+
+    return {
+      jobId:       job.id,
+      status:      job.status,
+      pdfUrl:      job.pdfUrl,
+      downloadUrl: job.status === 'ready' ? job.pdfUrl : null,
+      createdAt:   job.createdAt
+    }
+  })
+
+  // ── POST /api/cards/export/start — explicitly trigger a new export job ────
+  app.post('/export/start', { preHandler: [app.authenticate] }, async (req, reply) => {
+    const userId = req.user.userId
+
+    // Get user info + guests for export
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { name1: true, name2: true, weddingDate: true, venue: true, selectedCardTemplateId: true }
+    })
+    if (!user) return reply.code(404).send({ error: 'NOT_FOUND' })
+
+    const guests = await prisma.guest.findMany({
+      where: { userId },
+      select: { id: true, name: true, phone: true, email: true, numPeople: true, rsvpStatus: true, groupName: true }
+    })
+
+    const templateId = user.selectedCardTemplateId || 1
+    const template   = TEMPLATES.find(t => t.id === templateId) || TEMPLATES[0]
+    const layoutId   = 1
+
+    // Create CardExport job
+    const job = await prisma.cardExport.create({
+      data: { userId, layoutId, templateId: template.id, status: 'pending' }
+    })
+
+    // Simulate async processing: update to 'ready' immediately in background
+    setImmediate(async () => {
+      try {
+        await prisma.cardExport.update({
+          where: { id: job.id },
+          data: { status: 'ready', pdfUrl: `/api/cards/export/${job.id}/download` }
+        })
+      } catch {}
+    })
+
+    return reply.code(201).send({
+      jobId:       job.id,
+      status:      'pending',
+      guestCount:  guests.length,
+      template:    { id: template.id, name: template.name, slug: template.slug },
+      couple:      { name1: user.name1, name2: user.name2, weddingDate: user.weddingDate, venue: user.venue },
+      pollUrl:     `/api/cards/export/${job.id}`
+    })
+  })
+
+  // ── GET /api/cards/export/:jobId — poll export job status ────────────────
+  app.get('/export/:jobId', { preHandler: [app.authenticate] }, async (req, reply) => {
+    const userId = req.user.userId
+    const jobId  = parseInt(req.params.jobId, 10)
+    if (isNaN(jobId)) return reply.code(400).send({ error: 'VALIDATION', message: 'מזהה לא תקין' })
+
+    const job = await prisma.cardExport.findFirst({
+      where: { id: jobId, userId }
+    })
+    if (!job) return reply.code(404).send({ error: 'NOT_FOUND', message: 'משימת ייצוא לא נמצאה' })
+
+    return {
+      jobId:   job.id,
+      status:  job.status,
+      pdfUrl:  job.pdfUrl,
+      downloadUrl: job.status === 'ready' ? job.pdfUrl : null
+    }
+  })
+
+  // ── GET /api/cards/export/:jobId/download — download exported data ────────
+  app.get('/export/:jobId/download', { preHandler: [app.authenticate] }, async (req, reply) => {
+    const userId = req.user.userId
+    const jobId  = parseInt(req.params.jobId, 10)
+    if (isNaN(jobId)) return reply.code(400).send({ error: 'VALIDATION', message: 'מזהה לא תקין' })
+
+    const job = await prisma.cardExport.findFirst({ where: { id: jobId, userId } })
+    if (!job || job.status !== 'ready') return reply.code(404).send({ error: 'NOT_FOUND', message: 'הקובץ אינו מוכן' })
+
+    // In a real system this would serve a ZIP/PDF file
+    // Here we return JSON with all guests for client-side rendering
+    const guests = await prisma.guest.findMany({
+      where: { userId },
+      select: { id: true, name: true, phone: true, rsvpStatus: true, numPeople: true }
+    })
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { name1: true, name2: true, weddingDate: true, venue: true }
+    })
+
+    reply.header('Content-Disposition', `attachment; filename="invitations-${jobId}.json"`)
+    reply.header('Content-Type', 'application/json')
+    return { jobId, couple: user, guests, exportedAt: new Date().toISOString() }
   })
 }
