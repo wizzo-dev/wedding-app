@@ -139,32 +139,40 @@ model WaSession {
 
 model WaTemplate {
   id        Int      @id @default(autoincrement())
-  userId    Int      @map("user_id")
+  userId    Int?     @map("user_id")
   name      String
   type      String   @default("custom")
-  content   String  
-  variables String     @default("[]")
+  content   String   @default("")
+  body      String?
+  variables String   @default("[]")
   isDefault Boolean  @default(false) @map("is_default")
+  isSystem  Boolean  @default(false) @map("is_system")
+  style     String?
+  category  String?
+  emoji     String?
   createdAt DateTime @default(now()) @map("created_at")
 
-  user     User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user     User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
   messages WaMessage[]
 
   @@map("wa_templates")
 }
 
 model WaMessage {
-  id           Int           @id @default(autoincrement())
-  userId       Int           @map("user_id")
-  templateId   Int?          @map("template_id")
-  recipientIds String          @map("recipient_ids")
-  scheduledAt  DateTime?     @map("scheduled_at")
-  sentAt       DateTime?     @map("sent_at")
-  status       String @default("pending")
-  error        String?
-  message      String?
-  results      String?  @default("[]")
-  createdAt    DateTime      @default(now()) @map("created_at")
+  id             Int       @id @default(autoincrement())
+  userId         Int       @map("user_id")
+  templateId     Int?      @map("template_id")
+  recipientIds   String    @default("[]") @map("recipient_ids")
+  recipientPhone String?   @map("recipient_phone")
+  recipientName  String?   @map("recipient_name")
+  scheduledAt    DateTime? @map("scheduled_at")
+  sentAt         DateTime? @map("sent_at")
+  status         String    @default("pending")
+  error          String?
+  message        String?
+  body           String?
+  results        String?   @default("[]")
+  createdAt      DateTime  @default(now()) @map("created_at")
 
   user     User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   template WaTemplate? @relation(fields: [templateId], references: [id])

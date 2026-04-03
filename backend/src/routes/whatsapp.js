@@ -154,45 +154,90 @@ export default async function whatsappRoutes(app) {
     return { ok: true }
   })
 
-  // GET /api/whatsapp/templates
+  // GET /api/whatsapp/templates — returns system templates only
   app.get('/templates', { preHandler: [app.authenticate] }, async (req) => {
-    return prisma.waTemplate.findMany({ where: { userId: req.user.userId } })
-  })
-
-  // POST /api/whatsapp/templates
-  app.post('/templates', { preHandler: [app.authenticate] }, async (req) => {
-    const { name, content, body, type } = req.body
-    return prisma.waTemplate.create({
-      data: {
-        userId: req.user.userId,
-        name,
-        type: type || 'custom',
-        content: content || body || ''
-      }
+    return prisma.waTemplate.findMany({
+      where: { isSystem: true },
+      orderBy: [{ category: 'asc' }, { style: 'asc' }]
     })
   })
 
-  // PUT /api/whatsapp/templates/:id
-  app.put('/templates/:id', { preHandler: [app.authenticate] }, async (req, reply) => {
-    const tmpl = await prisma.waTemplate.findFirst({ where: { id: parseInt(req.params.id), userId: req.user.userId } })
-    if (!tmpl) return reply.code(404).send({ error: 'NOT_FOUND' })
-    const { name, content, body, type } = req.body
-    return prisma.waTemplate.update({
-      where: { id: tmpl.id },
-      data: {
-        ...(name !== undefined && { name }),
-        ...(type !== undefined && { type }),
-        ...((content || body) !== undefined && { content: content || body })
-      }
-    })
+  // POST /api/whatsapp/admin/templates — admin only (requires x-admin-key header)
+  app.post('/admin/templates', async (req, reply) => {
+    if (req.headers['x-admin-key'] !== process.env.ADMIN_KEY && req.headers['x-admin-key'] !== 'yalla-admin-2026') {
+      return reply.code(403).send({ error: 'FORBIDDEN' })
+    }
+    const { name, style, category, body, emoji } = req.body
+    return prisma.waTemplate.create({ data: { name, style, category, body, emoji, isSystem: true, userId: null } })
   })
 
-  // DELETE /api/whatsapp/templates/:id
-  app.delete('/templates/:id', { preHandler: [app.authenticate] }, async (req, reply) => {
-    const tmpl = await prisma.waTemplate.findFirst({ where: { id: parseInt(req.params.id), userId: req.user.userId } })
-    if (!tmpl) return reply.code(404).send({ error: 'NOT_FOUND' })
-    await prisma.waTemplate.delete({ where: { id: tmpl.id } })
-    return { ok: true }
+  // POST /api/whatsapp/send-bulk
+  app.post('/send-bulk', { preHandler: [app.authenticate] }, async (req, reply) => {
+    const userId = req.user.userId
+    const { templateId, guestIds, scheduledAt } = req.body
+
+    if (!templateId || !guestIds?.length) return reply.code(400).send({ error: 'MISSING_PARAMS' })
+
+    // Validate schedule time (9:00-22:00 only)
+    if (scheduledAt) {
+      const dt = new Date(scheduledAt)
+      const hour = dt.getHours()
+      if (hour < 9 || hour >= 22) return reply.code(400).send({ error: 'INVALID_HOUR', message: 'ניתן לשלוח רק בין 9:00 ל-22:00' })
+    }
+
+    const template = await prisma.waTemplate.findFirst({ where: { id: parseInt(templateId) } })
+    if (!template) return reply.code(404).send({ error: 'TEMPLATE_NOT_FOUND' })
+
+    const user = await prisma.user.findUnique({ where: { id: userId } })
+    const guests = await prisma.guest.findMany({ where: { id: { in: guestIds.map(Number) }, userId } })
+
+    if (scheduledAt) {
+      // Save as scheduled messages
+      await prisma.waMessage.createMany({
+        data: guests.map(g => ({
+          userId,
+          templateId: template.id,
+          recipientPhone: g.phone,
+          recipientName: g.name,
+          body: (template.body || template.content)
+            .replace(/{{name}}/g, g.name)
+            .replace(/{{name1}}/g, user.name1 || '')
+            .replace(/{{name2}}/g, user.name2 || ''),
+          status: 'scheduled',
+          scheduledAt: new Date(scheduledAt)
+        }))
+      })
+      return { ok: true, scheduled: guests.length }
+    }
+
+    // Send now
+    const state = getClientState(userId)
+    const results = { sent: 0, failed: 0 }
+
+    for (const guest of guests) {
+      if (!guest.phone) { results.failed++; continue }
+      const body = (template.body || template.content)
+        .replace(/{{name}}/g, guest.name)
+        .replace(/{{name1}}/g, user.name1 || '')
+        .replace(/{{name2}}/g, user.name2 || '')
+        .replace(/{{venue}}/g, user.venue || '')
+        .replace(/{{date}}/g, user.weddingDate ? new Date(user.weddingDate).toLocaleDateString('he-IL') : '')
+        .replace(/{{rsvp_link}}/g, `https://aware-carries-protecting-bay.trycloudflare.com/rsvp/${user.rsvpToken}`)
+
+      try {
+        if (state?.client && state.status === 'connected') {
+          const chatId = guest.phone.replace(/\D/g, '') + '@c.us'
+          await state.client.sendMessage(chatId, body)
+        }
+        await prisma.waMessage.create({ data: { userId, templateId: template.id, recipientPhone: guest.phone, recipientName: guest.name, body, status: 'sent', sentAt: new Date() } })
+        results.sent++
+      } catch(e) {
+        await prisma.waMessage.create({ data: { userId, templateId: template.id, recipientPhone: guest.phone, recipientName: guest.name, body, status: 'failed' } })
+        results.failed++
+      }
+    }
+
+    return { ok: true, ...results }
   })
 
   // GET /api/whatsapp/messages — history
