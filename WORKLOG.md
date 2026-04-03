@@ -1,3 +1,32 @@
+## 2026-04-03T01:00Z | Notifications + Profile + VendorSuggestions + PaymentStubs | freddy-round9
+
+**Summary:** Implemented 4 full production-quality pages for יאללה חתונה.
+
+### Pages Built
+
+#### 1. Notifications — `/app/notifications` | `feat/page/notifications`
+- Prisma `Notification` model (type enum: rsvp_received, gift_received, task_due, system)
+- Backend: GET list with unreadCount, PATCH single read, PATCH read-all, POST create
+- Frontend: grouped-by-date list, pink unread dot, mark-read on click, mark-all button, empty state
+- AppLayout: 🔔 bell icon in topbar with animated pink badge showing unread count
+
+#### 2. Profile — `/app/profile` | `feat/page/profile`
+- Backend: PATCH /api/users/profile (partial update incl. profileImageUrl)
+- Frontend: avatar card, couple name hero, info grid, inline edit form, URL-based avatar, wedding countdown card
+- Sidebar: 💍 הפרופיל שלנו added to ניהול group
+
+#### 3. VendorSuggestions — `/app/vendors/suggestions` | `feat/page/vendor-suggestions`
+- Backend: 15 hardcoded Hebrew vendor categories with price ranges and tips
+- Frontend: 3-column grid, category chip filter, text search, add-to-vendors CTA, toast feedback
+- Sidebar: ✨ הצעות ספקים added to תקשורת group
+
+#### 4. PaymentStubs — `/app/subscription/payment` | `feat/page/payment-stubs`
+- Backend: GET /api/subscription/plans (free/pro/premium), POST /api/subscription/upgrade (stub)
+- Frontend: 3-column plan comparison, popular badge, feature lists, upgrade modal with demo disclaimer, payment method stub UI
+- Demo banner: "מצב דמו - לא יבוצע חיוב"
+
+---
+
 ## 2026-04-02T22:15Z | WaHistory + SeatingMap + HallSettings | main
 
 **Summary:** Implemented 3 full production-quality pages for yalla-wedding.

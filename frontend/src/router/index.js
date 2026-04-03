@@ -69,6 +69,8 @@ const routes = [
       { path: 'notifications',          name: 'Notifications',  component: () => import('@/views/app/NotificationsView.vue') },
       // Profile
       { path: 'profile',                name: 'Profile',        component: () => import('@/views/app/ProfileView.vue') },
+      // Subscription / Payment
+      { path: 'subscription/payment',   name: 'PaymentPlans',   component: () => import('@/views/app/PaymentView.vue') },
 
       // Settings
       { path: 'settings',               name: 'Settings',       component: () => import('@/views/app/settings/SettingsView.vue') },

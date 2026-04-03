@@ -26,6 +26,7 @@ import vendorRoutes from './routes/vendors.js'
 import dashboardRoutes from './routes/dashboard.js'
 import timelineRoutes from './routes/timeline.js'
 import statsRoutes from './routes/stats.js'
+import subscriptionRoutes from './routes/subscription.js'
 
 import notificationRoutes from './routes/notifications.js'
 import vendorSuggestionsRoutes from './routes/vendorSuggestions.js'
@@ -108,6 +109,9 @@ app.register(dashboardRoutes, { prefix: '/api/dashboard' })
 app.register(timelineRoutes,        { prefix: '/api/timeline' })
 app.register(statsRoutes,           { prefix: '/api/stats' })
 app.register(notificationRoutes,    { prefix: '/api/notifications' })
+app.register(timelineRoutes,     { prefix: '/api/timeline' })
+app.register(statsRoutes,        { prefix: '/api/stats' })
+app.register(subscriptionRoutes, { prefix: '/api/subscription' })
 
 // ── Static Frontend ───────────────────────────────────────────────────────────
 const frontendDist = join(__dirname, '../../frontend/dist')
