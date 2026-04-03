@@ -165,6 +165,7 @@ const routeTitles = {
   '/app/timeline':             'ציר זמן',
   '/app/whatsapp':             'WhatsApp',
   '/app/vendors':              'ספקים',
+  '/app/subscription/payment': 'תוכניות ומנוי',
   '/app/settings':             'הגדרות',
   '/app/settings/account':     'פרטי חשבון',
   '/app/settings/subscription':'מנוי',
