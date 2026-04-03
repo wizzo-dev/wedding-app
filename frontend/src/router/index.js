@@ -58,6 +58,7 @@ const routes = [
       // Vendors
       { path: 'vendors',                name: 'Vendors',        component: () => import('@/views/app/vendors/VendorsView.vue') },
       { path: 'vendors/mine',           name: 'MyVendors',      component: () => import('@/views/app/vendors/MyVendorsView.vue') },
+      { path: 'vendors/suggestions',    name: 'VendorSuggestions', component: () => import('@/views/app/vendors/VendorSuggestionsView.vue') },
       { path: 'vendors/:id',            name: 'VendorDetail',   component: () => import('@/views/app/vendors/VendorView.vue') },
 
       // Tasks & Timeline

@@ -148,8 +148,9 @@ const navGroups = [
   {
     label: 'תקשורת',
     items: [
-      { to: '/app/whatsapp',   icon: '💬', label: 'WhatsApp' },
-      { to: '/app/vendors',    icon: '🏪', label: 'ספקים' },
+      { to: '/app/whatsapp',            icon: '💬', label: 'WhatsApp' },
+      { to: '/app/vendors',             icon: '🏪', label: 'ספקים' },
+      { to: '/app/vendors/suggestions', icon: '✨', label: 'הצעות ספקים' },
     ]
   }
 ]
@@ -165,6 +166,7 @@ const routeTitles = {
   '/app/timeline':             'ציר זמן',
   '/app/whatsapp':             'WhatsApp',
   '/app/vendors':              'ספקים',
+  '/app/vendors/suggestions':  'הצעות ספקים',
   '/app/settings':             'הגדרות',
   '/app/settings/account':     'פרטי חשבון',
   '/app/settings/subscription':'מנוי',
