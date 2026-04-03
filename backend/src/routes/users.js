@@ -22,6 +22,24 @@ export default async function userRoutes(app) {
     })
   })
 
+  // PATCH /api/users/profile — update profile including profileImageUrl
+  app.patch('/profile', { preHandler: [app.authenticate] }, async (req) => {
+    const { name1, name2, weddingDate, venue, venueAddress, profileImageUrl } = req.body
+    const data = {}
+    if (name1 !== undefined) data.name1 = name1
+    if (name2 !== undefined) data.name2 = name2
+    if (weddingDate !== undefined) data.weddingDate = weddingDate ? new Date(weddingDate) : null
+    if (venue !== undefined) data.venue = venue
+    if (venueAddress !== undefined) data.venueAddress = venueAddress
+    if (profileImageUrl !== undefined) data.profileImageUrl = profileImageUrl
+
+    return prisma.user.update({
+      where: { id: req.user.userId },
+      data,
+      select: { id: true, name1: true, name2: true, weddingDate: true, venue: true, venueAddress: true, profileImageUrl: true, plan: true }
+    })
+  })
+
   // POST /api/users/change-password
   app.post('/change-password', { preHandler: [app.authenticate] }, async (req, reply) => {
     const { currentPassword, newPassword } = req.body
