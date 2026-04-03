@@ -237,23 +237,26 @@ export default async function vendorSuggestionsRoutes(app) {
       return reply.code(400).send({ error: 'קטגוריה חסרה' })
     }
 
-    // Create a freeform vendor entry in the vendors table
-    const vendor = await prisma.vendor.create({
-      data: {
-        category: category.trim(),
-        name: name.trim(),
-        description: notes ? notes.trim() : null,
-      }
-    })
+    // Create vendor and link to user atomically — prevents orphan Vendor rows
+    const { vendor, userVendor } = await prisma.$transaction(async (tx) => {
+      const vendor = await tx.vendor.create({
+        data: {
+          category: category.trim(),
+          name: name.trim(),
+          description: notes ? notes.trim() : null,
+        }
+      })
 
-    // Link vendor to user
-    const userVendor = await prisma.userVendor.create({
-      data: {
-        userId,
-        vendorId: vendor.id,
-        status: 'considering',
-        notes: notes ? notes.trim() : null,
-      }
+      const userVendor = await tx.userVendor.create({
+        data: {
+          userId,
+          vendorId: vendor.id,
+          status: 'considering',
+          notes: notes ? notes.trim() : null,
+        }
+      })
+
+      return { vendor, userVendor }
     })
 
     return reply.code(201).send({ success: true, userVendor, vendor })
