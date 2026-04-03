@@ -261,6 +261,24 @@ export default async function guestRoutes(app) {
     }
   })
 
+  // ── GET /api/guests/export ────────────────────────────────────────────────────
+  app.get('/export', { preHandler: [app.authenticate] }, async (req, reply) => {
+    const { buildXlsx } = await import('../utils/export.js')
+    const guests = await prisma.guest.findMany({
+      where: { userId: req.user.userId },
+      orderBy: { name: 'asc' }
+    })
+    const headers = ['שם', 'טלפון', 'צד', 'מספר מגיעים', 'סטטוס RSVP', 'מתנה (₪)', 'הערות']
+    const rows = guests.map(g => [
+      g.name, g.phone || '', g.side || '', g.numPeople || 1,
+      g.rsvpStatus || 'pending', g.giftAmount || 0, g.notes || ''
+    ])
+    const buf = buildXlsx(headers, rows, 'אורחים')
+    reply.header('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    reply.header('Content-Disposition', 'attachment; filename="guests.xlsx"')
+    reply.send(buf)
+  })
+
   // ── GET /api/guests/:id ───────────────────────────────────────────────────────
   app.get('/:id', { preHandler: [app.authenticate] }, async (req, reply) => {
     const userId = req.user.userId

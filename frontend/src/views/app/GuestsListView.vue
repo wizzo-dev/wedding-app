@@ -8,8 +8,11 @@
         <p class="page-subtitle">נהל את כל האורחים שלך במקום אחד</p>
       </div>
       <div class="page-actions">
+        <button class="btn btn-outline btn-sm" @click="exportXlsx">
+          📥 ייצא XLSX
+        </button>
         <button class="btn btn-outline btn-sm" @click="showImportModal = true">
-          📥 ייבוא מרובה
+          📤 ייבוא מרובה
         </button>
         <button class="btn btn-primary btn-sm" @click="openAddModal">
           + הוסף אורח
@@ -551,6 +554,14 @@ async function submitImport() {
   } finally {
     importLoading.value = false
   }
+}
+
+async function exportXlsx() {
+  const res = await api.get('/guests/export', { responseType: 'blob' })
+  const url = URL.createObjectURL(res.data)
+  const a = document.createElement('a')
+  a.href = url; a.download = 'guests.xlsx'; a.click()
+  URL.revokeObjectURL(url)
 }
 
 onMounted(fetchGuests)

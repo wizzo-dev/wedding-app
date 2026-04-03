@@ -11,8 +11,11 @@
         <button class="btn btn-outline" @click="$router.push('/app/guests/stats')">
           📊 סטטיסטיקות
         </button>
+        <button class="btn btn-outline" @click="exportXlsx">
+          📥 ייצא XLSX
+        </button>
         <button class="btn btn-outline" @click="$router.push('/app/guests/import')">
-          📥 ייבוא
+          📤 ייבוא
         </button>
         <button class="btn btn-primary" @click="openAddModal">
           + הוסף אורח
@@ -454,6 +457,14 @@ function rsvpCls(status) {
 
 function sideCls(side) {
   return { 'חתן': 'side-groom', 'כלה': 'side-bride', 'משותף': 'side-both' }[side] || ''
+}
+
+async function exportXlsx() {
+  const res = await api.get('/guests/export', { responseType: 'blob' })
+  const url = URL.createObjectURL(res.data)
+  const a = document.createElement('a')
+  a.href = url; a.download = 'guests.xlsx'; a.click()
+  URL.revokeObjectURL(url)
 }
 
 onMounted(load)

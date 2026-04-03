@@ -9,6 +9,7 @@
       </div>
       <div class="header-actions">
         <button class="btn btn-outline" @click="exportCSV">📥 ייצוא CSV</button>
+        <button class="btn btn-outline" @click="exportXlsx">📊 ייצא XLSX</button>
         <button class="btn btn-primary" @click="showAddModal = true">+ הוסף מתנה</button>
       </div>
     </div>
@@ -272,6 +273,14 @@ function exportCSV() {
   a.href = url
   a.download = 'gifts.csv'
   a.click()
+  URL.revokeObjectURL(url)
+}
+
+async function exportXlsx() {
+  const res = await api.get('/gifts/export', { responseType: 'blob' })
+  const url = URL.createObjectURL(res.data)
+  const a = document.createElement('a')
+  a.href = url; a.download = 'gifts.xlsx'; a.click()
   URL.revokeObjectURL(url)
 }
 

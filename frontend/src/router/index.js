@@ -43,7 +43,7 @@ const routes = [
       { path: 'whatsapp/history',       name: 'WaHistory',      component: () => import('@/views/app/whatsapp/HistoryView.vue') },
 
       // Seating
-      { path: 'seating',                name: 'Seating',        component: () => import('@/views/app/SeatingMapView.vue') },
+      { path: 'seating',                name: 'Seating',        component: () => import('@/views/app/seating/SeatingView.vue') },
       { path: 'seating/settings',       name: 'HallSettings',   component: () => import('@/views/app/HallSettingsView.vue') },
 
       // Cards

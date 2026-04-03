@@ -145,6 +145,24 @@ export default async function giftsRoutes(app) {
     return reply.code(201).send(gift)
   })
 
+  // ── GET /api/gifts/export ─────────────────────────────────────────────────
+  app.get('/export', { preHandler: [app.authenticate] }, async (req, reply) => {
+    const { buildXlsx } = await import('../utils/export.js')
+    const gifts = await prisma.gift.findMany({
+      where: { userId: req.user.userId },
+      orderBy: { giverName: 'asc' }
+    })
+    const headers = ['שם נותן', 'טלפון', 'סכום (₪)', 'הערה', 'סטטוס']
+    const rows = gifts.map(g => [g.giverName, g.giverPhone || '', g.amount || 0, g.message || '', g.status || ''])
+    const total = gifts.reduce((s, g) => s + (g.amount || 0), 0)
+    rows.push(['', '', '', '', ''])
+    rows.push(['סה"כ', '', total, '', ''])
+    const buf = buildXlsx(headers, rows, 'מתנות')
+    reply.header('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    reply.header('Content-Disposition', 'attachment; filename="gifts.xlsx"')
+    reply.send(buf)
+  })
+
   // ── PUT /api/gifts/:id — update gift ─────────────────────────────────────
   app.put('/:id', { preHandler: [app.authenticate] }, async (req, reply) => {
     const userId = req.user.userId

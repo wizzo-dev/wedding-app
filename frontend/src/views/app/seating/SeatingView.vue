@@ -1,15 +1,14 @@
 <template>
   <div class="seating-view" dir="rtl">
+    <!-- Header -->
     <header class="page-header">
       <div class="header-content">
-        <h1 class="page-title">
-          <span class="title-icon">🪑</span>
-          סידורי הושבה
-        </h1>
-        <p class="page-subtitle">הגדר שולחנות ושבץ אורחים</p>
+        <h1 class="page-title"><span class="title-icon">🪑</span> סידורי הושבה</h1>
+        <p class="page-subtitle">גרור אורחים לשולחנות</p>
       </div>
       <div class="header-actions">
-        <router-link to="/app/seating/settings" class="btn btn-outline btn-sm">⚙️ הגדרות אולם</router-link>
+        <button class="btn btn-outline btn-sm" @click="exportXlsx">📥 ייצא XLSX</button>
+        <router-link to="/app/seating/settings" class="btn btn-outline btn-sm">⚙️ הגדרות</router-link>
         <button @click="showGenerateModal = true" class="btn btn-outline btn-sm">✨ צור שולחנות</button>
         <button @click="showAddTable = true" class="btn btn-primary btn-sm">+ שולחן חדש</button>
       </div>
@@ -39,144 +38,192 @@
       </div>
     </div>
 
-    <!-- Loading -->
+    <!-- Loading / Error -->
     <div v-if="loading" class="loading-state">
       <div class="spinner"></div>
-      <p>טוען שולחנות...</p>
+      <p>טוען...</p>
     </div>
-
-    <!-- Error -->
     <div v-else-if="error" class="error-state">
-      <span class="error-icon">⚠️</span>
-      <p>{{ error }}</p>
-      <button @click="loadData" class="btn btn-outline">נסה שוב</button>
+      <span>⚠️ {{ error }}</span>
+      <button @click="loadData" class="btn btn-outline btn-sm">נסה שוב</button>
     </div>
 
     <div v-else class="seating-layout">
-      <!-- Unassigned panel -->
-      <aside class="unassigned-panel">
+      <!-- LEFT: Unassigned guests panel -->
+      <aside class="guests-panel">
         <div class="panel-header">
-          <h3>לא משובצים <span class="badge">{{ unassigned.length }}</span></h3>
-          <input v-model="guestSearch" placeholder="חיפוש אורח..." class="search-input" />
+          <h3>ללא שולחן <span class="badge-count">{{ unassigned.length }}</span></h3>
+          <input v-model="search" placeholder="חפש אורח..." class="search-input" />
         </div>
-        <div class="unassigned-list">
-          <div
-            v-if="!filteredUnassigned.length"
-            class="no-unassigned"
-          >
-            <span v-if="guestSearch">אין תוצאות</span>
+        <div class="guest-list">
+          <div v-if="!filteredUnassigned.length" class="no-guests">
+            <span v-if="search">אין תוצאות</span>
             <span v-else>🎉 כל האורחים משובצים!</span>
           </div>
           <div
             v-for="guest in filteredUnassigned"
             :key="guest.id"
-            class="guest-chip unassigned"
-            :class="`rsvp-${guest.rsvpStatus}`"
-            @click="selectGuestForAssign(guest)"
-            :title="`${guest.name} — לחץ לשיבוץ`"
+            class="guest-chip"
+            :class="{ selected: dragGuest?.id === guest.id }"
+            draggable="true"
+            @dragstart="onDragStart(guest)"
+            @dragend="onDragEnd"
+            @click="selectGuest(guest)"
           >
             <span class="guest-name">{{ guest.name }}</span>
-            <span class="guest-people" v-if="guest.numPeople > 1">×{{ guest.numPeople }}</span>
+            <span class="guest-meta">{{ guest.numPeople > 1 ? `×${guest.numPeople}` : '' }}</span>
             <span class="rsvp-dot" :class="guest.rsvpStatus"></span>
           </div>
         </div>
       </aside>
 
-      <!-- Tables Grid -->
-      <main class="tables-grid">
-        <!-- Empty tables state -->
-        <div v-if="!tables.length" class="empty-tables">
+      <!-- CENTER: Konva canvas -->
+      <div
+        class="canvas-area"
+        ref="canvasContainer"
+        @dragover.prevent="onCanvasDragOver"
+        @drop.prevent="onCanvasDrop"
+      >
+        <div v-if="!tables.length" class="empty-canvas">
           <div class="empty-icon">🍽️</div>
           <h3>אין שולחנות עדיין</h3>
-          <p>הוסף שולחן ידנית או השתמש ב"צור שולחנות" לייצור מהיר</p>
+          <p>הוסף שולחן ידנית או השתמש ב"צור שולחנות"</p>
           <div class="empty-actions">
             <button @click="showGenerateModal = true" class="btn btn-primary">✨ צור שולחנות</button>
             <button @click="showAddTable = true" class="btn btn-outline">+ שולחן חדש</button>
           </div>
         </div>
 
-        <div
-          v-for="table in tables"
-          :key="table.id"
-          class="table-card"
-          :class="{ 'selected-target': selectedGuest && selectedTable?.id !== table.id, 'full': table.assignedCount >= table.seats }"
-          @click="handleTableClick(table)"
+        <v-stage
+          v-else
+          :config="stageConfig"
+          ref="stageRef"
+          @click="onStageClick"
         >
-          <div class="table-icon">
-            <svg viewBox="0 0 60 60" width="56" height="56">
-              <circle cx="30" cy="30" r="26" fill="#f3e8ff" stroke="var(--color-primary)" stroke-width="2"/>
-              <circle cx="30" cy="30" r="14" fill="white" stroke="var(--color-primary)" stroke-width="1.5"/>
-              <text x="30" y="35" text-anchor="middle" font-size="10" font-weight="700" fill="var(--color-primary)">{{ table.seats }}</text>
-            </svg>
-          </div>
-          <div class="table-info">
-            <div class="table-top">
-              <span class="table-name">{{ table.name }}</span>
-              <div class="table-actions">
-                <button @click.stop="editTable(table)" class="icon-btn" title="עריכה">✏️</button>
-                <button @click.stop="confirmDeleteTable(table)" class="icon-btn danger" title="מחיקה">🗑️</button>
+          <v-layer>
+            <template v-for="table in tables" :key="table.id">
+              <!-- Table shadow circle -->
+              <v-circle :config="{
+                x: tableX(table),
+                y: tableY(table),
+                radius: TABLE_R + 4,
+                fill: 'rgba(0,0,0,0.06)',
+                listening: false
+              }" />
+              <!-- Table body -->
+              <v-circle :config="{
+                x: tableX(table),
+                y: tableY(table),
+                radius: TABLE_R,
+                fill: tableFill(table),
+                stroke: selectedTable?.id === table.id ? '#E91E8C' : (dragOverTable?.id === table.id ? '#E91E8C' : '#d1d5db'),
+                strokeWidth: selectedTable?.id === table.id ? 3 : (dragOverTable?.id === table.id ? 3 : 1.5),
+                draggable: true,
+                id: String(table.id)
+              }"
+              @dragstart="() => onTableDragStart(table)"
+              @dragend="(e) => onTableDragEnd(table, e)"
+              @click="(e) => { e.cancelBubble = true; onTableClick(table) }"
+              />
+              <!-- Table label name -->
+              <v-text :config="{
+                x: tableX(table) - TABLE_R,
+                y: tableY(table) - 12,
+                width: TABLE_R * 2,
+                text: table.name,
+                fontSize: 12,
+                fontFamily: 'Heebo, sans-serif',
+                fontStyle: 'bold',
+                fill: '#1A1F36',
+                align: 'center',
+                listening: false
+              }" />
+              <!-- Guest count -->
+              <v-text :config="{
+                x: tableX(table) - TABLE_R,
+                y: tableY(table) + 2,
+                width: TABLE_R * 2,
+                text: `${table.guests.length}/${table.seats}`,
+                fontSize: 11,
+                fontFamily: 'Heebo, sans-serif',
+                fill: table.guests.length >= table.seats ? '#ef4444' : '#6b7280',
+                align: 'center',
+                listening: false
+              }" />
+            </template>
+          </v-layer>
+        </v-stage>
+      </div>
+
+      <!-- RIGHT: Selected table detail -->
+      <aside class="table-detail-panel" :class="{ visible: selectedTable }">
+        <template v-if="selectedTable">
+          <div class="detail-header">
+            <h3>{{ selectedTable.name }}</h3>
+            <div class="detail-meta">
+              <span class="seat-count" :class="{ full: selectedTable.guests.length >= selectedTable.seats }">
+                {{ selectedTable.guests.length }}/{{ selectedTable.seats }} מקומות
+              </span>
+              <div class="detail-actions">
+                <button @click.stop="editTable(selectedTable)" class="icon-btn" title="עריכה">✏️</button>
+                <button @click.stop="confirmDeleteTable(selectedTable)" class="icon-btn danger" title="מחיקה">🗑️</button>
               </div>
             </div>
-            <div class="seat-bar">
-              <div
-                class="seat-fill"
-                :style="{ width: `${Math.min(table.assignedCount / table.seats * 100, 100)}%` }"
-                :class="{ full: table.assignedCount >= table.seats }"
-              ></div>
-            </div>
-            <p class="seat-count">
-              {{ table.assignedCount }} / {{ table.seats }} מקומות
-              <span v-if="table.assignedCount >= table.seats" class="full-badge">מלא</span>
-            </p>
           </div>
 
-          <!-- Guests in table -->
-          <div class="table-guests">
+          <div class="seated-guests">
+            <div v-if="!selectedTable.guests.length" class="no-seated">
+              <p>לא שובצו אורחים</p>
+            </div>
             <div
-              v-for="guest in table.guests"
+              v-for="guest in selectedTable.guests"
               :key="guest.id"
-              class="guest-chip assigned"
+              class="seated-guest"
               :class="`rsvp-${guest.rsvpStatus}`"
             >
               <span class="guest-name">{{ guest.name }}</span>
-              <button
-                @click.stop="unassignGuest(guest.id)"
-                class="unassign-btn"
-                title="הסר מהשולחן"
-              >×</button>
-            </div>
-            <div v-if="!table.guests.length" class="empty-table-hint">
-              <span v-if="selectedGuest">👆 לחץ לשיבוץ</span>
-              <span v-else>לא שובצו אורחים</span>
+              <button class="unassign-btn" @click="unassignGuest(guest.id)" title="הסר">×</button>
             </div>
           </div>
+
+          <!-- Drop zone -->
+          <div
+            class="drop-zone"
+            @dragover.prevent="dropZoneActive = true"
+            @dragleave="dropZoneActive = false"
+            @drop.prevent="onDropToTable(selectedTable)"
+            :class="{ active: dropZoneActive }"
+          >
+            <span v-if="dragGuest">שחרר כאן לשיבוץ ב{{ selectedTable.name }}</span>
+            <span v-else>גרור אורח לכאן</span>
+          </div>
+        </template>
+        <div v-else class="detail-placeholder">
+          <p>בחר שולחן לצפייה בפרטים</p>
         </div>
-      </main>
+      </aside>
     </div>
 
-    <!-- Assign hint bar -->
+    <!-- Assign bar (click-to-assign mode) -->
     <transition name="slide-up">
-      <div v-if="selectedGuest" class="assign-bar">
-        <span>🎯 <strong>{{ selectedGuest.name }}</strong> — בחר שולחן לשיבוץ</span>
-        <button @click="selectedGuest = null" class="btn btn-sm btn-outline">ביטול</button>
+      <div v-if="clickAssignGuest && !dragGuest" class="assign-bar">
+        <span>🎯 <strong>{{ clickAssignGuest.name }}</strong> — לחץ על שולחן לשיבוץ</span>
+        <button @click="clickAssignGuest = null" class="btn btn-sm btn-outline">ביטול</button>
       </div>
     </transition>
 
-    <!-- Add Table Modal -->
+    <!-- Add/Edit Table Modal -->
     <div v-if="showAddTable || editingTable" class="modal-overlay" @click.self="closeTableModal">
       <div class="modal">
         <h3 class="modal-title">{{ editingTable ? 'עריכת שולחן' : 'שולחן חדש' }}</h3>
         <form @submit.prevent="saveTable" class="modal-form">
-          <label>
-            שם שולחן
+          <label>שם שולחן
             <input v-model="tableForm.name" required placeholder="לדוגמה: שולחן 1" class="form-input" />
           </label>
-          <label>
-            מספר מקומות
+          <label>מספר מקומות
             <input v-model.number="tableForm.seats" type="number" min="1" max="50" required class="form-input" />
           </label>
-          <label>
-            סוג שולחן
+          <label>סוג שולחן
             <select v-model="tableForm.type" class="form-input">
               <option value="round">עגול</option>
               <option value="rectangle">מלבני</option>
@@ -198,26 +245,22 @@
     <div v-if="showGenerateModal" class="modal-overlay" @click.self="showGenerateModal = false">
       <div class="modal">
         <h3 class="modal-title">✨ צור שולחנות אוטומטית</h3>
-        <p class="modal-note">⚠️ פעולה זו תמחק את כל השולחנות הקיימים ותיצור חדשים</p>
+        <p class="modal-note">⚠️ פעולה זו תמחק את כל השולחנות הקיימים</p>
         <form @submit.prevent="generateTables" class="modal-form">
-          <label>
-            מספר שולחנות
+          <label>מספר שולחנות
             <input v-model.number="generateForm.count" type="number" min="1" max="100" required class="form-input" />
           </label>
-          <label>
-            מקומות לשולחן
+          <label>מקומות לשולחן
             <input v-model.number="generateForm.seatsPerTable" type="number" min="1" max="30" required class="form-input" />
           </label>
-          <label>
-            שמות שולחנות
+          <label>שמות שולחנות
             <select v-model="generateForm.namingStyle" class="form-input">
               <option value="numbers">מספרים (שולחן 1, 2, 3...)</option>
               <option value="hebrew">אותיות עבריות (שולחן א, ב, ג...)</option>
               <option value="custom">תחילית מותאמת</option>
             </select>
           </label>
-          <label v-if="generateForm.namingStyle === 'custom'">
-            תחילית
+          <label v-if="generateForm.namingStyle === 'custom'">תחילית
             <input v-model="generateForm.prefix" class="form-input" placeholder="לדוגמה: מספר" />
           </label>
           <div class="modal-actions">
@@ -235,9 +278,12 @@
     <div v-if="deletingTable" class="modal-overlay" @click.self="deletingTable = null">
       <div class="modal modal-sm">
         <h3 class="modal-title">מחיקת שולחן</h3>
-        <p>האם למחוק את <strong>{{ deletingTable.name }}</strong>?<br>
-        <span v-if="deletingTable.assignedCount > 0" class="warning-text">⚠️ {{ deletingTable.assignedCount }} אורחים ישוחררו</span></p>
-        <div class="modal-actions">
+        <p>האם למחוק את <strong>{{ deletingTable.name }}</strong>?
+          <span v-if="deletingTable.guests.length > 0" class="warning-text">
+            <br>⚠️ {{ deletingTable.guests.length }} אורחים ישוחררו
+          </span>
+        </p>
+        <div class="modal-actions" style="margin-top: 1rem">
           <button @click="deleteTable" class="btn btn-danger" :disabled="saving">{{ saving ? 'מוחק...' : 'מחק' }}</button>
           <button @click="deletingTable = null" class="btn btn-outline">ביטול</button>
         </div>
@@ -252,21 +298,32 @@ import { useAuthStore } from '@/stores/auth'
 
 const auth = useAuthStore()
 
+// Constants
+const TABLE_R = 55
+
 // State
 const tables = ref([])
 const unassigned = ref([])
 const stats = ref(null)
 const loading = ref(false)
 const error = ref(null)
-const guestSearch = ref('')
-const selectedGuest = ref(null)
+const search = ref('')
+const dragGuest = ref(null)         // guest being HTML-dragged
+const clickAssignGuest = ref(null)  // guest selected via click
+const selectedTable = ref(null)
+const dragOverTable = ref(null)
+const dropZoneActive = ref(false)
+const stageRef = ref(null)
+const canvasContainer = ref(null)
+
+// Table positions (local override while dragging)
+const tablePositions = ref({}) // { tableId: {x, y} }
 
 // Modals
 const showAddTable = ref(false)
 const editingTable = ref(null)
 const deletingTable = ref(null)
 const showGenerateModal = ref(false)
-const selectedTable = ref(null)
 
 // Forms
 const tableForm = ref({ name: '', seats: 8, type: 'round' })
@@ -276,12 +333,34 @@ const generating = ref(false)
 const formError = ref(null)
 const generateError = ref(null)
 
+// Stage config — sized to canvas container
+const stageConfig = computed(() => ({
+  width: 700,
+  height: 550
+}))
+
+// Table position helpers — prefer local override (from drag), else DB value
+function tableX(table) {
+  return tablePositions.value[table.id]?.x ?? table.x ?? (100 + (table.id * 160) % 560)
+}
+function tableY(table) {
+  return tablePositions.value[table.id]?.y ?? table.y ?? (100 + Math.floor((table.id * 160) / 560) * 160)
+}
+
+function tableFill(table) {
+  if (dragOverTable.value?.id === table.id) return '#fde8f4'
+  if (table.guests.length >= table.seats) return '#fee2e2'
+  if (table.guests.length > 0) return '#f0fdf4'
+  return '#ffffff'
+}
+
 const filteredUnassigned = computed(() => {
-  if (!guestSearch.value) return unassigned.value
-  const q = guestSearch.value.toLowerCase()
+  if (!search.value) return unassigned.value
+  const q = search.value.toLowerCase()
   return unassigned.value.filter(g => g.name.toLowerCase().includes(q) || (g.phone || '').includes(q))
 })
 
+// API helper
 async function apiCall(path, options = {}) {
   const res = await fetch(`/api/seating${path}`, {
     ...options,
@@ -309,6 +388,16 @@ async function loadData() {
     tables.value = seating.tables
     unassigned.value = seating.unassigned
     stats.value = statsData
+    // Sync positions
+    seating.tables.forEach(t => {
+      if (!tablePositions.value[t.id]) {
+        tablePositions.value[t.id] = { x: t.x, y: t.y }
+      }
+    })
+    // Update selected table reference
+    if (selectedTable.value) {
+      selectedTable.value = tables.value.find(t => t.id === selectedTable.value.id) || null
+    }
   } catch (e) {
     error.value = e.message
   } finally {
@@ -316,22 +405,103 @@ async function loadData() {
   }
 }
 
-function selectGuestForAssign(guest) {
-  selectedGuest.value = guest
+// ── Guest drag handling ──────────────────────────────────────────────────────
+function onDragStart(guest) {
+  dragGuest.value = guest
+  clickAssignGuest.value = null
+}
+function onDragEnd() {
+  setTimeout(() => { dragGuest.value = null; dropZoneActive.value = false }, 200)
 }
 
-async function handleTableClick(table) {
-  if (!selectedGuest.value) return
-  if (table.assignedCount >= table.seats) {
+// Click-to-select a guest (no-drag mode)
+function selectGuest(guest) {
+  if (dragGuest.value) return
+  clickAssignGuest.value = clickAssignGuest.value?.id === guest.id ? null : guest
+}
+
+// Canvas drag over — highlight which table is under cursor
+function onCanvasDragOver(e) {
+  if (!dragGuest.value) return
+  const rect = canvasContainer.value.getBoundingClientRect()
+  const mx = e.clientX - rect.left
+  const my = e.clientY - rect.top
+  dragOverTable.value = tables.value.find(t => {
+    const dx = mx - tableX(t)
+    const dy = my - tableY(t)
+    return Math.sqrt(dx * dx + dy * dy) <= TABLE_R
+  }) || null
+}
+
+// Drop on canvas area
+async function onCanvasDrop(e) {
+  if (!dragGuest.value) return
+  const target = dragOverTable.value
+  dragOverTable.value = null
+  if (target) {
+    await assignGuestToTable(dragGuest.value, target)
+  }
+  dragGuest.value = null
+}
+
+// Drop on the detail-panel drop zone
+async function onDropToTable(table) {
+  dropZoneActive.value = false
+  if (!dragGuest.value) return
+  await assignGuestToTable(dragGuest.value, table)
+  dragGuest.value = null
+}
+
+// ── Table Konva click ────────────────────────────────────────────────────────
+async function onTableClick(table) {
+  if (clickAssignGuest.value) {
+    // Assign the selected guest to this table
+    await assignGuestToTable(clickAssignGuest.value, table)
+    clickAssignGuest.value = null
+  } else if (dragGuest.value) {
+    await assignGuestToTable(dragGuest.value, table)
+    dragGuest.value = null
+  } else {
+    // Select table for detail panel
+    selectedTable.value = selectedTable.value?.id === table.id ? null : table
+  }
+}
+
+function onStageClick(e) {
+  // Click on empty canvas: deselect table
+  if (e.target === e.target.getStage()) {
+    selectedTable.value = null
+  }
+}
+
+// ── Table Konva drag ─────────────────────────────────────────────────────────
+function onTableDragStart(table) {
+  // Prevent click-assign when dragging table
+}
+
+async function onTableDragEnd(table, evt) {
+  const node = evt.target
+  const newX = node.x()
+  const newY = node.y()
+  tablePositions.value[table.id] = { x: newX, y: newY }
+  // Persist position
+  apiCall(`/tables/${table.id}/position`, {
+    method: 'PATCH',
+    body: JSON.stringify({ x: newX, y: newY })
+  }).catch(() => {})
+}
+
+// ── Assignment ───────────────────────────────────────────────────────────────
+async function assignGuestToTable(guest, table) {
+  if (table.guests.length >= table.seats) {
     alert(`שולחן ${table.name} מלא (${table.seats} מקומות)`)
     return
   }
   try {
     await apiCall('/assign', {
       method: 'PUT',
-      body: JSON.stringify({ guestId: selectedGuest.value.id, tableId: table.id })
+      body: JSON.stringify({ guestId: guest.id, tableId: table.id })
     })
-    selectedGuest.value = null
     await loadData()
   } catch (e) {
     alert(e.message)
@@ -350,6 +520,7 @@ async function unassignGuest(guestId) {
   }
 }
 
+// ── Table CRUD ───────────────────────────────────────────────────────────────
 function editTable(table) {
   editingTable.value = table
   tableForm.value = { name: table.name, seats: table.seats, type: table.type }
@@ -395,6 +566,7 @@ async function deleteTable() {
   saving.value = true
   try {
     await apiCall(`/tables/${deletingTable.value.id}`, { method: 'DELETE' })
+    if (selectedTable.value?.id === deletingTable.value.id) selectedTable.value = null
     deletingTable.value = null
     await loadData()
   } catch (e) {
@@ -412,6 +584,8 @@ async function generateTables() {
       method: 'POST',
       body: JSON.stringify(generateForm.value)
     })
+    tablePositions.value = {}
+    selectedTable.value = null
     showGenerateModal.value = false
     await loadData()
   } catch (e) {
@@ -421,14 +595,26 @@ async function generateTables() {
   }
 }
 
+// ── Export ───────────────────────────────────────────────────────────────────
+async function exportXlsx() {
+  const res = await fetch('/api/seating/export', {
+    headers: { Authorization: `Bearer ${auth.accessToken}` }
+  })
+  const blob = await res.blob()
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url; a.download = 'seating.xlsx'; a.click()
+  URL.revokeObjectURL(url)
+}
+
 onMounted(loadData)
 </script>
 
 <style scoped>
 .seating-view {
-  height: calc(100vh - 80px);
   display: flex;
   flex-direction: column;
+  height: calc(100vh - 80px);
   padding: var(--space-4) var(--space-6);
   overflow: hidden;
 }
@@ -438,8 +624,8 @@ onMounted(loadData)
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  margin-bottom: var(--space-4);
-  gap: var(--space-4);
+  margin-bottom: var(--space-3);
+  gap: var(--space-3);
   flex-wrap: wrap;
   flex-shrink: 0;
 }
@@ -448,18 +634,15 @@ onMounted(loadData)
   font-weight: 800;
   color: var(--color-navy);
   margin: 0 0 2px;
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
 }
 .page-subtitle { color: var(--color-text-muted); font-size: var(--font-size-sm); margin: 0; }
-.header-actions { display: flex; gap: var(--space-2); flex-wrap: wrap; }
+.header-actions { display: flex; gap: var(--space-2); flex-wrap: wrap; align-items: center; }
 
 /* Stats */
 .stats-bar {
   display: flex;
   gap: var(--space-3);
-  margin-bottom: var(--space-4);
+  margin-bottom: var(--space-3);
   flex-wrap: wrap;
   flex-shrink: 0;
 }
@@ -467,32 +650,33 @@ onMounted(loadData)
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  background: var(--color-surface);
+  background: var(--color-bg-card);
   border-radius: 100px;
-  padding: var(--space-1) var(--space-3);
-  box-shadow: var(--shadow-sm);
+  padding: 4px 14px;
+  box-shadow: var(--shadow-xs);
+  border: 1px solid var(--color-border);
 }
-.pill-num { font-weight: 800; color: var(--color-navy); font-size: var(--font-size-base); }
+.pill-num { font-weight: 800; color: var(--color-navy); font-size: var(--font-size-sm); }
 .stat-pill.success .pill-num { color: #10b981; }
 .stat-pill.warning .pill-num { color: #f59e0b; }
 .pill-lbl { font-size: var(--font-size-xs); color: var(--color-text-muted); }
 
 /* Layout */
 .seating-layout {
-  display: flex;
-  gap: var(--space-4);
+  display: grid;
+  grid-template-columns: 240px 1fr 260px;
+  gap: 0;
   flex: 1;
-  overflow: hidden;
   min-height: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  background: var(--color-bg-card);
 }
 
-/* Unassigned Panel */
-.unassigned-panel {
-  width: 220px;
-  min-width: 180px;
-  background: var(--color-surface);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-sm);
+/* Guests Panel */
+.guests-panel {
+  border-left: 1px solid var(--color-border);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -500,6 +684,7 @@ onMounted(loadData)
 .panel-header {
   padding: var(--space-3);
   border-bottom: 1px solid var(--color-border);
+  background: var(--color-bg-subtle);
 }
 .panel-header h3 {
   font-size: var(--font-size-sm);
@@ -510,31 +695,34 @@ onMounted(loadData)
   align-items: center;
   gap: var(--space-2);
 }
-.badge {
+.badge-count {
   background: var(--color-primary);
   color: white;
   font-size: 10px;
-  padding: 1px 6px;
+  padding: 1px 7px;
   border-radius: 100px;
+  font-weight: 700;
 }
 .search-input {
   width: 100%;
-  padding: var(--space-1) var(--space-2);
+  padding: 6px 10px;
   border: 1.5px solid var(--color-border);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius);
   font-family: inherit;
   font-size: var(--font-size-xs);
   box-sizing: border-box;
+  direction: rtl;
 }
-.unassigned-list {
+.search-input:focus { outline: none; border-color: var(--color-primary); }
+.guest-list {
   flex: 1;
   overflow-y: auto;
   padding: var(--space-2);
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
+  gap: 4px;
 }
-.no-unassigned {
+.no-guests {
   text-align: center;
   color: var(--color-text-muted);
   font-size: var(--font-size-xs);
@@ -545,32 +733,23 @@ onMounted(loadData)
 .guest-chip {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: var(--space-1) var(--space-2);
-  border-radius: var(--radius-md);
-  font-size: var(--font-size-xs);
   gap: var(--space-1);
-  position: relative;
-}
-.guest-chip.unassigned {
-  background: #f9fafb;
+  padding: 7px 10px;
+  background: var(--color-bg-card);
   border: 1px solid var(--color-border);
-  cursor: pointer;
+  border-radius: var(--radius);
+  font-size: var(--font-size-xs);
+  cursor: grab;
   transition: all 0.15s;
+  user-select: none;
 }
-.guest-chip.unassigned:hover {
-  background: #fce7f3;
-  border-color: var(--color-primary);
-  transform: translateX(-2px);
-}
-.guest-chip.assigned {
-  background: #f0fdf4;
-  border: 1px solid #bbf7d0;
-}
+.guest-chip:hover { border-color: var(--color-primary); background: var(--color-primary-light); }
+.guest-chip.selected { border-color: var(--color-primary); background: var(--color-primary-light); box-shadow: 0 0 0 2px var(--color-primary-light); }
+.guest-chip:active { cursor: grabbing; }
 .guest-name { font-weight: 600; color: var(--color-navy); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.guest-people { font-size: 10px; color: var(--color-text-muted); white-space: nowrap; }
+.guest-meta { font-size: 10px; color: var(--color-text-muted); white-space: nowrap; }
 .rsvp-dot {
-  width: 6px; height: 6px;
+  width: 7px; height: 7px;
   border-radius: 50%;
   flex-shrink: 0;
 }
@@ -578,63 +757,70 @@ onMounted(loadData)
 .rsvp-dot.declined { background: #ef4444; }
 .rsvp-dot.pending { background: #f59e0b; }
 .rsvp-dot.maybe { background: #6b7280; }
-.unassign-btn {
-  background: none; border: none; cursor: pointer;
-  color: #ef4444; font-size: 12px; padding: 0 2px;
-  opacity: 0.5; transition: opacity 0.15s;
-}
-.unassign-btn:hover { opacity: 1; }
 
-/* Tables Grid */
-.tables-grid {
-  flex: 1;
-  overflow-y: auto;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: var(--space-4);
-  align-content: start;
+/* Canvas Area */
+.canvas-area {
+  background: #f8f9fb;
+  overflow: auto;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
 }
-.empty-tables {
-  grid-column: 1 / -1;
+.empty-canvas {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   text-align: center;
   padding: var(--space-12);
   color: var(--color-text-muted);
+  width: 100%;
 }
 .empty-icon { font-size: 3rem; margin-bottom: var(--space-3); }
-.empty-tables h3 { color: var(--color-navy); font-weight: 700; margin-bottom: var(--space-2); }
-.empty-actions { display: flex; gap: var(--space-3); justify-content: center; margin-top: var(--space-4); }
+.empty-canvas h3 { color: var(--color-navy); font-weight: 700; margin-bottom: var(--space-2); }
+.empty-actions { display: flex; gap: var(--space-3); margin-top: var(--space-4); }
 
-/* Table Card */
-.table-card {
-  background: var(--color-surface);
-  border-radius: var(--radius-xl);
-  padding: var(--space-4);
-  box-shadow: var(--shadow-sm);
-  border: 2px solid transparent;
-  transition: all 0.2s;
-  cursor: default;
-}
-.table-card.selected-target {
-  border-color: var(--color-primary);
-  cursor: pointer;
-  box-shadow: 0 0 0 3px #fce7f3;
-}
-.table-card.selected-target:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
-}
-.table-card.full {
-  opacity: 0.7;
-}
-
-.table-top {
+/* Table Detail Panel */
+.table-detail-panel {
+  border-right: 1px solid var(--color-border);
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: var(--space-2);
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--color-bg-card);
 }
-.table-name { font-weight: 700; color: var(--color-navy); font-size: var(--font-size-sm); }
-.table-actions { display: flex; gap: 4px; }
+.detail-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  text-align: center;
+  padding: var(--space-6);
+}
+.detail-header {
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-bg-subtle);
+}
+.detail-header h3 {
+  font-size: var(--font-size-base);
+  font-weight: 700;
+  color: var(--color-navy);
+  margin: 0 0 4px;
+}
+.detail-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.seat-count {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+.seat-count.full { color: #ef4444; }
+.detail-actions { display: flex; gap: 4px; }
 .icon-btn {
   background: none; border: none; cursor: pointer;
   font-size: 14px; padding: 2px 4px;
@@ -644,49 +830,50 @@ onMounted(loadData)
 .icon-btn:hover { opacity: 1; background: #f3f4f6; }
 .icon-btn.danger:hover { background: #fee2e2; }
 
-.table-icon { display: flex; justify-content: center; margin-bottom: var(--space-2); }
-
-.seat-bar {
-  height: 6px;
-  background: var(--color-border);
-  border-radius: 100px;
-  overflow: hidden;
-  margin-bottom: 4px;
+.seated-guests {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-2);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
-.seat-fill {
-  height: 100%;
-  background: var(--color-primary);
-  border-radius: 100px;
-  transition: width 0.3s ease;
-}
-.seat-fill.full { background: #ef4444; }
-.seat-count {
-  font-size: 11px;
-  color: var(--color-text-muted);
+.no-seated { text-align: center; color: var(--color-text-muted); font-size: var(--font-size-xs); padding: var(--space-4); }
+.seated-guest {
   display: flex;
   align-items: center;
-  gap: var(--space-1);
-  margin-bottom: var(--space-2);
+  justify-content: space-between;
+  padding: 6px 10px;
+  background: var(--color-bg-subtle);
+  border-radius: var(--radius);
+  font-size: var(--font-size-xs);
+  border-right: 3px solid transparent;
 }
-.full-badge {
-  background: #fee2e2;
-  color: #ef4444;
-  font-size: 10px;
-  padding: 1px 5px;
-  border-radius: 100px;
+.seated-guest.rsvp-confirmed { border-right-color: #10b981; }
+.seated-guest.rsvp-declined { border-right-color: #ef4444; }
+.seated-guest.rsvp-pending { border-right-color: #f59e0b; }
+.seated-guest.rsvp-maybe { border-right-color: #6b7280; }
+.unassign-btn {
+  background: none; border: none; cursor: pointer;
+  color: #ef4444; font-size: 16px; padding: 0 4px;
+  line-height: 1; opacity: 0.5; transition: opacity 0.15s;
 }
+.unassign-btn:hover { opacity: 1; }
 
-.table-guests {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  min-height: 28px;
-}
-.empty-table-hint {
+.drop-zone {
+  margin: var(--space-2);
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius);
+  padding: var(--space-3);
+  text-align: center;
   color: var(--color-text-muted);
   font-size: var(--font-size-xs);
-  font-style: italic;
-  padding: var(--space-1);
+  transition: all 0.2s;
+}
+.drop-zone.active {
+  border-color: var(--color-primary);
+  background: var(--color-primary-light);
+  color: var(--color-primary);
 }
 
 /* Assign Bar */
@@ -697,7 +884,7 @@ onMounted(loadData)
   transform: translateX(-50%);
   background: var(--color-navy);
   color: white;
-  padding: var(--space-3) var(--space-6);
+  padding: 12px var(--space-6);
   border-radius: 100px;
   display: flex;
   align-items: center;
@@ -724,7 +911,6 @@ onMounted(loadData)
   animation: spin 0.8s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
-.error-icon { font-size: 2rem; }
 
 /* Modal */
 .modal-overlay {
@@ -739,7 +925,7 @@ onMounted(loadData)
   padding: var(--space-6);
   width: 100%;
   max-width: 400px;
-  box-shadow: var(--shadow-2xl);
+  box-shadow: var(--shadow-xl);
 }
 .modal-sm { max-width: 320px; }
 .modal-title {
@@ -753,7 +939,7 @@ onMounted(loadData)
   color: #f59e0b;
   background: #fef3c7;
   padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius);
   margin-bottom: var(--space-4);
 }
 .modal-form { display: flex; flex-direction: column; gap: var(--space-4); }
@@ -761,7 +947,7 @@ onMounted(loadData)
 .form-input {
   padding: var(--space-2) var(--space-3);
   border: 1.5px solid var(--color-border);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius);
   font-family: inherit;
   font-size: var(--font-size-sm);
   color: var(--color-navy);
@@ -776,7 +962,7 @@ onMounted(loadData)
 .btn {
   display: inline-flex; align-items: center; gap: var(--space-2);
   padding: var(--space-2) var(--space-4);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-full);
   font-family: inherit; font-size: var(--font-size-sm); font-weight: 600;
   cursor: pointer; border: none; text-decoration: none; transition: all 0.2s;
 }
@@ -785,16 +971,17 @@ onMounted(loadData)
 .btn-primary:hover { filter: brightness(1.1); }
 .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
 .btn-outline { background: transparent; border: 1.5px solid var(--color-primary); color: var(--color-primary); }
-.btn-outline:hover { background: #fce7f3; }
+.btn-outline:hover { background: var(--color-primary-light); }
 .btn-danger { background: #ef4444; color: white; }
 .btn-danger:hover { background: #dc2626; }
 .btn-danger:disabled { opacity: 0.6; cursor: not-allowed; }
 
 /* Responsive */
-@media (max-width: 768px) {
-  .seating-view { padding: var(--space-4); overflow: auto; height: auto; }
-  .seating-layout { flex-direction: column; overflow: visible; }
-  .unassigned-panel { width: 100%; max-height: 200px; }
-  .tables-grid { overflow: visible; }
+@media (max-width: 900px) {
+  .seating-view { height: auto; overflow: auto; }
+  .seating-layout { grid-template-columns: 1fr; height: auto; }
+  .guests-panel { max-height: 200px; border-left: none; border-bottom: 1px solid var(--color-border); }
+  .canvas-area { min-height: 400px; }
+  .table-detail-panel { border-right: none; border-top: 1px solid var(--color-border); }
 }
 </style>

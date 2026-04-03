@@ -168,6 +168,62 @@ export default async function seatingRoutes(app) {
     return { success: true, guestId: updated.id, tableId: updated.tableId }
   })
 
+  // ── DELETE /api/seating/assign/:guestId ───────────────────────────────────
+  app.delete('/assign/:guestId', { preHandler: [app.authenticate] }, async (req, reply) => {
+    const userId = req.user.userId
+    const guestId = parseInt(req.params.guestId)
+    if (isNaN(guestId)) return reply.code(400).send({ error: 'INVALID_ID' })
+    const guest = await prisma.guest.findFirst({ where: { id: guestId, userId } })
+    if (!guest) return reply.code(404).send({ error: 'אורח לא נמצא' })
+    await prisma.guest.update({ where: { id: guestId }, data: { tableId: null } })
+    return { ok: true }
+  })
+
+  // ── PATCH /api/seating/tables/:id/position ────────────────────────────────
+  app.patch('/tables/:id/position', { preHandler: [app.authenticate] }, async (req, reply) => {
+    const userId = req.user.userId
+    const id = parseInt(req.params.id)
+    if (isNaN(id)) return reply.code(400).send({ error: 'INVALID_ID' })
+    const { x, y } = req.body || {}
+    const existing = await prisma.table.findFirst({ where: { id, userId } })
+    if (!existing) return reply.code(404).send({ error: 'שולחן לא נמצא' })
+    await prisma.table.update({
+      where: { id },
+      data: {
+        ...(x !== undefined && { x: Number(x) }),
+        ...(y !== undefined && { y: Number(y) })
+      }
+    })
+    return { ok: true, id, x, y }
+  })
+
+  // ── GET /api/seating/export ────────────────────────────────────────────────
+  app.get('/export', { preHandler: [app.authenticate] }, async (req, reply) => {
+    const { buildXlsx } = await import('../utils/export.js')
+    const userId = req.user.userId
+    const layout = await getOrCreateLayout(userId)
+    const tables = await prisma.table.findMany({
+      where: { userId, layoutId: layout.id },
+      include: { guests: { select: { name: true, phone: true, rsvpStatus: true } } },
+      orderBy: { name: 'asc' }
+    })
+    const headers = ['שולחן', 'קיבולת', 'אורח', 'טלפון', 'סטטוס RSVP']
+    const rows = []
+    for (const t of tables) {
+      if (t.guests.length === 0) {
+        rows.push([t.name || `שולחן ${t.id}`, t.seats, '(ריק)', '', ''])
+      } else {
+        for (const g of t.guests) {
+          rows.push([t.name || `שולחן ${t.id}`, t.seats, g.name, g.phone || '', g.rsvpStatus || ''])
+        }
+      }
+    }
+    const buf = buildXlsx(headers, rows, 'סידורי הושבה')
+    reply.header('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    reply.header('Content-Disposition', 'attachment; filename="seating.xlsx"')
+    reply.send(buf)
+  })
+
   // ── GET /api/seating/settings ──────────────────────────────────────────────
   app.get('/settings', { preHandler: [app.authenticate] }, async (req) => {
     const userId = req.user.userId
