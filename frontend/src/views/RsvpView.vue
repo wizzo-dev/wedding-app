@@ -34,6 +34,15 @@
 
       <!-- RSVP Form -->
       <div v-else class="rsvp-card fade-in">
+        <!-- Invitation Banner (if couple has a digital invitation) -->
+        <div v-if="coupleData?.invitationId" class="invitation-banner">
+          <a :href="`/invitation/${coupleData.invitationId}`" target="_blank" class="invitation-banner-inner">
+            <span class="inv-banner-icon">💌</span>
+            <span class="inv-banner-text">צפה בהזמנה הדיגיטלית</span>
+            <span class="inv-banner-arrow">›</span>
+          </a>
+        </div>
+
         <div class="rsvp-header">
           <div class="header-decor">💍</div>
           <h1 class="rsvp-couple" v-if="coupleData">{{ coupleData.name1 }} &amp; {{ coupleData.name2 }}</h1>
@@ -345,4 +354,29 @@ function reset() { submitted.value = false; submitError.value = ''; form.value.r
   .rsvp-couple { font-size: var(--font-size-2xl); }
   .attendance-options { grid-template-columns: 1fr; }
 }
+/* Invitation banner */
+.invitation-banner {
+  margin-bottom: var(--space-4);
+}
+.invitation-banner-inner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: linear-gradient(135deg, #fff0f8 0%, #ffe6f4 100%);
+  border: 1.5px solid rgba(233,30,140,0.25);
+  border-radius: var(--radius-lg);
+  text-decoration: none;
+  color: var(--color-primary);
+  font-weight: 700;
+  font-size: var(--font-size-sm);
+  transition: background 0.2s, transform 0.2s;
+}
+.invitation-banner-inner:hover {
+  background: linear-gradient(135deg, #ffe6f4 0%, #ffcce9 100%);
+  transform: translateY(-1px);
+}
+.inv-banner-icon { font-size: 1.3rem; }
+.inv-banner-text { flex: 1; }
+.inv-banner-arrow { font-size: 1.2rem; }
 </style>

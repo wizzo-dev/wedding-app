@@ -19,9 +19,23 @@ export default async function rsvpRoutes(app) {
     })
 
     if (guest) {
+      // Try to get the user's id so we can look up their invitation
+      const hostUser = await prisma.user.findFirst({
+        where: { guests: { some: { guestToken: code } } },
+        select: { id: true }
+      })
+      let invitationId = null
+      if (hostUser) {
+        const latestInv = await prisma.userInvitation.findFirst({
+          where: { userId: hostUser.id },
+          orderBy: { updatedAt: 'desc' },
+          select: { id: true }
+        })
+        invitationId = latestInv?.id || null
+      }
       return {
         type: 'guest',
-        couple: guest.user,
+        couple: { ...guest.user, invitationId },
         guest: {
           id:          guest.id,
           name:        guest.name,
@@ -37,12 +51,23 @@ export default async function rsvpRoutes(app) {
     // Second try: rsvpToken (couple's public link)
     const user = await prisma.user.findUnique({
       where: { rsvpToken: code },
-      select: { name1: true, name2: true, weddingDate: true, venue: true, venueAddress: true }
+      select: { id: true, name1: true, name2: true, weddingDate: true, venue: true, venueAddress: true }
     })
 
     if (!user) return reply.code(404).send({ error: 'NOT_FOUND', message: 'קוד RSVP לא נמצא' })
 
-    return { type: 'couple', couple: user, guest: null }
+    // Look up their latest invitation
+    const latestInv = await prisma.userInvitation.findFirst({
+      where: { userId: user.id },
+      orderBy: { updatedAt: 'desc' },
+      select: { id: true }
+    })
+
+    return {
+      type: 'couple',
+      couple: { ...user, invitationId: latestInv?.id || null },
+      guest: null
+    }
   })
 
   // ── POST /api/rsvp/submit ───────────────────────────────────────────────

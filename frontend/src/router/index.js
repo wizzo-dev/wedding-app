@@ -7,6 +7,7 @@ const routes = [
   { path: '/',           name: 'Landing',     component: () => import('@/views/LandingView.vue'), meta: { public: true } },
   { path: '/rsvp/:code?', name: 'Rsvp',        component: () => import('@/views/RsvpView.vue'),    meta: { public: true } },
   { path: '/gift/:userId', name: 'GiftPublic', component: () => import('@/views/GiftPublicView.vue'), meta: { public: true } },
+  { path: '/invitation/:id', name: 'InvitationPublic', component: () => import('@/views/InvitationPublicView.vue'), meta: { public: true } },
 
   // ── Auth ─────────────────────────────────────────────────────────────────────
   { path: '/login',          name: 'Login',         component: () => import('@/views/auth/LoginView.vue'),    meta: { guest: true } },
@@ -71,6 +72,12 @@ const routes = [
       { path: 'profile',                name: 'Profile',        component: () => import('@/views/app/ProfileView.vue') },
       // Subscription / Payment
       { path: 'subscription/payment',   name: 'PaymentPlans',   component: () => import('@/views/app/PaymentView.vue') },
+
+      // Invitations
+      { path: 'invitations',            name: 'Invitations',        component: () => import('@/views/app/invitations/InvitationsListView.vue') },
+      { path: 'invitations/new',        name: 'InvitationNew',      component: () => import('@/views/app/invitations/TemplatePickerView.vue') },
+      { path: 'invitations/builder/:templateId', name: 'InvitationBuilder', component: () => import('@/views/app/invitations/InvitationBuilderView.vue') },
+      { path: 'invitations/edit/:id',   name: 'InvitationEdit',     component: () => import('@/views/app/invitations/InvitationBuilderView.vue') },
 
       // Settings
       { path: 'settings',               name: 'Settings',       component: () => import('@/views/app/settings/SettingsView.vue') },

@@ -50,9 +50,11 @@ model User {
   giftWishes        GiftWish[]
   tasks             Task[]
   notifications     Notification[]
+  invitations       UserInvitation[]
 
   @@map("users")
 }
+
 
 model RefreshToken {
   id        Int      @id @default(autoincrement())
@@ -396,5 +398,34 @@ model Notification {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("notifications")
+}
+
+model InvitationTemplate {
+  id          Int      @id @default(autoincrement())
+  name        String
+  imageUrl    String   @map("image_url")
+  textZones   String   @map("text_zones")
+  isSystem    Boolean  @default(true) @map("is_system")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  invitations UserInvitation[]
+
+  @@map("invitation_templates")
+}
+
+model UserInvitation {
+  id          Int                @id @default(autoincrement())
+  userId      Int                @map("user_id")
+  templateId  Int                @map("template_id")
+  fields      String
+  customZones String?            @map("custom_zones")
+  font        String             @default("Heebo")
+  createdAt   DateTime           @default(now()) @map("created_at")
+  updatedAt   DateTime           @updatedAt @map("updated_at")
+
+  user     User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  template InvitationTemplate @relation(fields: [templateId], references: [id])
+
+  @@map("user_invitations")
 }
 

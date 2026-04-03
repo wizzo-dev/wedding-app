@@ -140,7 +140,8 @@ const navGroups = [
       { to: '/app/profile',    icon: '💍', label: 'הפרופיל שלנו' },
       { to: '/app/guests',     icon: '👥', label: 'אורחים' },
       { to: '/app/budget',     icon: '💰', label: 'תקציב' },
-      { to: '/app/gifts',      icon: '🎁', label: 'מתנות' },
+      { to: '/app/gifts',        icon: '🎁', label: 'מתנות' },
+      { to: '/app/invitations',  icon: '💌', label: 'הזמנות' },
     ]
   },
   {
@@ -180,6 +181,8 @@ const routeTitles = {
   '/app/settings':             'הגדרות',
   '/app/settings/account':     'פרטי חשבון',
   '/app/settings/subscription':'מנוי',
+  '/app/invitations':           'הזמנות',
+  '/app/invitations/new':       'בחר תבנית',
 }
 
 const currentPageTitle = computed(() => {

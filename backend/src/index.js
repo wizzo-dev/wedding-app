@@ -32,6 +32,7 @@ import rsvpRoutes from './routes/rsvp.js'
 
 import notificationRoutes from './routes/notifications.js'
 import vendorSuggestionsRoutes from './routes/vendorSuggestions.js'
+import invitationRoutes from './routes/invitations.js'
 
 const app = Fastify({ logger: process.env.NODE_ENV === 'development' })
 
@@ -116,6 +117,7 @@ app.register(statsRoutes,           { prefix: '/api/stats' })
 app.register(notificationRoutes,    { prefix: '/api/notifications' })
 app.register(subscriptionRoutes,    { prefix: '/api/subscription' })
 app.register(rsvpRoutes,           { prefix: '/api/rsvp' })
+app.register(invitationRoutes,     { prefix: '/api/invitations' })
 
 // ── Static Frontend ───────────────────────────────────────────────────────────
 const frontendDist = join(__dirname, '../../frontend/dist')
