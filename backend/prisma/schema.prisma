@@ -28,6 +28,8 @@ model User {
   plan                    String     @default("free")
   totalBudget             Float      @default(0) @map("total_budget")
   selectedCardTemplateId  Int?       @map("selected_card_template_id")
+  bankInfo                String?    @map("bank_info")
+  bitPhone                String?    @map("bit_phone")
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
 
@@ -44,6 +46,9 @@ model User {
   subscription      Subscription?
   refreshTokens     RefreshToken[]
   timelineEvents    TimelineEvent[]
+  gifts             Gift[]
+  giftWishes        GiftWish[]
+  tasks             Task[]
 
   @@map("users")
 }
@@ -104,9 +109,11 @@ model Guest {
   giftAmount Float?     @map("gift_amount")
   notes      String?
   tableId    Int?       @map("table_id")
-  guestToken String?    @unique @map("guest_token") // 5-6 chars, for personalized links
-  createdAt  DateTime   @default(now()) @map("created_at")
-  updatedAt  DateTime   @updatedAt @map("updated_at")
+  guestToken  String?    @unique @map("guest_token") // 5-6 chars, for personalized links
+  mealPref    String?    @map("meal_pref")
+  rsvpMessage String?    @map("rsvp_message")
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
 
   user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   table            Table?            @relation(fields: [tableId], references: [id])
@@ -318,4 +325,51 @@ model TimelineEvent {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("timeline_events")
+}
+
+model Gift {
+  id         Int      @id @default(autoincrement())
+  userId     Int      @map("user_id")
+  giverName  String   @map("giver_name")
+  giverPhone String?  @map("giver_phone")
+  amount     Float
+  message    String?
+  status     String   @default("new")
+  createdAt  DateTime @default(now()) @map("created_at")
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("gifts")
+}
+
+model GiftWish {
+  id            Int      @id @default(autoincrement())
+  userId        Int      @map("user_id")
+  name          String
+  desiredAmount Float    @map("desired_amount")
+  message       String?
+  imageUrl      String?  @map("image_url")
+  isContributed Boolean  @default(false) @map("is_contributed")
+  contributedBy String?  @map("contributed_by")
+  sortOrder     Int      @default(0) @map("sort_order")
+  createdAt     DateTime @default(now()) @map("created_at")
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("gift_wishes")
+}
+
+model Task {
+  id          Int       @id @default(autoincrement())
+  userId      Int       @map("user_id")
+  title       String
+  description String?
+  dueDate     DateTime? @map("due_date")
+  priority    String    @default("medium")
+  status      String    @default("todo")
+  category    String?
+  sortOrder   Int       @default(0) @map("sort_order")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("tasks")
 }
