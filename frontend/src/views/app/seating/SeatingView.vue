@@ -102,19 +102,19 @@
             @click="onStageClick"
           >
             <v-layer>
-              <template v-for="table in tables" :key="table.id">
+              <template v-for="(table, idx) in tables" :key="table.id">
                 <!-- Table shadow circle -->
                 <v-circle :config="{
-                  x: tableX(table),
-                  y: tableY(table),
+                  x: tableX(table, idx),
+                  y: tableY(table, idx),
                   radius: TABLE_R + 4,
                   fill: 'rgba(0,0,0,0.06)',
                   listening: false
                 }" />
                 <!-- Table body -->
                 <v-circle :config="{
-                  x: tableX(table),
-                  y: tableY(table),
+                  x: tableX(table, idx),
+                  y: tableY(table, idx),
                   radius: TABLE_R,
                   fill: tableFill(table),
                   stroke: selectedTable?.id === table.id ? '#E91E8C' : (dragOverTable?.id === table.id ? '#E91E8C' : '#d1d5db'),
@@ -128,8 +128,8 @@
                 />
                 <!-- Table label name -->
                 <v-text :config="{
-                  x: tableX(table) - TABLE_R,
-                  y: tableY(table) - 12,
+                  x: tableX(table, idx) - TABLE_R,
+                  y: tableY(table, idx) - 12,
                   width: TABLE_R * 2,
                   text: table.name,
                   fontSize: 12,
@@ -139,15 +139,15 @@
                   align: 'center',
                   listening: false
                 }" />
-                <!-- Guest count -->
+                <!-- Guest count (numPeople-aware) -->
                 <v-text :config="{
-                  x: tableX(table) - TABLE_R,
-                  y: tableY(table) + 2,
+                  x: tableX(table, idx) - TABLE_R,
+                  y: tableY(table, idx) + 2,
                   width: TABLE_R * 2,
-                  text: `${table.guests.length}/${table.seats}`,
+                  text: `${tableGuestCount(table)}/${table.seats}`,
                   fontSize: 11,
                   fontFamily: 'Heebo, sans-serif',
-                  fill: table.guests.length >= table.seats ? '#ef4444' : '#6b7280',
+                  fill: tableGuestCount(table) >= table.seats ? '#ef4444' : '#6b7280',
                   align: 'center',
                   listening: false
                 }" />
@@ -176,8 +176,8 @@
           <div class="detail-header">
             <h3>{{ selectedTable.name }}</h3>
             <div class="detail-meta">
-              <span class="seat-count" :class="{ full: selectedTable.guests.length >= selectedTable.seats }">
-                {{ selectedTable.guests.length }}/{{ selectedTable.seats }} מקומות
+              <span class="seat-count" :class="{ full: tableGuestCount(selectedTable) >= selectedTable.seats }">
+                {{ tableGuestCount(selectedTable) }}/{{ selectedTable.seats }} מקומות
               </span>
               <div class="detail-actions">
                 <button @click.stop="editTable(selectedTable)" class="icon-btn" title="עריכה">✏️</button>
@@ -350,23 +350,45 @@ const generating = ref(false)
 const formError = ref(null)
 const generateError = ref(null)
 
-// Stage config — sized to canvas container
+// Stage config — sized dynamically to fit all tables
 const stageConfig = computed(() => ({
-  width: 700,
-  height: 550
+  width: Math.max(800, 4 * 180 + 100),
+  height: Math.max(500, Math.ceil(tables.value.length / 4) * 180 + 100)
 }))
 
-// Table position helpers — prefer local override (from drag), else DB value
-function tableX(table) {
-  return tablePositions.value[table.id]?.x ?? table.x ?? (100 + (table.id * 160) % 560)
+// Grid-based position fallback (no overlap)
+function tableGridPos(idx) {
+  const cols = 4
+  const colWidth = 180
+  const rowHeight = 180
+  const startX = 90
+  const startY = 90
+  return {
+    x: startX + (idx % cols) * colWidth,
+    y: startY + Math.floor(idx / cols) * rowHeight
+  }
 }
-function tableY(table) {
-  return tablePositions.value[table.id]?.y ?? table.y ?? (100 + Math.floor((table.id * 160) / 560) * 160)
+
+// Table position helpers — prefer explicit drag (local override), then grid fallback
+function tableX(table, idx) {
+  const local = tablePositions.value[table.id]
+  if (local !== undefined) return local.x
+  return tableGridPos(idx ?? 0).x
+}
+function tableY(table, idx) {
+  const local = tablePositions.value[table.id]
+  if (local !== undefined) return local.y
+  return tableGridPos(idx ?? 0).y
+}
+
+// Count total number of people (not just guest records) at a table
+function tableGuestCount(table) {
+  return table.guests?.reduce((sum, g) => sum + (g.numPeople || 1), 0) || 0
 }
 
 function tableFill(table) {
   if (dragOverTable.value?.id === table.id) return '#fde8f4'
-  if (table.guests.length >= table.seats) return '#fee2e2'
+  if (tableGuestCount(table) >= table.seats) return '#fee2e2'
   if (table.guests.length > 0) return '#f0fdf4'
   return '#ffffff'
 }
@@ -405,10 +427,14 @@ async function loadData() {
     tables.value = seating.tables
     unassigned.value = seating.unassigned
     stats.value = statsData
-    // Sync positions
-    seating.tables.forEach(t => {
+    // Sync positions — only override with DB value if it's a real (non-default) position
+    seating.tables.forEach((t, idx) => {
       if (!tablePositions.value[t.id]) {
-        tablePositions.value[t.id] = { x: t.x, y: t.y }
+        // x=100,y=100 is the default for manually added tables — use grid instead
+        if (t.x !== 100 || t.y !== 100) {
+          tablePositions.value[t.id] = { x: t.x, y: t.y }
+        }
+        // else: leave undefined → tableX/tableY will use idx-based grid
       }
     })
     // Update selected table reference
@@ -443,9 +469,9 @@ function onCanvasDragOver(e) {
   const rect = canvasContainer.value.getBoundingClientRect()
   const mx = e.clientX - rect.left
   const my = e.clientY - rect.top
-  dragOverTable.value = tables.value.find(t => {
-    const dx = mx - tableX(t)
-    const dy = my - tableY(t)
+  dragOverTable.value = tables.value.find((t, idx) => {
+    const dx = mx - tableX(t, idx)
+    const dy = my - tableY(t, idx)
     return Math.sqrt(dx * dx + dy * dy) <= TABLE_R
   }) || null
 }
@@ -510,8 +536,11 @@ async function onTableDragEnd(table, evt) {
 
 // ── Assignment ───────────────────────────────────────────────────────────────
 async function assignGuestToTable(guest, table) {
-  if (table.guests.length >= table.seats) {
-    alert(`שולחן ${table.name} מלא (${table.seats} מקומות)`)
+  const currentCount = tableGuestCount(table)
+  const guestPeople = guest.numPeople || 1
+  if (currentCount + guestPeople > table.seats) {
+    alert(`השולחן מלא! קיבולת: ${table.seats}, יושבים: ${currentCount}, האורח: ${guestPeople} אנשים`)
+    dragGuest.value = null
     return
   }
   try {
@@ -520,6 +549,9 @@ async function assignGuestToTable(guest, table) {
       body: JSON.stringify({ guestId: guest.id, tableId: table.id })
     })
     await loadData()
+    if (selectedTable.value) {
+      selectedTable.value = tables.value.find(t => t.id === selectedTable.value.id) || null
+    }
   } catch (e) {
     alert(e.message)
   }
@@ -548,11 +580,8 @@ function openAddTable() {
 
 // ── HTML Overlay Drop Zone helpers ───────────────────────────────────────────
 function tableDropStyle(table, idx) {
-  const cols = 3
-  const col = idx % cols
-  const row = Math.floor(idx / cols)
-  const x = tableX(table) || (80 + col * 200)
-  const y = tableY(table) || (80 + row * 180)
+  const x = tableX(table, idx)
+  const y = tableY(table, idx)
   return {
     position: 'absolute',
     left: (x - TABLE_R) + 'px',
