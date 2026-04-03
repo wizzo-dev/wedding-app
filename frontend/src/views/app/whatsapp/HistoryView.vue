@@ -155,7 +155,7 @@ async function loadHistory() {
     if (filters.status)   params.status   = filters.status
     if (filters.dateFrom) params.dateFrom = filters.dateFrom
     if (filters.dateTo)   params.dateTo   = filters.dateTo
-    const { data } = await api.get('/api/whatsapp/messages', { params })
+    const { data } = await api.get('/whatsapp/messages', { params })
     items.value = data.items; totalPages.value = data.totalPages
   } catch (e) { error.value = e.response?.data?.error || e.message || 'שגיאה בטעינת הנתונים' }
   finally { loading.value = false }
@@ -178,7 +178,7 @@ function filteredResults(batch) {
 async function resendFailed(batch) {
   resending[batch.id] = true
   try {
-    const { data } = await api.post('/api/whatsapp/resend/' + batch.id)
+    const { data } = await api.post('/whatsapp/resend/' + batch.id)
     showToast('נשלחו מחדש ' + data.resent + ' הודעות בהצלחה', 'success')
     await loadHistory()
   } catch (e) { showToast(e.response?.data?.error || 'שגיאה בשליחה מחדש', 'error') }

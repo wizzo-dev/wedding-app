@@ -247,12 +247,40 @@ export default async function whatsappRoutes(app) {
     return { ok: true, ...results }
   })
 
-  // GET /api/whatsapp/messages — history
+  // GET /api/whatsapp/messages — history with pagination
   app.get('/messages', { preHandler: [app.authenticate] }, async (req) => {
-    const { status, limit = 50 } = req.query
-    const where = { userId: req.user.userId }
+    const { status, page = 1, limit = 20 } = req.query
+    const userId = req.user.userId
+    const where = { userId }
     if (status) where.status = status
-    return prisma.waMessage.findMany({ where, orderBy: { createdAt: 'desc' }, take: parseInt(limit) })
+    const skip = (parseInt(page) - 1) * parseInt(limit)
+    const [total, items] = await Promise.all([
+      prisma.waMessage.count({ where }),
+      prisma.waMessage.findMany({ where, orderBy: { createdAt: 'desc' }, skip, take: parseInt(limit) })
+    ])
+    return { items, totalPages: Math.ceil(total / parseInt(limit)), total, page: parseInt(page) }
+  })
+
+  // POST /api/whatsapp/resend/:id — resend failed messages from a batch
+  app.post('/resend/:id', { preHandler: [app.authenticate] }, async (req, reply) => {
+    const userId = req.user.userId
+    const msgId = parseInt(req.params.id)
+    const original = await prisma.waMessage.findFirst({ where: { id: msgId, userId } })
+    if (!original) return reply.code(404).send({ error: 'NOT_FOUND' })
+
+    const state = getClientState(userId)
+    if (!state?.client || state.status !== 'connected') {
+      return reply.code(400).send({ error: 'WA_NOT_CONNECTED', message: 'WhatsApp לא מחובר' })
+    }
+
+    try {
+      const chatId = original.recipientPhone.replace(/\D/g, '') + '@c.us'
+      await state.client.sendMessage(chatId, original.body)
+      await prisma.waMessage.update({ where: { id: msgId }, data: { status: 'sent', sentAt: new Date(), error: null } })
+      return { ok: true, resent: 1 }
+    } catch (e) {
+      return reply.code(500).send({ error: 'SEND_FAILED', message: e.message })
+    }
   })
 
   // Auto-reconnect users with existing WA sessions on startup
