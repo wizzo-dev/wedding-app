@@ -31,11 +31,33 @@
 
             <div class="form-group">
               <label>שם החתן</label>
-              <input v-model="fields.groomName" type="text" class="form-input" placeholder="ישראל" @input="scheduleRedraw" />
+              <div class="field-with-size">
+                <input v-model="fields.groomName" type="text" class="form-input" placeholder="ישראל" @input="scheduleRedraw" />
+                <div class="size-override">
+                  <span class="size-label">גודל</span>
+                  <input
+                    v-model.number="fieldSizes.groomName"
+                    type="number" min="12" max="72" step="2"
+                    class="size-input"
+                    @input="scheduleRedraw"
+                  />
+                </div>
+              </div>
             </div>
             <div class="form-group">
               <label>שם הכלה</label>
-              <input v-model="fields.brideName" type="text" class="form-input" placeholder="ישראלה" @input="scheduleRedraw" />
+              <div class="field-with-size">
+                <input v-model="fields.brideName" type="text" class="form-input" placeholder="ישראלה" @input="scheduleRedraw" />
+                <div class="size-override">
+                  <span class="size-label">גודל</span>
+                  <input
+                    v-model.number="fieldSizes.brideName"
+                    type="number" min="12" max="72" step="2"
+                    class="size-input"
+                    @input="scheduleRedraw"
+                  />
+                </div>
+              </div>
             </div>
             <div class="form-group">
               <label>הורי החתן</label>
@@ -83,9 +105,7 @@
             <h3 class="section-title">עיצוב</h3>
             <div class="form-group">
               <label>פונט</label>
-              <select v-model="selectedFont" class="form-input" @change="scheduleRedraw">
-                <option v-for="f in fonts" :key="f.value" :value="f.value">{{ f.label }}</option>
-              </select>
+              <FontPicker v-model="selectedFont" />
             </div>
             <div class="form-group">
               <label>גודל בסיס: {{ baseFontSize }}px</label>
@@ -158,6 +178,8 @@
 import { ref, computed, watch, onMounted, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import api from '@/composables/useApi'
+import FontPicker from '@/components/FontPicker.vue'
+import { loadAllFonts } from '@/composables/useFonts'
 
 const route = useRoute()
 const router = useRouter()
@@ -218,13 +240,11 @@ const baseFontSize = ref(20)
 const primaryColor = ref('#E91E8C')
 const secondaryColor = ref('#333333')
 
-const fonts = [
-  { value: 'Heebo',              label: 'Heebo' },
-  { value: 'Assistant',          label: 'Assistant' },
-  { value: 'Frank Ruhl Libre',   label: 'Frank Ruhl Libre' },
-  { value: 'Noto Serif Hebrew',  label: 'Noto Serif Hebrew' },
-  { value: 'David Libre',        label: 'David Libre' },
-]
+// Per-field font size overrides (null = use template default)
+const fieldSizes = ref({
+  groomName: null,
+  brideName: null,
+})
 
 // Map field name → display text
 function getFieldText(field) {
@@ -267,7 +287,11 @@ const computedTextNodes = computed(() => {
     const text = getFieldText(zone.field)
     if (!text) return null
 
-    const fontScaled = Math.round(zone.fontSize * (baseFontSize.value / 20))
+    // Per-field size override (for groomName / brideName)
+    const sizeOverride = fieldSizes.value[zone.field]
+    const fontScaled = sizeOverride != null
+      ? sizeOverride
+      : Math.round(zone.fontSize * (baseFontSize.value / 20))
     const maxW = Math.round(zone.maxWidth * CANVAS_W)
 
     // Use primary/secondary color based on zone
@@ -290,6 +314,13 @@ const computedTextNodes = computed(() => {
       listening: false,
     }
   }).filter(Boolean)
+})
+
+// Watch font changes → force full redraw
+watch(selectedFont, () => {
+  nextTick(() => {
+    stageRef.value?.getNode()?.batchDraw?.()
+  })
 })
 
 // Redraw scheduler (debounce)
@@ -426,6 +457,7 @@ function onResize() {
 }
 
 onMounted(async () => {
+  loadAllFonts() // inject all Google Fonts dynamically
   await loadData()
   window.addEventListener('resize', onResize)
 })
@@ -554,6 +586,41 @@ textarea.form-input { resize: vertical; min-height: 60px; }
   cursor: pointer;
   padding: 2px;
   background: var(--color-bg);
+}
+
+/* Per-field size override layout */
+.field-with-size {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.size-override {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  direction: rtl;
+}
+
+.size-label {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.size-input {
+  width: 64px;
+  padding: 3px 6px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  font-size: 12px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  text-align: center;
+}
+.size-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
 }
 
 .sidebar-actions {
