@@ -524,3 +524,32 @@ New models added to `backend/prisma/schema.prisma`:
 - All branches pushed to origin — no merges to main
 - pm2 restarted after each backend change (vendor-suggestions, profile, payment-stubs)
 - Prisma `migrate dev` could not run interactively in non-TTY env; migration created manually and marked as applied via `prisma migrate resolve`
+
+
+---
+
+## 2026-04-03T02:27Z | freddy-fix round11 — Migration Resolve + Vendor Transaction | main
+
+### Fixes Applied
+
+#### 🔴 CRITICAL — `feat/page/notifications`: Migrations Never Marked as Applied
+- `npx prisma migrate resolve --applied 20260403020000_add_gift_wish`
+- `npx prisma migrate resolve --applied 20260403030000_add_notifications`
+- Verified with `prisma migrate status` → "Database schema is up to date!"
+- Committed updated `dev.db` (contains the updated `_prisma_migrations` table)
+- Commit: `2cddb3f`
+
+#### ⚠️ WARN — `feat/page/vendor-suggestions`: Missing Transaction on Vendor + UserVendor Creates
+- Wrapped `prisma.vendor.create()` + `prisma.userVendor.create()` in `prisma.$transaction(async (tx) => {...})`
+- Prevents orphan Vendor rows if the UserVendor create fails
+- Commit: `56d6fd0`
+
+### Build Results
+| Branch | Build | Time |
+|--------|-------|------|
+| feat/page/notifications | ✅ 0 errors | 923ms |
+| feat/page/vendor-suggestions | ✅ 0 errors | 764ms |
+
+### Notes
+- Both branches pushed to origin
+- pm2 restarted after vendor-suggestions change
