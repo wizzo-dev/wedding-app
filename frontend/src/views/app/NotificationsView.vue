@@ -15,7 +15,7 @@
           :disabled="markingAll"
         >
           <span v-if="markingAll">מסמן...</span>
-          <span v-else">✓ סמן הכל כנקרא ({{ unreadCount }})</span>
+          <span v-else>✓ סמן הכל כנקרא ({{ unreadCount }})</span>
         </button>
       </div>
     </div>
