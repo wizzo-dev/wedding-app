@@ -1,29 +1,37 @@
-@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Heebo:wght@300;400;500;700;800&display=swap');
 
 /* ── Design Tokens ────────────────────────────────────────────────────────── */
 :root {
-  /* Brand Colors - based on designs */
-  --color-primary:        #E91E8C;   /* hot pink / magenta - CTA ראשי */
-  --color-primary-hover:  #C9177A;
-  --color-primary-light:  #FDE8F4;
-  --color-primary-bg:     #FFF5FB;
+  /* Core brand — warm editorial luxury */
+  --color-primary:        #C8116B;   /* Deep rose */
+  --color-primary-hover:  #A80E59;
+  --color-primary-light:  #F7D6E8;
+  --color-primary-bg:     #FFF5F9;
 
-  --color-navy:           #1A1F36;   /* navy dark - secondary / text */
-  --color-overlay:        rgba(26,31,54,0.5);  /* modal backdrop navy */
-  --color-overlay-dark:   rgba(0,0,0,0.5);     /* modal backdrop dark */
-  --color-navy-mid:       #2D3454;
+  --color-navy:           #1A1F36;   /* Deep navy */
+  --color-navy-mid:       #2D3456;
   --color-navy-light:     #8B92B3;
+  --color-overlay:        rgba(26,31,54,0.5);
+  --color-overlay-dark:   rgba(0,0,0,0.5);
 
-  --color-bg:             #F5F5F7;   /* app background */
+  /* Backgrounds — warm ivory palette */
+  --color-bg:             #FAFAF8;   /* Warm off-white */
   --color-bg-card:        #FFFFFF;
-  --color-bg-subtle:      #F9F9FB;
+  --color-bg-sidebar:     #1A1F36;   /* Dark navy sidebar */
+  --color-bg-subtle:      #F5F0EB;   /* Warm cream */
 
+  /* Typography */
   --color-text:           #1A1F36;
   --color-text-muted:     #6B7280;
-  --color-text-light:     #B0B7C3;
+  --color-text-light:     #9CA3AF;
 
-  --color-border:         #E8E8EF;
-  --color-border-focus:   #E91E8C;
+  /* Borders */
+  --color-border:         #E8E4DF;
+  --color-border-strong:  #D1CCC5;
+  --color-border-focus:   #C8116B;
+
+  /* Accents */
+  --color-gold:           #C9A84C;
 
   /* Status */
   --color-success:        #22C55E;
@@ -31,12 +39,14 @@
   --color-warning:        #F59E0B;
   --color-warning-bg:     #FEF3C7;
   --color-error:          #EF4444;
+  --color-danger:         #EF4444;
   --color-error-bg:       #FEE2E2;
   --color-info:           #3B82F6;
   --color-info-bg:        #DBEAFE;
 
   /* Typography */
   --font:                 'Heebo', sans-serif;
+  --font-display:         'Cormorant Garamond', serif;
   --font-size-xs:         0.75rem;    /* 12px */
   --font-size-sm:         0.875rem;   /* 14px */
   --font-size-base:       1rem;       /* 16px */
@@ -63,18 +73,20 @@
   /* Border Radius */
   --radius-sm:   6px;
   --radius:      10px;
-  --radius-lg:   16px;
-  --radius-xl:   20px;
+  --radius-md:   12px;
+  --radius-lg:   18px;
+  --radius-xl:   24px;
   --radius-2xl:  28px;
   --radius-full: 9999px;
 
   /* Shadows */
   --shadow-xs:  0 1px 2px rgba(0,0,0,0.05);
-  --shadow-sm:  0 2px 8px rgba(26,31,54,0.06);
-  --shadow:     0 4px 20px rgba(26,31,54,0.10);
-  --shadow-lg:  0 8px 40px rgba(26,31,54,0.14);
+  --shadow-sm:  0 1px 3px rgba(26,31,54,0.08);
+  --shadow:     0 4px 16px rgba(26,31,54,0.10);
+  --shadow-md:  0 4px 16px rgba(26,31,54,0.10);
+  --shadow-lg:  0 8px 32px rgba(26,31,54,0.12);
   --shadow-xl:  0 16px 60px rgba(26,31,54,0.18);
-  --shadow-pink: 0 4px 20px rgba(233,30,140,0.25);
+  --shadow-pink: 0 4px 20px rgba(200,17,107,0.25);
 
   /* Transitions */
   --transition-fast: 150ms ease;
@@ -83,8 +95,8 @@
 
   /* Layout */
   --topbar-height:   64px;
-  --sidebar-width:   260px;
-  --content-max:     1280px;
+  --sidebar-width:   240px;
+  --content-max:     1100px;
 }
 
 /* ── Reset ────────────────────────────────────────────────────────────────── */
@@ -99,7 +111,7 @@ html {
 }
 
 body {
-  font-family: var(--font);
+  font-family: 'Heebo', var(--font), sans-serif;
   font-size: var(--font-size-base);
   color: var(--color-text);
   background: var(--color-bg);
@@ -255,8 +267,9 @@ ul, ol { list-style: none; }
 
 /* ── Stat Card ────────────────────────────────────────────────────────────── */
 .stat-number {
-  font-size: var(--font-size-3xl);
-  font-weight: 800;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 40px;
+  font-weight: 700;
   color: var(--color-navy);
   line-height: 1;
 }
@@ -265,6 +278,16 @@ ul, ol { list-style: none; }
   color: var(--color-text-muted);
   font-weight: 500;
   margin-top: var(--space-1);
+}
+
+/* ── Page Header ──────────────────────────────────────────────────────────── */
+.page-header {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: var(--font-size-4xl);
+  font-weight: 700;
+  color: var(--color-navy);
+  line-height: 1.2;
+  margin-bottom: var(--space-6);
 }
 
 /* ── Divider ──────────────────────────────────────────────────────────────── */
@@ -342,8 +365,8 @@ ul, ol { list-style: none; }
 
 /* ── Design Token Aliases (backward compat + new tokens) ─────────────────── */
 :root {
-  --color-primary-dark:  #c2185b;
-  --color-navy-light:    #2d3452;
+  --color-primary-dark:  #A80E59;
+  --color-navy-light:    #8B92B3;
   --color-bg-white:      #ffffff;
   --color-surface:       #ffffff;
 
@@ -354,9 +377,6 @@ ul, ol { list-style: none; }
   --space-lg:  var(--space-6);
   --space-xl:  var(--space-8);
   --space-2xl: var(--space-12);
-
-  /* Shadow aliases */
-  --shadow-md: var(--shadow);
 }
 
 /* ── Card (enhanced) ──────────────────────────────────────────────────────── */

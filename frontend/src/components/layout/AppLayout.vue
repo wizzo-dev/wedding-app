@@ -1,79 +1,37 @@
 <template>
-  <div class="app-shell" :class="{ 'sidebar-collapsed': collapsed, 'sidebar-mobile-open': mobileOpen }">
+  <div class="app-shell" :class="{ 'sidebar-collapsed': collapsed }">
     <!-- ── Sidebar ── -->
     <aside class="sidebar">
-      <div class="sidebar-header">
-        <div class="brand">
-          <span class="brand-logo">💍</span>
-          <Transition name="label">
-            <span v-if="!collapsed" class="brand-name">יאללה חתונה</span>
-          </Transition>
-        </div>
-        <button
-          class="collapse-btn btn btn-icon btn-ghost"
-          @click="collapsed = !collapsed"
-          v-if="!isMobile"
-          :aria-label="collapsed ? 'הרחב סרגל צד' : 'כווץ סרגל צד'"
-          :aria-expanded="!collapsed"
-        >
-          <span class="icon">{{ collapsed ? '›' : '‹' }}</span>
-        </button>
-      </div>
-
-      <!-- User mini card -->
-      <div class="sidebar-user" v-if="auth.user">
-        <div class="user-avatar">{{ initials }}</div>
-        <Transition name="label">
-          <div v-if="!collapsed" class="user-info">
-            <div class="user-names">{{ auth.user.name1 }} &amp; {{ auth.user.name2 }}</div>
-            <div class="user-date" v-if="auth.user.weddingDate">
-              {{ daysUntilWedding }} ימים לחתונה 💕
-            </div>
-          </div>
-        </Transition>
+      <!-- Logo -->
+      <div class="sidebar-logo">
+        <div class="logo-text">יאללה</div>
+        <div class="logo-sub">Wedding Management</div>
       </div>
 
       <!-- Navigation -->
-      <nav class="sidebar-nav">
-        <div v-for="group in navGroups" :key="group.label" class="nav-group">
-          <Transition name="label">
-            <div v-if="!collapsed" class="nav-group-label">{{ group.label }}</div>
-          </Transition>
+      <ul class="nav-list">
+        <li v-for="item in navItems" :key="item.path" class="nav-item">
           <RouterLink
-            v-for="item in group.items"
-            :key="item.to"
-            :to="item.to"
-            class="nav-item"
-            :title="collapsed ? item.label : ''"
+            :to="item.path"
+            :title="item.label"
             @click="mobileOpen = false"
           >
             <span class="nav-icon">{{ item.icon }}</span>
-            <Transition name="label">
-              <span v-if="!collapsed" class="nav-label">{{ item.label }}</span>
-            </Transition>
-            <Transition name="label">
-              <span v-if="!collapsed && item.badge" class="nav-badge" :class="`badge-${item.badgeType || 'pink'}`">
-                {{ item.badge }}
-              </span>
-            </Transition>
+            <span class="nav-label">{{ item.label }}</span>
           </RouterLink>
-        </div>
-      </nav>
+        </li>
+      </ul>
 
-      <!-- Bottom actions -->
+      <!-- Footer -->
       <div class="sidebar-footer">
-        <RouterLink to="/app/settings" class="nav-item" @click="mobileOpen = false">
-          <span class="nav-icon">⚙️</span>
-          <Transition name="label">
-            <span v-if="!collapsed" class="nav-label">הגדרות</span>
-          </Transition>
-        </RouterLink>
-        <button class="nav-item logout-btn" @click="handleLogout">
-          <span class="nav-icon">🚪</span>
-          <Transition name="label">
-            <span v-if="!collapsed" class="nav-label">יציאה</span>
-          </Transition>
-        </button>
+        <div class="user-info" v-if="auth.user">
+          <div class="user-avatar">{{ initials }}</div>
+          <div class="user-email-wrap">
+            <div class="user-names-small">{{ auth.user.name1 }} &amp; {{ auth.user.name2 }}</div>
+            <div class="user-email">{{ auth.user.email }}</div>
+          </div>
+        </div>
+        <button class="logout-btn" @click="handleLogout">יציאה מהמערכת</button>
       </div>
     </aside>
 
@@ -81,33 +39,30 @@
     <div class="sidebar-overlay" @click="mobileOpen = false" v-if="mobileOpen" />
 
     <!-- ── Main ── -->
-    <div class="app-body">
-      <!-- Top bar (mobile + breadcrumbs) -->
+    <div class="main-content">
+      <!-- Top bar -->
       <header class="topbar">
         <button
-          class="menu-btn btn btn-icon btn-ghost"
+          class="menu-btn"
           @click="mobileOpen = !mobileOpen"
-          :aria-label="mobileOpen ? 'סגור תפריט' : 'פתח תפריט'"
-          :aria-expanded="mobileOpen"
-        >
-          <span class="icon">☰</span>
-        </button>
+          aria-label="פתח תפריט"
+        >☰</button>
         <div class="topbar-title">
           <h1 class="page-title">{{ currentPageTitle }}</h1>
         </div>
         <div class="topbar-actions">
-          <RouterLink to="/app/notifications" class="notif-btn" :title="'התראות'" aria-label="התראות">
+          <RouterLink to="/app/notifications" class="notif-btn" aria-label="התראות">
             <span class="bell-icon">🔔</span>
             <span v-if="unreadNotifCount > 0" class="notif-badge">{{ unreadNotifCount > 9 ? '9+' : unreadNotifCount }}</span>
           </RouterLink>
           <div v-if="auth.user" class="topbar-user">
-            <div class="user-avatar sm">{{ initials }}</div>
+            <div class="topbar-avatar">{{ initials }}</div>
           </div>
         </div>
       </header>
 
       <!-- Page content -->
-      <main class="app-main">
+      <main class="page-content">
         <RouterView v-slot="{ Component }">
           <Transition name="page" mode="out-in">
             <component :is="Component" />
@@ -132,48 +87,31 @@ const mobileOpen = ref(false)
 const isMobile = ref(false)
 const unreadNotifCount = ref(0)
 
-const navGroups = [
-  {
-    label: 'ניהול',
-    items: [
-      { to: '/app/dashboard',  icon: '🏠', label: 'דאשבורד' },
-      { to: '/app/profile',    icon: '💍', label: 'הפרופיל שלנו' },
-      { to: '/app/guests',     icon: '👥', label: 'אורחים' },
-      { to: '/app/budget',     icon: '💰', label: 'תקציב' },
-      { to: '/app/gifts',        icon: '🎁', label: 'מתנות' },
-      { to: '/app/invitations',  icon: '💌', label: 'הזמנות' },
-      { to: '/app/rsvp-links',   icon: '🔗', label: 'לינקי RSVP' },
-    ]
-  },
-  {
-    label: 'יום החתונה',
-    items: [
-      { to: '/app/seating',    icon: '🪑', label: 'סידורי הושבה' },
-      { to: '/app/cards',      icon: '🃏', label: 'כרטיסי הושבה' },
-      { to: '/app/tasks',      icon: '✅', label: 'משימות' },
-      { to: '/app/timeline',   icon: '📅', label: 'ציר זמן' },
-    ]
-  },
-  {
-    label: 'תקשורת',
-    items: [
-      { to: '/app/whatsapp',            icon: '💬', label: 'WhatsApp' },
-      { to: '/app/vendors',             icon: '🏪', label: 'ספקים' },
-      { to: '/app/vendors/suggestions', icon: '✨', label: 'הצעות ספקים' },
-    ]
-  }
+const navItems = [
+  { icon: '🏠', label: 'לוח בקרה',      path: '/app/dashboard' },
+  { icon: '👥', label: 'רשימת אורחים',   path: '/app/guests' },
+  { icon: '💬', label: 'שליחת WhatsApp', path: '/app/whatsapp' },
+  { icon: '🎴', label: 'הזמנות',          path: '/app/invitations' },
+  { icon: '🔗', label: 'לינקי RSVP',     path: '/app/rsvp-links' },
+  { icon: '🪑', label: 'מפת ישיבה',      path: '/app/seating' },
+  { icon: '💰', label: 'תקציב',           path: '/app/budget' },
+  { icon: '✅', label: 'משימות',           path: '/app/tasks' },
+  { icon: '🎁', label: 'מתנות',            path: '/app/gifts' },
+  { icon: '🏢', label: 'ספקים',            path: '/app/vendors' },
+  { icon: '⚙️', label: 'הגדרות',           path: '/app/settings' },
 ]
 
 const routeTitles = {
-  '/app/dashboard':            'דאשבורד',
+  '/app/dashboard':            'לוח בקרה',
   '/app/guests':               'רשימת אורחים',
   '/app/budget':               'תקציב',
   '/app/gifts':                'מתנות',
-  '/app/seating':              'סידורי הושבה',
+  '/app/seating':              'מפת ישיבה',
   '/app/cards':                'כרטיסי הושבה',
   '/app/tasks':                'משימות',
   '/app/timeline':             'ציר זמן',
   '/app/whatsapp':             'WhatsApp',
+  '/app/whatsapp/send':        'שליחת WhatsApp',
   '/app/vendors':              'ספקים',
   '/app/notifications':        'התראות',
   '/app/profile':              'הפרופיל שלנו',
@@ -182,14 +120,14 @@ const routeTitles = {
   '/app/settings':             'הגדרות',
   '/app/settings/account':     'פרטי חשבון',
   '/app/settings/subscription':'מנוי',
-  '/app/invitations':           'הזמנות',
-  '/app/invitations/new':       'בחר תבנית',
-  '/app/rsvp-links':            'לינקי RSVP',
+  '/app/invitations':          'הזמנות',
+  '/app/invitations/new':      'בחר תבנית',
+  '/app/rsvp-links':           'לינקי RSVP',
 }
 
 const currentPageTitle = computed(() => {
   const path = route.path.replace(/\/$/, '')
-  return routeTitles[path] || 'יאללה חתונה'
+  return routeTitles[path] || 'יאללה'
 })
 
 const initials = computed(() => {
@@ -238,250 +176,187 @@ onUnmounted(() => window.removeEventListener('resize', checkMobile))
   background: var(--color-bg);
   direction: rtl;
   overflow-x: hidden;
-  max-width: 100vw;
 }
 
 /* ── Sidebar ── */
 .sidebar {
   width: var(--sidebar-width);
-  background: var(--color-navy);
+  background: var(--color-bg-sidebar);
+  height: 100vh;
+  position: fixed;
+  right: 0;
+  top: 0;
   display: flex;
   flex-direction: column;
-  position: fixed;
-  top: 0;
-  right: 0;
-  bottom: 0;
+  padding: 0;
   z-index: 200;
-  transition: width var(--transition), transform var(--transition);
-  overflow: hidden;
+  transition: transform var(--transition);
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
-.app-shell.sidebar-collapsed .sidebar {
-  width: 72px;
-}
-
-/* ── Sidebar Header ── */
-.sidebar-header {
-  height: var(--topbar-height);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 var(--space-4);
+/* ── Logo ── */
+.sidebar-logo {
+  padding: 28px 24px 20px;
   border-bottom: 1px solid rgba(255,255,255,0.08);
   flex-shrink: 0;
 }
 
-.brand {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  overflow: hidden;
-}
-
-.brand-logo {
-  font-size: 1.6rem;
-  flex-shrink: 0;
-}
-
-.brand-name {
-  font-size: var(--font-size-lg);
-  font-weight: 800;
-  color: #fff;
-  white-space: nowrap;
-}
-
-.collapse-btn {
-  color: rgba(255,255,255,0.5);
-  flex-shrink: 0;
-}
-
-.collapse-btn:hover {
-  color: #fff;
-  background: rgba(255,255,255,0.1) !important;
-}
-
-.collapse-btn .icon {
-  font-size: 1.2rem;
+.logo-text {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 32px;
+  font-weight: 700;
+  color: #C8116B;
+  letter-spacing: -0.5px;
   line-height: 1;
 }
 
-/* ── User card ── */
-.sidebar-user {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-4);
-  border-bottom: 1px solid rgba(255,255,255,0.08);
-  flex-shrink: 0;
-  overflow: hidden;
-}
-
-.user-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: var(--radius-full);
-  background: linear-gradient(135deg, var(--color-primary), #ff6b9d);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 800;
-  font-size: var(--font-size-sm);
-  color: #fff;
-  flex-shrink: 0;
-}
-
-.user-avatar.sm {
-  width: 34px;
-  height: 34px;
-  font-size: var(--font-size-xs);
-}
-
-.user-info {
-  overflow: hidden;
-}
-
-.user-names {
-  font-size: var(--font-size-sm);
-  font-weight: 700;
-  color: #fff;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.user-date {
-  font-size: var(--font-size-xs);
-  color: var(--color-primary);
-  margin-top: 2px;
-  white-space: nowrap;
+.logo-sub {
+  font-size: 10px;
+  color: rgba(255,255,255,0.35);
+  margin-top: 4px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  font-weight: 400;
 }
 
 /* ── Navigation ── */
-.sidebar-nav {
+.nav-list {
   flex: 1;
+  padding: 12px 0;
   overflow-y: auto;
-  overflow-x: hidden;
-  padding: var(--space-4) var(--space-3);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
+  list-style: none;
+  margin: 0;
   scrollbar-width: thin;
-  scrollbar-color: rgba(233,30,140,0.35) transparent;
+  scrollbar-color: rgba(200,17,107,0.3) transparent;
 }
 
-.sidebar-nav::-webkit-scrollbar { width: 3px; }
-.sidebar-nav::-webkit-scrollbar-track { background: transparent; }
-.sidebar-nav::-webkit-scrollbar-thumb {
-  background: rgba(233,30,140,0.35);
-  border-radius: var(--radius-full);
-}
-.sidebar-nav::-webkit-scrollbar-thumb:hover {
-  background: rgba(233,30,140,0.6);
-}
-
-.nav-group {
-  margin-bottom: var(--space-4);
-}
-
-.nav-group-label {
-  font-size: var(--font-size-xs);
-  font-weight: 700;
-  color: rgba(255,255,255,0.35);
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  padding: 0 var(--space-3);
-  margin-bottom: var(--space-2);
-  white-space: nowrap;
-}
+.nav-list::-webkit-scrollbar { width: 3px; }
+.nav-list::-webkit-scrollbar-thumb { background: rgba(200,17,107,0.3); border-radius: 2px; }
 
 .nav-item {
+  margin: 0;
+}
+
+.nav-item a {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
-  padding: 10px var(--space-3);
-  border-radius: var(--radius);
-  font-size: var(--font-size-sm);
-  font-weight: 600;
-  color: rgba(255,255,255,0.65);
-  transition: all var(--transition-fast);
-  cursor: pointer;
-  white-space: nowrap;
-  overflow: hidden;
-  background: none;
-  border: none;
-  width: 100%;
-  text-align: right;
+  gap: 12px;
+  padding: 10px 20px;
+  color: rgba(255,255,255,0.6);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 10px;
+  margin: 2px 8px;
+  transition: all 0.15s ease;
 }
 
-.nav-item:hover {
-  background: rgba(255,255,255,0.08);
-  color: #fff;
+.nav-item a:hover {
+  background: rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.9);
 }
 
-.nav-item.router-link-active {
-  background: rgba(233,30,140,0.2);
-  color: #fff;
-  border-left: 3px solid var(--color-primary);
+.nav-item a.router-link-active {
+  background: rgba(200,17,107,0.18);
+  color: #F7D6E8;
 }
 
 .nav-icon {
-  font-size: 1.1rem;
-  flex-shrink: 0;
-  width: 24px;
+  font-size: 16px;
+  min-width: 20px;
   text-align: center;
+  flex-shrink: 0;
 }
 
 .nav-label {
   flex: 1;
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.nav-badge {
-  font-size: var(--font-size-xs);
-  font-weight: 700;
-  padding: 2px 6px;
-  border-radius: var(--radius-full);
-}
-
-.badge-pink {
-  background: var(--color-primary-light);
-  color: var(--color-primary);
-}
-
-/* ── Sidebar footer ── */
+/* ── Sidebar Footer ── */
 .sidebar-footer {
-  padding: var(--space-3);
+  padding: 16px;
   border-top: 1px solid rgba(255,255,255,0.08);
+  flex-shrink: 0;
+}
+
+.user-info {
   display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+
+.user-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(200,17,107,0.25);
+  color: #F7D6E8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+  border: 1.5px solid rgba(200,17,107,0.4);
+}
+
+.user-email-wrap {
+  overflow: hidden;
+}
+
+.user-names-small {
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.75);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-email {
+  font-size: 11px;
+  color: rgba(255,255,255,0.4);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .logout-btn {
-  color: rgba(255,100,100,0.7) !important;
+  width: 100%;
+  padding: 8px 12px;
+  background: rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.55);
+  border: none;
+  border-radius: 8px;
+  font-family: 'Heebo', sans-serif;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: center;
 }
 
 .logout-btn:hover {
-  color: #ff6b6b !important;
-  background: rgba(255,100,100,0.1) !important;
+  background: rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.85);
 }
 
-/* ── App Body ── */
-.app-body {
+/* ── Main Content ── */
+.main-content {
   flex: 1;
   margin-right: var(--sidebar-width);
+  min-height: 100vh;
+  background: var(--color-bg);
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
-  transition: margin-right var(--transition);
 }
 
-.app-shell.sidebar-collapsed .app-body {
-  margin-right: 72px;
-}
-
-/* ── Topbar ── */
+/* ── Top Bar ── */
 .topbar {
   height: var(--topbar-height);
   background: var(--color-bg-card);
@@ -493,16 +368,24 @@ onUnmounted(() => window.removeEventListener('resize', checkMobile))
   position: sticky;
   top: 0;
   z-index: 100;
-  box-shadow: var(--shadow-xs);
+  box-shadow: var(--shadow-sm);
 }
 
 .menu-btn {
   display: none;
-  color: var(--color-text);
+  background: none;
+  border: none;
+  font-size: 1.3rem;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: var(--radius-sm);
+  transition: all 0.15s;
 }
 
-.menu-btn .icon {
-  font-size: 1.2rem;
+.menu-btn:hover {
+  background: var(--color-bg-subtle);
+  color: var(--color-text);
 }
 
 .topbar-title {
@@ -510,9 +393,11 @@ onUnmounted(() => window.removeEventListener('resize', checkMobile))
 }
 
 .page-title {
-  font-size: var(--font-size-xl);
-  font-weight: 800;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: var(--font-size-2xl);
+  font-weight: 700;
   color: var(--color-navy);
+  line-height: 1;
 }
 
 .topbar-actions {
@@ -533,13 +418,13 @@ onUnmounted(() => window.removeEventListener('resize', checkMobile))
   text-decoration: none;
 }
 .notif-btn:hover { background: var(--color-bg-subtle); }
-.bell-icon { font-size: 1.2rem; line-height: 1; }
+.bell-icon { font-size: 1.1rem; line-height: 1; }
 .notif-badge {
   position: absolute;
   top: -2px;
   left: -2px;
-  min-width: 18px;
-  height: 18px;
+  min-width: 17px;
+  height: 17px;
   background: var(--color-primary);
   color: #fff;
   font-size: 10px;
@@ -548,30 +433,33 @@ onUnmounted(() => window.removeEventListener('resize', checkMobile))
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0 4px;
+  padding: 0 3px;
   box-shadow: 0 0 0 2px var(--color-bg-card);
-  animation: pulse-badge 2s infinite;
-}
-@keyframes pulse-badge {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.1); }
 }
 
-.topbar-user {
+.topbar-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--color-primary-light);
+  color: var(--color-primary);
   display: flex;
   align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
 }
 
-/* ── Main content ── */
-.app-main {
+/* ── Page Content ── */
+.page-content {
   flex: 1;
-  padding: var(--space-8) var(--space-6);
   max-width: var(--content-max);
   margin: 0 auto;
+  padding: 32px 24px;
   width: 100%;
 }
 
-/* ── Overlay (mobile) ── */
+/* ── Mobile Overlay ── */
 .sidebar-overlay {
   position: fixed;
   inset: 0;
@@ -579,65 +467,83 @@ onUnmounted(() => window.removeEventListener('resize', checkMobile))
   z-index: 150;
 }
 
-/* ── Label transition ── */
-.label-enter-active,
-.label-leave-active {
-  transition: opacity 180ms ease, transform 180ms ease;
-}
-
-.label-enter-from,
-.label-leave-to {
-  opacity: 0;
-  transform: translateX(6px);
-}
-
-/* ── Page transition ── */
+/* ── Page Transition ── */
 .page-enter-active,
 .page-leave-active {
   transition: opacity 200ms ease, transform 200ms ease;
 }
-
 .page-enter-from {
   opacity: 0;
-  transform: translateY(8px);
+  transform: translateY(6px);
 }
-
 .page-leave-to {
   opacity: 0;
   transform: translateY(-4px);
 }
 
-/* ── Mobile ── */
-@media (max-width: 767px) {
+/* ── Mobile: bottom tab bar ── */
+@media (max-width: 768px) {
   .sidebar {
-    transform: translateX(100%);
-    width: var(--sidebar-width) !important;
+    width: 100%;
+    height: 60px;
+    bottom: 0;
+    top: auto;
+    right: 0;
+    left: 0;
+    flex-direction: row;
+    overflow: visible;
+    transform: none !important;
   }
 
-  .sidebar-mobile-open .sidebar {
-    transform: translateX(0);
+  .sidebar-logo,
+  .sidebar-footer {
+    display: none;
   }
 
-  .app-body {
-    margin-right: 0 !important;
+  .nav-list {
+    flex-direction: row;
+    display: flex;
+    padding: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    align-items: center;
+    flex: 1;
+    width: 100%;
+    scrollbar-width: none;
+  }
+
+  .nav-list::-webkit-scrollbar { display: none; }
+
+  .nav-item {
+    flex-shrink: 0;
+  }
+
+  .nav-item a {
+    flex-direction: column;
+    gap: 2px;
+    padding: 6px 10px;
+    font-size: 10px;
+    margin: 0;
+    border-radius: 0;
+    min-width: 56px;
+    text-align: center;
+  }
+
+  .nav-icon { font-size: 18px; min-width: unset; }
+
+  .main-content {
+    margin-right: 0;
+    margin-bottom: 60px;
   }
 
   .menu-btn {
     display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
-  .app-main {
-    padding: var(--space-4);
-  }
-
-  /* Ensure topbar + hamburger always above sidebar overlay */
-  .topbar {
-    z-index: 300;
-  }
-
-  .menu-btn {
-    position: relative;
-    z-index: 300;
+  .page-content {
+    padding: 16px;
   }
 }
 </style>
