@@ -46,7 +46,10 @@ await app.register(helmet, {
 })
 
 await app.register(cors, {
-  origin: process.env.NODE_ENV === 'development' ? true : process.env.FRONTEND_URL,
+  origin: (origin, cb) => {
+    // Allow any origin (supports Cloudflare tunnel + dev)
+    cb(null, true)
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']
 })

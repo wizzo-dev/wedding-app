@@ -10,7 +10,7 @@
         <button class="btn btn-outline btn-sm" @click="exportXlsx">📥 ייצא XLSX</button>
         <router-link to="/app/seating/settings" class="btn btn-outline btn-sm">⚙️ הגדרות</router-link>
         <button @click="showGenerateModal = true" class="btn btn-outline btn-sm">✨ צור שולחנות</button>
-        <button @click="showAddTable = true" class="btn btn-primary btn-sm">+ שולחן חדש</button>
+        <button @click="openAddTable()" class="btn btn-primary btn-sm">+ שולחן חדש</button>
       </div>
     </header>
 
@@ -68,7 +68,7 @@
             draggable="true"
             @dragstart="onDragStart(guest)"
             @dragend="onDragEnd"
-            @click="selectGuest(guest)"
+            @click="clickGuest(guest)"
           >
             <span class="guest-name">{{ guest.name }}</span>
             <span class="guest-meta">{{ guest.numPeople > 1 ? `×${guest.numPeople}` : '' }}</span>
@@ -81,6 +81,7 @@
       <div
         class="canvas-area"
         ref="canvasContainer"
+        style="position:relative"
         @dragover.prevent="onCanvasDragOver"
         @drop.prevent="onCanvasDrop"
       >
@@ -90,69 +91,83 @@
           <p>הוסף שולחן ידנית או השתמש ב"צור שולחנות"</p>
           <div class="empty-actions">
             <button @click="showGenerateModal = true" class="btn btn-primary">✨ צור שולחנות</button>
-            <button @click="showAddTable = true" class="btn btn-outline">+ שולחן חדש</button>
+            <button @click="openAddTable()" class="btn btn-outline">+ שולחן חדש</button>
           </div>
         </div>
 
-        <v-stage
-          v-else
-          :config="stageConfig"
-          ref="stageRef"
-          @click="onStageClick"
-        >
-          <v-layer>
-            <template v-for="table in tables" :key="table.id">
-              <!-- Table shadow circle -->
-              <v-circle :config="{
-                x: tableX(table),
-                y: tableY(table),
-                radius: TABLE_R + 4,
-                fill: 'rgba(0,0,0,0.06)',
-                listening: false
-              }" />
-              <!-- Table body -->
-              <v-circle :config="{
-                x: tableX(table),
-                y: tableY(table),
-                radius: TABLE_R,
-                fill: tableFill(table),
-                stroke: selectedTable?.id === table.id ? '#E91E8C' : (dragOverTable?.id === table.id ? '#E91E8C' : '#d1d5db'),
-                strokeWidth: selectedTable?.id === table.id ? 3 : (dragOverTable?.id === table.id ? 3 : 1.5),
-                draggable: true,
-                id: String(table.id)
-              }"
-              @dragstart="() => onTableDragStart(table)"
-              @dragend="(e) => onTableDragEnd(table, e)"
-              @click="(e) => { e.cancelBubble = true; onTableClick(table) }"
-              />
-              <!-- Table label name -->
-              <v-text :config="{
-                x: tableX(table) - TABLE_R,
-                y: tableY(table) - 12,
-                width: TABLE_R * 2,
-                text: table.name,
-                fontSize: 12,
-                fontFamily: 'Heebo, sans-serif',
-                fontStyle: 'bold',
-                fill: '#1A1F36',
-                align: 'center',
-                listening: false
-              }" />
-              <!-- Guest count -->
-              <v-text :config="{
-                x: tableX(table) - TABLE_R,
-                y: tableY(table) + 2,
-                width: TABLE_R * 2,
-                text: `${table.guests.length}/${table.seats}`,
-                fontSize: 11,
-                fontFamily: 'Heebo, sans-serif',
-                fill: table.guests.length >= table.seats ? '#ef4444' : '#6b7280',
-                align: 'center',
-                listening: false
-              }" />
-            </template>
-          </v-layer>
-        </v-stage>
+        <template v-else>
+          <v-stage
+            :config="stageConfig"
+            ref="stageRef"
+            @click="onStageClick"
+          >
+            <v-layer>
+              <template v-for="table in tables" :key="table.id">
+                <!-- Table shadow circle -->
+                <v-circle :config="{
+                  x: tableX(table),
+                  y: tableY(table),
+                  radius: TABLE_R + 4,
+                  fill: 'rgba(0,0,0,0.06)',
+                  listening: false
+                }" />
+                <!-- Table body -->
+                <v-circle :config="{
+                  x: tableX(table),
+                  y: tableY(table),
+                  radius: TABLE_R,
+                  fill: tableFill(table),
+                  stroke: selectedTable?.id === table.id ? '#E91E8C' : (dragOverTable?.id === table.id ? '#E91E8C' : '#d1d5db'),
+                  strokeWidth: selectedTable?.id === table.id ? 3 : (dragOverTable?.id === table.id ? 3 : 1.5),
+                  draggable: true,
+                  id: String(table.id)
+                }"
+                @dragstart="() => onTableDragStart(table)"
+                @dragend="(e) => onTableDragEnd(table, e)"
+                @click="(e) => { e.cancelBubble = true; onTableClick(table) }"
+                />
+                <!-- Table label name -->
+                <v-text :config="{
+                  x: tableX(table) - TABLE_R,
+                  y: tableY(table) - 12,
+                  width: TABLE_R * 2,
+                  text: table.name,
+                  fontSize: 12,
+                  fontFamily: 'Heebo, sans-serif',
+                  fontStyle: 'bold',
+                  fill: '#1A1F36',
+                  align: 'center',
+                  listening: false
+                }" />
+                <!-- Guest count -->
+                <v-text :config="{
+                  x: tableX(table) - TABLE_R,
+                  y: tableY(table) + 2,
+                  width: TABLE_R * 2,
+                  text: `${table.guests.length}/${table.seats}`,
+                  fontSize: 11,
+                  fontFamily: 'Heebo, sans-serif',
+                  fill: table.guests.length >= table.seats ? '#ef4444' : '#6b7280',
+                  align: 'center',
+                  listening: false
+                }" />
+              </template>
+            </v-layer>
+          </v-stage>
+
+          <!-- HTML drop-zone overlays positioned on top of each Konva circle -->
+          <div
+            v-for="(table, idx) in tables"
+            :key="'drop-'+table.id"
+            class="table-drop-overlay"
+            :class="{ 'drop-hover': dragOverTable?.id === table.id }"
+            :style="tableDropStyle(table, idx)"
+            @dragover.prevent="dragOverTable = table"
+            @dragleave="dragOverTable = null"
+            @drop.prevent="onOverlayDrop(table)"
+            @click="onTableClick(table)"
+          ></div>
+        </template>
       </div>
 
       <!-- RIGHT: Selected table detail -->
@@ -180,9 +195,11 @@
               :key="guest.id"
               class="seated-guest"
               :class="`rsvp-${guest.rsvpStatus}`"
+              @click="clickGuest(guest)"
+              style="cursor:pointer"
             >
               <span class="guest-name">{{ guest.name }}</span>
-              <button class="unassign-btn" @click="unassignGuest(guest.id)" title="הסר">×</button>
+              <button class="unassign-btn" @click.stop="unassignGuest(guest.id)" title="הסר">×</button>
             </div>
           </div>
 
@@ -520,6 +537,56 @@ async function unassignGuest(guestId) {
   }
 }
 
+// ── Open Add Table (with auto-numbering) ─────────────────────────────────────
+function openAddTable() {
+  const nextNum = tables.value.length + 1
+  tableForm.value = { name: `שולחן ${nextNum}`, seats: 8, type: 'round' }
+  editingTable.value = null
+  formError.value = null
+  showAddTable.value = true
+}
+
+// ── HTML Overlay Drop Zone helpers ───────────────────────────────────────────
+function tableDropStyle(table, idx) {
+  const cols = 3
+  const col = idx % cols
+  const row = Math.floor(idx / cols)
+  const x = tableX(table) || (80 + col * 200)
+  const y = tableY(table) || (80 + row * 180)
+  return {
+    position: 'absolute',
+    left: (x - TABLE_R) + 'px',
+    top: (y - TABLE_R) + 'px',
+    width: (TABLE_R * 2) + 'px',
+    height: (TABLE_R * 2) + 'px',
+    borderRadius: '50%',
+    cursor: 'pointer',
+    zIndex: 10,
+    background: 'transparent'
+  }
+}
+
+function onOverlayDrop(table) {
+  dragOverTable.value = null
+  if (!dragGuest.value) return
+  const guest = dragGuest.value
+  dragGuest.value = null
+  assignGuestToTable(guest, table)
+}
+
+// ── Bug 5: Click guest → highlight its table ──────────────────────────────────
+function clickGuest(guest) {
+  const table = tables.value.find(t =>
+    t.guests?.some(g => g.id === guest.id)
+  )
+  if (table) {
+    selectedTable.value = table
+  } else {
+    // Unassigned guest → enter click-assign mode
+    selectGuest(guest)
+  }
+}
+
 // ── Table CRUD ───────────────────────────────────────────────────────────────
 function editTable(table) {
   editingTable.value = table
@@ -765,6 +832,18 @@ onMounted(loadData)
   display: flex;
   align-items: flex-start;
   justify-content: flex-start;
+  position: relative;
+}
+
+/* HTML drop-zone overlays for guest DnD */
+.table-drop-overlay {
+  pointer-events: all;
+  transition: background 0.15s;
+}
+.table-drop-overlay.drop-hover {
+  background: rgba(233, 30, 140, 0.15) !important;
+  outline: 3px solid #E91E8C;
+  outline-offset: -3px;
 }
 .empty-canvas {
   flex: 1;

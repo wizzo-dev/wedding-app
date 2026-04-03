@@ -232,6 +232,8 @@ onUnmounted(() => window.removeEventListener('resize', checkMobile))
   min-height: 100vh;
   background: var(--color-bg);
   direction: rtl;
+  overflow-x: hidden;
+  max-width: 100vw;
 }
 
 /* ── Sidebar ── */
@@ -621,6 +623,16 @@ onUnmounted(() => window.removeEventListener('resize', checkMobile))
 
   .app-main {
     padding: var(--space-4);
+  }
+
+  /* Ensure topbar + hamburger always above sidebar overlay */
+  .topbar {
+    z-index: 300;
+  }
+
+  .menu-btn {
+    position: relative;
+    z-index: 300;
   }
 }
 </style>
