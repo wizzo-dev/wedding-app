@@ -7,6 +7,7 @@ import jwt from '@fastify/jwt'
 import cookie from '@fastify/cookie'
 import multipart from '@fastify/multipart'
 import staticFiles from '@fastify/static'
+import { readFileSync } from 'fs'
 // socket.io - will be added later
 import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
@@ -115,8 +116,7 @@ app.register(subscriptionRoutes,    { prefix: '/api/subscription' })
 const frontendDist = join(__dirname, '../../frontend/dist')
 app.register(staticFiles, {
   root: frontendDist,
-  prefix: '/',
-  decorateReply: false
+  prefix: '/'
 })
 
 // ── Health Check ──────────────────────────────────────────────────────────────
@@ -127,7 +127,8 @@ app.setNotFoundHandler((req, reply) => {
   if (req.url.startsWith('/api/')) {
     reply.code(404).send({ error: 'NOT_FOUND', message: 'endpoint לא קיים' })
   } else {
-    reply.sendFile('index.html')
+    const indexPath = join(frontendDist, 'index.html')
+    reply.type('text/html').send(readFileSync(indexPath))
   }
 })
 
