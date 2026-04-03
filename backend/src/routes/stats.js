@@ -46,7 +46,7 @@ export default async function statsRoutes(app) {
         by: ['status'],
         where: { userId },
         _count: { id: true }
-      }).catch(() => []), // task table might be empty initially
+      }).catch(err => { console.error('task groupBy error:', err); return [] }), // task table might be empty initially
 
       // Vendor counts by status
       prisma.userVendor.groupBy({
