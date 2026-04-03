@@ -41,7 +41,10 @@ api.interceptors.response.use(
         queue = []
         refreshing = false
         tokenRegistry.clear()
-        if (window.location.pathname !== "/login") window.location.href = "/login"
+        // Don't redirect on public pages (RSVP, gift, invitation, landing)
+        const PUBLIC_PREFIXES = ['/login', '/rsvp', '/gift', '/invitation', '/']
+        const isPublic = PUBLIC_PREFIXES.some(p => window.location.pathname === p || window.location.pathname.startsWith(p + '/'))
+        if (!isPublic) window.location.href = "/login"
         return Promise.reject(err)
       }
 
@@ -60,7 +63,9 @@ api.interceptors.response.use(
         queue.forEach(p => p.reject(refreshErr))
         queue = []
         tokenRegistry.clear()
-        if (window.location.pathname !== "/login") window.location.href = "/login"
+        const PUBLIC_PREFIXES2 = ['/login', '/rsvp', '/gift', '/invitation', '/']
+        const isPublicPage = PUBLIC_PREFIXES2.some(p => window.location.pathname === p || window.location.pathname.startsWith(p + '/'))
+        if (!isPublicPage) window.location.href = "/login"
         return Promise.reject(refreshErr)
       } finally {
         refreshing = false
