@@ -22,152 +22,179 @@
       <RouterLink to="/app/invitations/new" class="btn btn-primary">בחר תבנית</RouterLink>
     </div>
 
-    <div v-else class="builder-layout">
-      <!-- Sidebar -->
-      <aside class="builder-sidebar card card-body">
-        <div class="sidebar-scroll">
-          <section class="form-section">
-            <h3 class="section-title">פרטי החתן והכלה</h3>
-
-            <div class="form-group">
-              <label>שם החתן</label>
-              <div class="field-with-size">
-                <input v-model="fields.groomName" type="text" class="form-input" placeholder="ישראל" @input="scheduleRedraw" />
-                <div class="size-override">
-                  <span class="size-label">גודל</span>
-                  <input
-                    v-model.number="fieldSizes.groomName"
-                    type="number" min="12" max="72" step="2"
-                    class="size-input"
-                    @input="scheduleRedraw"
-                  />
-                </div>
-              </div>
-            </div>
-            <div class="form-group">
-              <label>שם הכלה</label>
-              <div class="field-with-size">
-                <input v-model="fields.brideName" type="text" class="form-input" placeholder="ישראלה" @input="scheduleRedraw" />
-                <div class="size-override">
-                  <span class="size-label">גודל</span>
-                  <input
-                    v-model.number="fieldSizes.brideName"
-                    type="number" min="12" max="72" step="2"
-                    class="size-input"
-                    @input="scheduleRedraw"
-                  />
-                </div>
-              </div>
-            </div>
-            <div class="form-group">
-              <label>הורי החתן</label>
-              <input v-model="fields.groomParents" type="text" class="form-input" placeholder="משפחת כהן" @input="scheduleRedraw" />
-            </div>
-            <div class="form-group">
-              <label>הורי הכלה</label>
-              <input v-model="fields.brideParents" type="text" class="form-input" placeholder="משפחת לוי" @input="scheduleRedraw" />
-            </div>
-          </section>
-
-          <section class="form-section">
-            <h3 class="section-title">פרטי האירוע</h3>
-            <div class="form-group">
-              <label>תאריך</label>
-              <input v-model="fields.date" type="date" class="form-input" @input="scheduleRedraw" />
-            </div>
-            <div class="form-group">
-              <label>שעה</label>
-              <input v-model="fields.time" type="time" class="form-input" @input="scheduleRedraw" />
-            </div>
-            <div class="form-group">
-              <label>מקום</label>
-              <input v-model="fields.venue" type="text" class="form-input" placeholder="אולם האגם" @input="scheduleRedraw" />
-            </div>
-            <div class="form-group">
-              <label>כתובת</label>
-              <input v-model="fields.address" type="text" class="form-input" placeholder="רחוב הורדים 5, תל אביב" @input="scheduleRedraw" />
-            </div>
-          </section>
-
-          <section class="form-section">
-            <h3 class="section-title">טקסטים</h3>
-            <div class="form-group">
-              <label>ברכה</label>
-              <textarea v-model="fields.blessing" class="form-input" rows="2" placeholder="בשעה טובה ומוצלחת" @input="scheduleRedraw" />
-            </div>
-            <div class="form-group">
-              <label>טקסט נוסף</label>
-              <textarea v-model="fields.extraText" class="form-input" rows="2" placeholder="אנא אשר הגעתך..." @input="scheduleRedraw" />
-            </div>
-          </section>
-
-          <section class="form-section">
-            <h3 class="section-title">עיצוב</h3>
-            <div class="form-group">
-              <label>פונט</label>
-              <FontPicker v-model="selectedFont" />
-            </div>
-            <div class="form-group">
-              <label>גודל בסיס: {{ baseFontSize }}px</label>
-              <input v-model.number="baseFontSize" type="range" min="12" max="48" step="1" class="range-input" @input="scheduleRedraw" />
-            </div>
-            <div class="form-row">
-              <div class="form-group">
-                <label>צבע ראשי</label>
-                <input v-model="primaryColor" type="color" class="color-input" @input="scheduleRedraw" />
-              </div>
-              <div class="form-group">
-                <label>צבע משני</label>
-                <input v-model="secondaryColor" type="color" class="color-input" @input="scheduleRedraw" />
-              </div>
-            </div>
-          </section>
-        </div>
-
-        <!-- Sidebar footer actions -->
-        <div class="sidebar-actions">
-          <button class="btn btn-primary" @click="saveInvitation" :disabled="saving">
-            {{ saving ? '⏳ שומר...' : '💾 שמור' }}
-          </button>
-          <button
-            v-if="invitationId"
-            class="btn btn-outline"
-            @click="downloadPdf"
-            :disabled="downloading"
-          >
-            {{ downloading ? '⏳' : '📥 הורד' }}
-          </button>
-          <button
-            v-if="invitationId"
-            class="btn btn-outline"
-            @click="copyShareLink"
-          >
-            🔗 שתף
-          </button>
-        </div>
-      </aside>
-
-      <!-- Canvas area -->
-      <div class="canvas-area">
-        <div class="canvas-wrapper invitation-canvas-container" ref="canvasWrapper">
-          <div class="canvas-stage-wrap" :style="{ width: displayWidth + 'px', height: displayHeight + 'px' }">
-            <v-stage ref="stageRef" :config="stageConfig">
-              <v-layer>
-                <!-- Background image -->
-                <v-image v-if="bgImage" :config="bgImageConfig" />
-                <!-- Text zones -->
-                <v-text
-                  v-for="(zone, idx) in computedTextNodes"
-                  :key="idx"
-                  :config="zone"
-                />
-              </v-layer>
-            </v-stage>
-          </div>
-        </div>
-        <p class="canvas-hint">👆 זה הצפה חיה של ההזמנה שלך</p>
+    <template v-else>
+      <!-- Mobile tabs -->
+      <div v-if="isMobile" class="mobile-tabs">
+        <button :class="{ active: mobileTab === 'edit' }" @click="mobileTab = 'edit'">✏️ עריכה</button>
+        <button :class="{ active: mobileTab === 'preview' }" @click="mobileTab = 'preview'">👁 תצוגה</button>
       </div>
-    </div>
+
+      <div class="builder-layout" :class="{ mobile: isMobile }">
+        <!-- Sidebar -->
+        <aside v-show="!isMobile || mobileTab === 'edit'" class="builder-sidebar card card-body">
+          <div class="sidebar-scroll">
+            <section class="form-section">
+              <h3 class="section-title">פרטי החתן והכלה</h3>
+
+              <div class="form-group field-row">
+                <label>שם החתן</label>
+                <span v-if="!editedFields.has('groomName')" class="default-badge">לדוגמה</span>
+                <div class="field-with-size">
+                  <input v-model="fields.groomName" type="text" class="form-input" placeholder="ישראל" @input="onFieldInput('groomName')" />
+                  <div class="size-override">
+                    <span class="size-label">גודל</span>
+                    <input
+                      v-model.number="fieldSizes.groomName"
+                      type="number" min="12" max="72" step="2"
+                      class="size-input"
+                      @input="scheduleRedraw"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-group field-row">
+                <label>שם הכלה</label>
+                <span v-if="!editedFields.has('brideName')" class="default-badge">לדוגמה</span>
+                <div class="field-with-size">
+                  <input v-model="fields.brideName" type="text" class="form-input" placeholder="ישראלה" @input="onFieldInput('brideName')" />
+                  <div class="size-override">
+                    <span class="size-label">גודל</span>
+                    <input
+                      v-model.number="fieldSizes.brideName"
+                      type="number" min="12" max="72" step="2"
+                      class="size-input"
+                      @input="scheduleRedraw"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-group field-row">
+                <label>הורי החתן</label>
+                <span v-if="!editedFields.has('groomParents')" class="default-badge">לדוגמה</span>
+                <input v-model="fields.groomParents" type="text" class="form-input" placeholder="משפחת כהן" @input="onFieldInput('groomParents')" />
+              </div>
+
+              <div class="form-group field-row">
+                <label>הורי הכלה</label>
+                <span v-if="!editedFields.has('brideParents')" class="default-badge">לדוגמה</span>
+                <input v-model="fields.brideParents" type="text" class="form-input" placeholder="משפחת לוי" @input="onFieldInput('brideParents')" />
+              </div>
+            </section>
+
+            <section class="form-section">
+              <h3 class="section-title">פרטי האירוע</h3>
+
+              <div class="form-group field-row">
+                <label>תאריך</label>
+                <span v-if="!editedFields.has('date')" class="default-badge">לדוגמה</span>
+                <input v-model="fields.date" type="text" class="form-input" placeholder="יום שישי, כ״ב בסיון תשפ״ה" @input="onFieldInput('date')" />
+              </div>
+
+              <div class="form-group field-row">
+                <label>שעה</label>
+                <span v-if="!editedFields.has('time')" class="default-badge">לדוגמה</span>
+                <input v-model="fields.time" type="text" class="form-input" placeholder="19:00" @input="onFieldInput('time')" />
+              </div>
+
+              <div class="form-group field-row">
+                <label>מקום</label>
+                <span v-if="!editedFields.has('venue')" class="default-badge">לדוגמה</span>
+                <input v-model="fields.venue" type="text" class="form-input" placeholder="אולם האגם" @input="onFieldInput('venue')" />
+              </div>
+
+              <div class="form-group field-row">
+                <label>כתובת</label>
+                <span v-if="!editedFields.has('address')" class="default-badge">לדוגמה</span>
+                <input v-model="fields.address" type="text" class="form-input" placeholder="רחוב הורדים 5, תל אביב" @input="onFieldInput('address')" />
+              </div>
+            </section>
+
+            <section class="form-section">
+              <h3 class="section-title">טקסטים</h3>
+
+              <div class="form-group field-row">
+                <label>ברכה</label>
+                <span v-if="!editedFields.has('blessing')" class="default-badge">לדוגמה</span>
+                <textarea v-model="fields.blessing" class="form-input" rows="2" placeholder="בשעה טובה ומוצלחת" @input="onFieldInput('blessing')" />
+              </div>
+
+              <div class="form-group field-row">
+                <label>טקסט נוסף</label>
+                <span v-if="!editedFields.has('extraText')" class="default-badge">לדוגמה</span>
+                <textarea v-model="fields.extraText" class="form-input" rows="2" placeholder="אנא אשר הגעתך..." @input="onFieldInput('extraText')" />
+              </div>
+            </section>
+
+            <section class="form-section">
+              <h3 class="section-title">עיצוב</h3>
+              <div class="form-group">
+                <label>פונט</label>
+                <FontPicker v-model="selectedFont" />
+              </div>
+              <div class="form-group">
+                <label>גודל בסיס: {{ baseFontSize }}px</label>
+                <input v-model.number="baseFontSize" type="range" min="12" max="48" step="1" class="range-input" @input="scheduleRedraw" />
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>צבע ראשי</label>
+                  <input v-model="primaryColor" type="color" class="color-input" @input="scheduleRedraw" />
+                </div>
+                <div class="form-group">
+                  <label>צבע משני</label>
+                  <input v-model="secondaryColor" type="color" class="color-input" @input="scheduleRedraw" />
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <!-- Sidebar footer actions -->
+          <div class="sidebar-actions">
+            <button class="btn btn-primary" @click="saveInvitation" :disabled="saving">
+              {{ saving ? '⏳ שומר...' : '💾 שמור' }}
+            </button>
+            <button
+              v-if="invitationId"
+              class="btn btn-outline"
+              @click="downloadPdf"
+              :disabled="downloading"
+            >
+              {{ downloading ? '⏳' : '📥 הורד' }}
+            </button>
+            <button
+              v-if="invitationId"
+              class="btn btn-outline"
+              @click="copyShareLink"
+            >
+              🔗 שתף
+            </button>
+          </div>
+        </aside>
+
+        <!-- Canvas area -->
+        <div v-show="!isMobile || mobileTab === 'preview'" class="canvas-area">
+          <div class="canvas-wrapper invitation-canvas-container" ref="canvasWrapper">
+            <div class="canvas-stage-wrap" :style="{ width: displayWidth + 'px', height: displayHeight + 'px' }">
+              <v-stage ref="stageRef" :config="stageConfig">
+                <v-layer>
+                  <!-- Background image -->
+                  <v-image v-if="bgImage" :config="bgImageConfig" />
+                  <!-- Text zones -->
+                  <v-text
+                    v-for="(zone, idx) in computedTextNodes"
+                    :key="idx"
+                    :config="zone"
+                  />
+                </v-layer>
+              </v-stage>
+            </div>
+          </div>
+          <p class="canvas-hint">👆 זה הצפה חיה של ההזמנה שלך</p>
+        </div>
+      </div>
+    </template>
 
     <!-- Toast -->
     <div v-if="toast" class="toast" :class="toast.type">{{ toast.msg }}</div>
@@ -175,7 +202,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, nextTick } from 'vue'
+import { ref, reactive, computed, watch, onMounted, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import api from '@/composables/useApi'
 import FontPicker from '@/components/FontPicker.vue'
@@ -196,6 +223,10 @@ const loadError = ref(null)
 const saving = ref(false)
 const downloading = ref(false)
 const toast = ref(null)
+
+// Mobile responsive
+const isMobile = ref(window.innerWidth <= 768)
+const mobileTab = ref('edit') // 'edit' | 'preview'
 
 // Scale for responsive display
 const scale = ref(1)
@@ -221,18 +252,26 @@ const template = ref(null)
 const invitationId = computed(() => route.params.id ? parseInt(route.params.id) : null)
 const templateId = computed(() => route.params.templateId ? parseInt(route.params.templateId) : null)
 
-// Form fields
+// Edited fields tracker
+const editedFields = reactive(new Set())
+
+function onFieldInput(fieldName) {
+  editedFields.add(fieldName)
+  scheduleRedraw()
+}
+
+// Form fields — with beautiful defaults so canvas looks great immediately
 const fields = ref({
-  groomName: '',
-  brideName: '',
-  groomParents: '',
-  brideParents: '',
-  date: '',
-  time: '',
-  venue: '',
-  address: '',
-  blessing: 'בשעה טובה ומוצלחת',
-  extraText: '',
+  groomName:    'יוסי כהן',
+  brideName:    'מיכל לוי',
+  groomParents: 'רחל ואברהם כהן',
+  brideParents: 'שרה ויעקב לוי',
+  date:         'יום שישי, כ״ב בסיון תשפ״ה',
+  time:         '19:00',
+  venue:        'אולם שמחות גן האהבה',
+  address:      'רחוב הפרחים 1, תל אביב',
+  blessing:     'בשעה טובה ומוצלחת',
+  extraText:    'נשמח לראותכם!',
 })
 
 const selectedFont = ref('Heebo')
@@ -253,8 +292,8 @@ function getFieldText(field) {
     brideName:    fields.value.brideName,
     groomParents: fields.value.groomParents,
     brideParents: fields.value.brideParents,
-    date:         fields.value.date ? formatDate(fields.value.date) : '',
-    time:         fields.value.time ? formatTime(fields.value.time) : '',
+    date:         fields.value.date,
+    time:         fields.value.time,
     venue:        fields.value.venue,
     address:      fields.value.address,
     blessing:     fields.value.blessing,
@@ -262,18 +301,6 @@ function getFieldText(field) {
     andSign:      '&',
   }
   return map[field] ?? ''
-}
-
-function formatDate(d) {
-  if (!d) return ''
-  try {
-    return new Date(d).toLocaleDateString('he-IL', { day: 'numeric', month: 'long', year: 'numeric' })
-  } catch { return d }
-}
-
-function formatTime(t) {
-  if (!t) return ''
-  return t.slice(0, 5)
 }
 
 // Compute Konva text node configs from template zones
@@ -302,6 +329,9 @@ const computedTextNodes = computed(() => {
       color = secondaryColor.value
     }
 
+    // Lower opacity for placeholder (default, unedited) fields
+    const opacity = editedFields.has(zone.field) ? 1 : 0.7
+
     return {
       text,
       x: zone.x * CANVAS_W - maxW / 2,
@@ -312,6 +342,7 @@ const computedTextNodes = computed(() => {
       fill: color,
       align: 'center',
       listening: false,
+      opacity,
     }
   }).filter(Boolean)
 })
@@ -321,6 +352,13 @@ watch(selectedFont, () => {
   nextTick(() => {
     stageRef.value?.getNode()?.batchDraw?.()
   })
+})
+
+// When switching to preview tab on mobile, recompute scale
+watch(mobileTab, (tab) => {
+  if (tab === 'preview') {
+    nextTick(computeScale)
+  }
 })
 
 // Redraw scheduler (debounce)
@@ -361,7 +399,11 @@ async function loadData() {
       const res = await api.get(`/invitations/${invitationId.value}`)
       const inv = res.data
       template.value = inv.template
-      fields.value = { ...fields.value, ...inv.fields }
+      // Merge saved fields — mark them all as edited since user set them
+      if (inv.fields) {
+        fields.value = { ...fields.value, ...inv.fields }
+        Object.keys(inv.fields).forEach(k => { if (inv.fields[k]) editedFields.add(k) })
+      }
       selectedFont.value = inv.font || 'Heebo'
     } else if (templateId.value) {
       // New mode: load template
@@ -453,6 +495,7 @@ function showToast(msg, type = 'success') {
 
 // Resize handler
 function onResize() {
+  isMobile.value = window.innerWidth <= 768
   computeScale()
 }
 
@@ -491,6 +534,38 @@ onUnmounted(() => window.removeEventListener('resize', onResize))
 
 .header-actions { display: flex; gap: var(--space-3); }
 
+/* ── Mobile tabs ── */
+.mobile-tabs {
+  display: flex;
+  background: white;
+  border-bottom: 1px solid #eee;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  margin-bottom: 0;
+}
+
+.mobile-tabs button {
+  flex: 1;
+  padding: 14px;
+  border: none;
+  background: none;
+  font-size: 15px;
+  font-family: Heebo, sans-serif;
+  color: #888;
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  transition: all .2s;
+  min-height: 44px; /* touch-friendly */
+}
+
+.mobile-tabs button.active {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+  font-weight: 700;
+}
+
+/* ── Builder layout ── */
 .builder-layout {
   display: flex;
   gap: var(--space-6);
@@ -499,7 +574,14 @@ onUnmounted(() => window.removeEventListener('resize', onResize))
   overflow: hidden;
 }
 
-/* Sidebar */
+.builder-layout.mobile {
+  flex-direction: column;
+  height: auto;
+  overflow: visible;
+  flex: unset;
+}
+
+/* ── Sidebar ── */
 .builder-sidebar {
   width: 320px;
   flex-shrink: 0;
@@ -509,11 +591,21 @@ onUnmounted(() => window.removeEventListener('resize', onResize))
   padding: 0;
 }
 
+.builder-layout.mobile .builder-sidebar {
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
 .sidebar-scroll {
   flex: 1;
   overflow-y: auto;
   padding: var(--space-4);
   scrollbar-width: thin;
+}
+
+.builder-layout.mobile .sidebar-scroll {
+  overflow-y: visible;
 }
 
 .form-section {
@@ -531,6 +623,31 @@ onUnmounted(() => window.removeEventListener('resize', onResize))
   border-bottom: 1px solid var(--color-border);
 }
 
+/* ── Field row with default badge ── */
+.field-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 14px;
+}
+
+.field-row label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #555;
+}
+
+.default-badge {
+  display: inline-block;
+  font-size: 10px;
+  background: #FFF3CD;
+  color: #856404;
+  padding: 1px 6px;
+  border-radius: 4px;
+  width: fit-content;
+  margin-bottom: 2px;
+}
+
 .form-group {
   margin-bottom: var(--space-3);
 }
@@ -545,14 +662,14 @@ onUnmounted(() => window.removeEventListener('resize', onResize))
 
 .form-input {
   width: 100%;
-  padding: var(--space-2) var(--space-3);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
-  font-size: var(--font-size-sm);
-  font-family: inherit;
-  background: var(--color-bg);
+  padding: 10px 12px;
+  border: 1.5px solid #E0E0E0;
+  border-radius: 8px;
+  font-family: Heebo, sans-serif;
+  font-size: 14px;
+  background: white;
   color: var(--color-text);
-  transition: border-color var(--transition-fast);
+  transition: border-color .15s;
   direction: rtl;
   text-align: right;
   box-sizing: border-box;
@@ -631,7 +748,7 @@ textarea.form-input { resize: vertical; min-height: 60px; }
   gap: var(--space-3);
 }
 
-/* Canvas */
+/* ── Canvas ── */
 .canvas-area {
   flex: 1;
   display: flex;
@@ -639,6 +756,12 @@ textarea.form-input { resize: vertical; min-height: 60px; }
   align-items: center;
   overflow: auto;
   min-width: 0;
+}
+
+.builder-layout.mobile .canvas-area {
+  width: 100%;
+  min-height: 400px;
+  overflow: visible;
 }
 
 .canvas-wrapper {
@@ -662,11 +785,16 @@ textarea.form-input { resize: vertical; min-height: 60px; }
   text-align: center;
 }
 
-/* Loaders */
+/* ── Font grid touch targets ── */
+:deep(.font-grid) > * {
+  min-height: 44px;
+}
+
+/* ── Loaders ── */
 .loading-center { display: flex; justify-content: center; padding: var(--space-12); }
 .error-card { text-align: center; padding: var(--space-8); }
 
-/* Toast */
+/* ── Toast ── */
 .toast {
   position: fixed;
   bottom: var(--space-6);
@@ -688,8 +816,8 @@ textarea.form-input { resize: vertical; min-height: 60px; }
   to   { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
 
-/* Responsive */
-@media (max-width: 900px) {
+/* ── Responsive (tablet: column layout without tabs) ── */
+@media (max-width: 900px) and (min-width: 769px) {
   .builder-layout {
     flex-direction: column;
     overflow: visible;
@@ -698,6 +826,11 @@ textarea.form-input { resize: vertical; min-height: 60px; }
   .builder-sidebar {
     width: 100%;
   }
+  .builder-view { height: auto; }
+}
+
+/* Mobile full-height fix */
+@media (max-width: 768px) {
   .builder-view { height: auto; }
 }
 </style>
