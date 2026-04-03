@@ -96,13 +96,7 @@ export default async function subscriptionRoutes(app) {
       return reply.code(400).send({ error: 'INVALID_PLAN', message: 'תוכנית לא תקינה' })
     }
 
-    // STUB: Log the upgrade request without actually processing payment
-    console.log(`[SUBSCRIPTION STUB] User ${req.user.userId} requested upgrade to ${plan}`, {
-      userId: req.user.userId,
-      plan,
-      paymentMethod: paymentMethod || 'unknown',
-      timestamp: new Date().toISOString()
-    })
+    // TODO: payment integration
 
     // In demo mode, we don't actually process payment or change the plan
     return {
