@@ -144,7 +144,7 @@ async function load() {
   loading.value = true; error.value = null
   try {
     const res = await fetch('/api/cards/templates', {
-      headers: { Authorization: 'Bearer ' + auth.token }
+      headers: { Authorization: 'Bearer ' + auth.accessToken }
     })
     if (!res.ok) throw new Error('שגיאה בטעינת התבניות')
     const d = await res.json()

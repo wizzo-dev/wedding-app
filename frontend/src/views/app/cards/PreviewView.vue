@@ -121,7 +121,7 @@ async function load() {
   loading.value = true; error.value = null
   try {
     const res = await fetch('/api/cards/templates/' + route.params.id, {
-      headers: { Authorization: 'Bearer ' + auth.token }
+      headers: { Authorization: 'Bearer ' + auth.accessToken }
     })
     if (!res.ok) throw new Error('תבנית לא נמצאה')
     template.value = await res.json()

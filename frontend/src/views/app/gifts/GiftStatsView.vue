@@ -226,7 +226,7 @@ async function load() {
   error.value   = null
   try {
     const res = await fetch('/api/gifts/stats', {
-      headers: { Authorization: `Bearer ${auth.token}` }
+      headers: { Authorization: `Bearer ${auth.accessToken}` }
     })
     if (!res.ok) {
       const body = await res.json().catch(() => ({}))

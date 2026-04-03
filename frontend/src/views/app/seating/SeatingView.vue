@@ -287,7 +287,7 @@ async function apiCall(path, options = {}) {
     ...options,
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${auth.token}`,
+      Authorization: `Bearer ${auth.accessToken}`,
       ...options.headers
     }
   })
