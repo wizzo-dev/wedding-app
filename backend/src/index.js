@@ -127,7 +127,7 @@ app.setNotFoundHandler((req, reply) => {
   if (req.url.startsWith('/api/')) {
     reply.code(404).send({ error: 'NOT_FOUND', message: 'endpoint לא קיים' })
   } else {
-    reply.sendFile('index.html', frontendDist)
+    reply.sendFile('index.html')
   }
 })
 
