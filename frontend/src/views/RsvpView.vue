@@ -83,9 +83,9 @@
         <div class="form-group people-group">
           <label>כמה אנשים?</label>
           <div class="people-counter">
-            <button class="counter-btn" @click="form.numPeople = Math.max(1, form.numPeople - 1)" aria-label="הפחת">−</button>
-            <span class="counter-num">{{ form.numPeople }}</span>
             <button class="counter-btn" @click="form.numPeople = Math.min(20, form.numPeople + 1)" aria-label="הוסף">+</button>
+            <span class="counter-num">{{ form.numPeople }}</span>
+            <button class="counter-btn" @click="form.numPeople = Math.max(1, form.numPeople - 1)" aria-label="הפחת">−</button>
           </div>
         </div>
 
@@ -196,15 +196,18 @@ async function submit(rsvpStatus) {
   sending.value = true
   error.value   = ''
   try {
-    const code = route.params.code
+    const urlCode = route.params.code
+    // Use the actual rsvpToken from the loaded couple data for submit
+    // (important when urlCode is a numeric group link ID, not the rsvpToken)
+    const coupleToken = couple.value?.coupleToken || urlCode
     const body = {
       name:       form.name,
       phone:      form.phone      || undefined,
       numPeople:  form.numPeople,
       rsvpStatus,
-      // backend resolves guest via code; send as both fields for compat
-      code,
-      coupleToken: code,
+      // If personal guestToken link → send code for direct guest update
+      code:        prefilledGuest.value ? urlCode : undefined,
+      coupleToken: !prefilledGuest.value ? coupleToken : undefined,
     }
     const res = await fetch('/api/rsvp/submit', {
       method:  'POST',
@@ -213,7 +216,7 @@ async function submit(rsvpStatus) {
     })
     if (!res.ok) {
       const d = await res.json().catch(() => ({}))
-      error.value = d.message || 'שגיאה בשמירה'
+      error.value = 'שגיאה בשמירה, אנא נסה שוב או צרו קשר עם הזוג'
       return
     }
     lastStatus.value = rsvpStatus
@@ -441,6 +444,7 @@ onMounted(loadEvent)
 .people-counter {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 18px;
 }
 .counter-btn {

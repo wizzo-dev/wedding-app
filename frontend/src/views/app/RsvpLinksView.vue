@@ -41,15 +41,16 @@
           <span class="section-hint">הלינק ימלא את שם הקבוצה אוטומטית בטופס</span>
         </div>
         <div class="card-body groups-list">
-          <div v-for="group in groups" :key="group" class="group-item">
+          <div v-for="group in groups" :key="group.linkId" class="group-item">
             <div class="group-name">
-              <span class="group-icon">{{ groupIcon(group) }}</span>
-              {{ group }}
+              <span class="group-icon">{{ groupIcon(group.name) }}</span>
+              {{ group.name }}
+              <span class="group-id-badge">#{{ group.linkId }}</span>
             </div>
             <div class="link-url group-link-url">{{ groupLink(group) }}</div>
             <div class="link-actions">
-              <button class="btn btn-outline btn-sm" @click="copyLink(groupLink(group), group)">📋 העתק</button>
-              <button class="btn btn-outline btn-sm btn-wa" @click="shareWhatsApp(groupLink(group), group)">📱 שתף</button>
+              <button class="btn btn-outline btn-sm" @click="copyLink(groupLink(group), group.name)">📋 העתק</button>
+              <button class="btn btn-outline btn-sm btn-wa" @click="shareWhatsApp(groupLink(group), group.name)">📱 שתף</button>
             </div>
           </div>
         </div>
@@ -121,7 +122,8 @@ const generalLink = computed(() =>
 )
 
 function groupLink(group) {
-  return `${BASE_URL}/rsvp/${userData.value.rsvpToken}?group=${encodeURIComponent(group)}`
+  // Use numeric linkId - no group name exposed in URL
+  return `${BASE_URL}/rsvp/${group.linkId}`
 }
 
 function groupIcon(group) {
@@ -208,6 +210,18 @@ onMounted(async () => {
 
 /* Groups */
 .groups-list { display: flex; flex-direction: column; gap: var(--space-4); }
+.group-id-badge {
+  display: inline-flex;
+  align-items: center;
+  background: var(--color-bg-subtle, #F5F0EB);
+  color: var(--color-text-muted, #6B7280);
+  font-size: 11px;
+  padding: 2px 7px;
+  border-radius: 8px;
+  margin-right: 6px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
 .group-item {
   display: flex; align-items: center; gap: var(--space-4);
   padding: var(--space-3) 0; border-bottom: 1px solid var(--color-border);

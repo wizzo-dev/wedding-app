@@ -2,14 +2,39 @@ import { prisma } from '../models/db.js'
 
 export default async function rsvpRoutes(app) {
 
-  // ── GET /api/rsvp/groups — list groups for the logged-in user ────────────
+  // ── GET /api/rsvp/groups — list groups with their numeric link IDs ────────
   app.get('/groups', { preHandler: [app.authenticate] }, async (req) => {
     const userId = req.user.userId
     const groups = await prisma.guest.groupBy({
       by: ['groupName'],
       where: { userId, groupName: { not: null } }
     })
-    return groups.map(g => g.groupName).filter(Boolean)
+    const groupNames = groups.map(g => g.groupName).filter(Boolean)
+
+    // Ensure each group has a GroupLink record, create if missing
+    const result = []
+    for (const name of groupNames) {
+      const link = await prisma.groupLink.upsert({
+        where: { userId_groupName: { userId, groupName: name } },
+        create: { userId, groupName: name },
+        update: {}
+      })
+      result.push({ name, linkId: link.id })
+    }
+    return result
+  })
+
+  // ── POST /api/rsvp/group-link — create or get a group link ───────────────
+  app.post('/group-link', { preHandler: [app.authenticate] }, async (req, reply) => {
+    const userId = req.user.userId
+    const { groupName } = req.body
+    if (!groupName) return reply.code(400).send({ error: 'VALIDATION', message: 'groupName נדרש' })
+    const link = await prisma.groupLink.upsert({
+      where: { userId_groupName: { userId, groupName } },
+      create: { userId, groupName },
+      update: {}
+    })
+    return { id: link.id, groupName: link.groupName }
   })
 
   // ── GET /api/rsvp/:code ─────────────────────────────────────────────────
@@ -26,6 +51,8 @@ export default async function rsvpRoutes(app) {
     let user = null
     let prefilledGuest = null
 
+    let groupContext = null
+
     if (guestRecord) {
       user = guestRecord.user
       prefilledGuest = {
@@ -41,9 +68,21 @@ export default async function rsvpRoutes(app) {
     } else {
       // Second try: rsvpToken (couple's public link)
       user = await prisma.user.findUnique({ where: { rsvpToken: code } })
+
+      // Third try: numeric group link ID
+      if (!user && /^\d+$/.test(code)) {
+        const groupLink = await prisma.groupLink.findUnique({
+          where: { id: parseInt(code) },
+          include: { user: true }
+        })
+        if (groupLink) {
+          user = groupLink.user
+          groupContext = groupLink.groupName
+        }
+      }
     }
 
-    if (!user) return reply.code(404).send({ error: 'NOT_FOUND', message: 'קוד RSVP לא נמצא' })
+    if (!user) return reply.code(404).send({ error: 'NOT_FOUND', message: 'לינק לא תקין' })
 
     // Get latest invitation with template
     const latestInv = await prisma.userInvitation.findFirst({
@@ -61,9 +100,11 @@ export default async function rsvpRoutes(app) {
         venue:        user.venue,
         venueAddress: user.venueAddress,
         couplePhoto:  user.profileImageUrl,
-        invitationId: latestInv?.id || null  // kept for backward compat
+        coupleToken:  user.rsvpToken,        // needed for submit from group/general link
+        invitationId: latestInv?.id || null
       },
       prefilledGuest,
+      groupContext,   // group name for group links, null otherwise
       invitation: latestInv ? {
         id:               latestInv.id,
         templateImageUrl: latestInv.template.imageUrl,

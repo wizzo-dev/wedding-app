@@ -52,6 +52,7 @@ model User {
   tasks             Task[]
   notifications     Notification[]
   invitations       UserInvitation[]
+  groupLinks        GroupLink[]
 
   @@map("users")
 }
@@ -430,3 +431,15 @@ model UserInvitation {
   @@map("user_invitations")
 }
 
+
+model GroupLink {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  groupName String   @map("group_name")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, groupName])
+  @@map("group_links")
+}
