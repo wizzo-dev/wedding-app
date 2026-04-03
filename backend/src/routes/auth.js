@@ -55,8 +55,8 @@ export default async function authRoutes(app) {
 
     reply.setCookie('refresh_token', refreshToken, {
       httpOnly: true,
-      secure: true,
-      sameSite: 'none',
+      secure: false,
+      sameSite: 'lax',
       maxAge: REFRESH_EXPIRES_MS / 1000,
       path: '/'
     })
@@ -91,8 +91,8 @@ export default async function authRoutes(app) {
 
     reply.setCookie('refresh_token', refreshToken, {
       httpOnly: true,
-      secure: true,
-      sameSite: 'none',
+      secure: false,
+      sameSite: 'lax',
       maxAge: REFRESH_EXPIRES_MS / 1000,
       path: '/'
     })
@@ -122,8 +122,8 @@ export default async function authRoutes(app) {
 
     reply.setCookie('refresh_token', refreshToken, {
       httpOnly: true,
-      secure: true,
-      sameSite: 'none',
+      secure: false,
+      sameSite: 'lax',
       maxAge: REFRESH_EXPIRES_MS / 1000,
       path: '/'
     })
