@@ -1,437 +1,556 @@
 <template>
   <div class="rsvp-page" dir="rtl">
-    <div class="rsvp-bg" aria-hidden="true">
-      <div v-for="i in 12" :key="i" class="petal" :style="petalStyle(i)">🌸</div>
+
+    <!-- Invitation image card -->
+    <div class="inv-card">
+      <button class="zoom-btn" @click="zoomOpen = true" v-if="imageUrl" aria-label="הגדל תמונה">⊕</button>
+
+      <!-- Real image (invitation template or couple photo) -->
+      <img v-if="imageUrl" :src="imageUrl" class="inv-img" alt="הזמנה" />
+
+      <!-- Gradient placeholder when no image -->
+      <div v-else class="inv-placeholder">
+        <div class="placeholder-inner">
+          <div class="placeholder-icon">💍</div>
+          <h2 class="placeholder-names" v-if="couple.name1 || couple.name2">
+            {{ couple.name1 }}<span v-if="couple.name1 && couple.name2"> ❤️ </span>{{ couple.name2 }}
+          </h2>
+          <h2 class="placeholder-names" v-else>אישור הגעה</h2>
+          <p class="placeholder-date" v-if="formattedDate">{{ formattedDate }}</p>
+          <p class="placeholder-venue" v-if="couple.venue">📍 {{ couple.venue }}</p>
+        </div>
+      </div>
     </div>
 
-    <div class="rsvp-container">
-      <!-- Loading -->
-      <div v-if="loading" class="rsvp-card skeleton-wrap">
-        <div class="skel skel-h2" />
-        <div class="skel skel-line" />
-        <div class="skel skel-line short" />
+    <!-- Fullscreen zoom overlay -->
+    <Teleport to="body">
+      <div v-if="zoomOpen" class="zoom-overlay" @click="zoomOpen = false">
+        <img :src="imageUrl" alt="הזמנה מוגדלת" @click.stop />
+        <button class="zoom-close" @click="zoomOpen = false" aria-label="סגור">✕</button>
       </div>
+    </Teleport>
 
-      <!-- Confirmation screen -->
-      <div v-else-if="submitted" class="rsvp-card confirm-card pop-in">
-        <div class="confirm-emoji">{{ statusEmoji }}</div>
-        <h2 class="confirm-title">{{ confirmTitle }}</h2>
-        <p class="confirm-sub">{{ confirmSub }}</p>
-        <div v-if="coupleData" class="confirm-couple">
-          <span class="couple-name">{{ coupleData.name1 }} &amp; {{ coupleData.name2 }}</span>
-          <span v-if="coupleData.weddingDate" class="couple-date">📅 {{ formatDate(coupleData.weddingDate) }}</span>
-          <span v-if="coupleData.venue" class="couple-venue">📍 {{ coupleData.venue }}</span>
-        </div>
-        <button class="btn btn-outline" @click="reset">שלח תגובה חדשה</button>
-      </div>
+    <!-- Event title -->
+    <div class="event-title" v-if="couple.name1 || couple.name2">
+      <h1>{{ couple.name1 }}<span v-if="couple.name1 && couple.name2"> ❤️ </span>{{ couple.name2 }}</h1>
+      <p class="event-details">
+        <span v-if="formattedDate">{{ formattedDate }}</span>
+        <span v-if="couple.weddingTime"> | {{ couple.weddingTime }}</span>
+        <span v-if="couple.venue"> | {{ couple.venue }}</span>
+      </p>
+    </div>
 
-      <!-- Error state -->
-      <div v-else-if="loadError" class="rsvp-card error-card">
-        <div class="err-icon">💔</div>
+    <!-- Scroll-down arrow -->
+    <button class="scroll-arrow" @click="scrollToForm" aria-label="גלול לטופס">⌄</button>
+
+    <!-- RSVP Form -->
+    <div class="rsvp-form" ref="formRef">
+
+      <!-- Load error -->
+      <div v-if="loadError" class="state-box error-box">
+        <div class="state-icon">💔</div>
         <h2>הקישור לא תקין</h2>
         <p>לא מצאנו הזמנה עם הקוד שסופק.</p>
       </div>
 
-      <!-- RSVP Form -->
-      <div v-else class="rsvp-card fade-in">
-
-        <!-- Hero section -->
-        <div class="rsvp-hero">
-          <!-- Has invitation template -->
-          <div v-if="eventData?.invitation" class="invitation-hero">
-            <img :src="eventData.invitation.templateImageUrl" class="invitation-bg" alt="הזמנה" />
-            <div class="invitation-overlay">
-              <p class="inv-names">{{ coupleData?.name1 }} ❤️ {{ coupleData?.name2 }}</p>
-              <p class="inv-date" v-if="coupleData?.weddingDate">
-                {{ new Date(coupleData.weddingDate).toLocaleDateString('he-IL', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) }}
-              </p>
-            </div>
-          </div>
-
-          <!-- Has couple photo, no invitation -->
-          <div v-else-if="coupleData?.couplePhoto" class="couple-photo-hero">
-            <img :src="coupleData.couplePhoto" alt="החתן והכלה" />
-          </div>
-
-          <!-- Default header with decor -->
-          <div v-else class="default-hero">
-            <div class="hero-emoji">💒</div>
-            <h1 class="hero-names" v-if="coupleData">{{ coupleData.name1 }} ❤️ {{ coupleData.name2 }}</h1>
-            <h1 class="hero-names" v-else>אישור הגעה</h1>
-            <p class="hero-date" v-if="coupleData?.weddingDate">
-              {{ new Date(coupleData.weddingDate).toLocaleDateString('he-IL', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) }}
-            </p>
-            <p class="hero-venue" v-if="coupleData?.venue">📍 {{ coupleData.venue }}</p>
-          </div>
-        </div>
-
-        <!-- Invitation Banner link (if has invitation) -->
-        <div v-if="coupleData?.invitationId" class="invitation-banner">
-          <a :href="`/invitation/${coupleData.invitationId}`" target="_blank" class="invitation-banner-inner">
-            <span class="inv-banner-icon">💌</span>
-            <span class="inv-banner-text">צפה בהזמנה הדיגיטלית</span>
-            <span class="inv-banner-arrow">›</span>
-          </a>
-        </div>
-
-        <div class="rsvp-sub-header">
-          <p class="rsvp-invite">נשמח לדעת האם תוכלו להצטרף לשמחה שלנו ✨</p>
-        </div>
-
-        <form @submit.prevent="handleSubmit" class="rsvp-form">
-          <!-- Guest lookup -->
-          <div v-if="!guestPreFilled" class="form-section">
-            <h3 class="section-title">פרטים אישיים</h3>
-            <div class="form-group">
-              <label class="label" for="rsvp-name">שם מלא *</label>
-              <input id="rsvp-name" v-model="form.name" type="text" class="input"
-                :class="{ 'input-error': errors.name }" placeholder="הכנס/י את שמך המלא" autocomplete="name" />
-              <span v-if="errors.name" class="form-error">{{ errors.name }}</span>
-            </div>
-            <div class="form-group">
-              <label class="label" for="rsvp-phone">מספר טלפון</label>
-              <input id="rsvp-phone" v-model="form.phone" type="tel" class="input"
-                placeholder="05X-XXXXXXX" dir="ltr" autocomplete="tel" />
-            </div>
-            <div class="form-group">
-              <label class="label" for="rsvp-code">קוד RSVP אישי (אם קיבלת)</label>
-              <input id="rsvp-code" v-model="form.code" type="text" class="input"
-                placeholder="קוד אישי (אופציונלי)" dir="ltr" @input="onCodeInput" />
-              <span class="form-hint">קיבלת קוד אישי בהזמנה? הזן כאן לאישור מהיר</span>
-            </div>
-          </div>
-
-          <!-- Pre-filled guest greeting -->
-          <div v-else class="prefilled-banner">
-            <div class="pf-icon">👋</div>
-            <div>
-              <p class="pf-name">שלום, {{ guestData.name }}!</p>
-              <p class="pf-hint">אנא אשר/י את הגעתך</p>
-            </div>
-            <button type="button" class="btn btn-ghost btn-sm" @click="clearPrefill">שנה</button>
-          </div>
-
-          <!-- Attendance -->
-          <div class="form-section">
-            <h3 class="section-title">אישור הגעה *</h3>
-            <div class="attendance-options">
-              <button v-for="opt in attendanceOptions" :key="opt.value" type="button"
-                class="attend-btn" :class="{ active: form.rsvpStatus === opt.value }"
-                @click="form.rsvpStatus = opt.value">
-                <span class="attend-emoji">{{ opt.emoji }}</span>
-                <span class="attend-label">{{ opt.label }}</span>
-              </button>
-            </div>
-            <span v-if="errors.rsvpStatus" class="form-error">{{ errors.rsvpStatus }}</span>
-          </div>
-
-          <!-- Seats (only if coming/maybe) -->
-          <Transition name="slide-down">
-            <div v-if="form.rsvpStatus === 'confirmed' || form.rsvpStatus === 'maybe'" class="form-section">
-              <h3 class="section-title">מספר מגיעים</h3>
-              <div class="seats-row">
-                <button v-for="n in [1,2,3,4,5,6,7,8]" :key="n" type="button"
-                  class="seat-btn" :class="{ active: form.numPeople === n }" @click="form.numPeople = n">{{ n }}</button>
-                <span class="seats-hint">אנשים</span>
-              </div>
-            </div>
-          </Transition>
-
-          <!-- Meal preference -->
-          <Transition name="slide-down">
-            <div v-if="form.rsvpStatus === 'confirmed' || form.rsvpStatus === 'maybe'" class="form-section">
-              <h3 class="section-title">העדפת מנה</h3>
-              <div class="meal-options">
-                <button v-for="meal in mealOptions" :key="meal.value" type="button"
-                  class="meal-btn" :class="{ active: form.mealPref === meal.value }"
-                  @click="form.mealPref = meal.value">
-                  <span class="meal-emoji">{{ meal.emoji }}</span>
-                  {{ meal.label }}
-                </button>
-              </div>
-            </div>
-          </Transition>
-
-          <!-- Message -->
-          <div class="form-section">
-            <h3 class="section-title">ברכה לזוג (אופציונלי)</h3>
-            <textarea v-model="form.message" class="input" rows="3"
-              placeholder="כתוב/י מילה טובה לזוג המאושר..." />
-          </div>
-
-          <div v-if="submitError" class="submit-error">{{ submitError }}</div>
-
-          <button type="submit" class="btn btn-primary btn-lg w-full" :disabled="submitting">
-            <span v-if="submitting">שולח...</span>
-            <span v-else>שלח אישור הגעה 💌</span>
-          </button>
-        </form>
+      <!-- Loading skeleton -->
+      <div v-else-if="loading" class="skeleton-wrap">
+        <div class="skel skel-line" />
+        <div class="skel skel-line short" />
+        <div class="skel skel-line" />
       </div>
+
+      <!-- Success state -->
+      <div v-else-if="submitted" class="state-box success-box">
+        <div class="state-icon">✅</div>
+        <h2>תודה {{ form.name }}!</h2>
+        <p>{{ successMessage }}</p>
+      </div>
+
+      <!-- Form fields -->
+      <template v-else>
+        <div class="form-group">
+          <label>שם האורחים</label>
+          <input
+            v-model="form.name"
+            type="text"
+            placeholder="לדוגמה: אור ועדי כהן"
+            class="form-input"
+            autocomplete="name"
+          />
+        </div>
+
+        <div class="form-group people-group">
+          <label>כמה אנשים?</label>
+          <div class="people-counter">
+            <button class="counter-btn" @click="form.numPeople = Math.max(1, form.numPeople - 1)" aria-label="הפחת">−</button>
+            <span class="counter-num">{{ form.numPeople }}</span>
+            <button class="counter-btn" @click="form.numPeople = Math.min(20, form.numPeople + 1)" aria-label="הוסף">+</button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>מספר טלפון</label>
+          <input
+            v-model="form.phone"
+            type="tel"
+            placeholder="050-000-0000"
+            class="form-input"
+            dir="ltr"
+            autocomplete="tel"
+          />
+        </div>
+
+        <div class="rsvp-buttons">
+          <button class="rsvp-btn btn-no"    :disabled="sending" @click="submit('declined')">לא מגיע/ה</button>
+          <button class="rsvp-btn btn-yes"   :disabled="sending" @click="submit('confirmed')">מגיע/ה</button>
+          <button class="rsvp-btn btn-maybe" :disabled="sending" @click="submit('maybe')">אולי מגיע/ה</button>
+        </div>
+
+        <p v-if="error" class="error-msg">{{ error }}</p>
+      </template>
+
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 
 const route = useRoute()
 
+// State
+const couple      = ref({})
+const invitation  = ref(null)
 const loading     = ref(false)
 const loadError   = ref(false)
-const submitting  = ref(false)
+const zoomOpen    = ref(false)
 const submitted   = ref(false)
-const submitError = ref('')
-const coupleData  = ref(null)
-const guestData   = ref(null)
-const eventData   = ref(null)
+const sending     = ref(false)
+const error       = ref('')
+const lastStatus  = ref('')
+const formRef     = ref(null)
 
-const form = ref({ name: '', phone: '', code: '', rsvpStatus: '', numPeople: 1, mealPref: '', message: '' })
-const errors = ref({})
-
-const guestPreFilled = computed(() => !!guestData.value)
-
-const attendanceOptions = [
-  { value: 'confirmed', label: 'מגיע/ה 🎉', emoji: '✅' },
-  { value: 'maybe',     label: 'אולי',        emoji: '🤔' },
-  { value: 'declined',  label: 'לא מגיע/ה',  emoji: '❌' }
-]
-
-const mealOptions = [
-  { value: 'regular',    label: 'רגילה',     emoji: '🍽️' },
-  { value: 'vegetarian', label: 'צמחונית',   emoji: '🥗' },
-  { value: 'vegan',      label: 'טבעונית',   emoji: '🌱' },
-  { value: 'kosher',     label: 'כשרה',      emoji: '✡️' },
-  { value: 'glutenfree', label: 'ללא גלוטן', emoji: '🌾' }
-]
-
-const statusEmoji  = computed(() => ({ confirmed: '🎊', declined: '💙' }[form.value.rsvpStatus] || '💌'))
-const confirmTitle = computed(() => ({ confirmed: 'נהדר! מחכים לכם בשמחה', declined: 'תודה שעדכנת/ת!' }[form.value.rsvpStatus] || 'תודה! נציר את מקומך'))
-const confirmSub   = computed(() => {
-  if (form.value.rsvpStatus === 'confirmed') return `אישרנו את הגעת ${form.value.name || 'האורח/ת'} לחתונה 💕`
-  if (form.value.rsvpStatus === 'declined')  return 'חבל שלא תוכלו להגיע, אבל מעריכים את העדכון 💙'
-  return 'נשמח לדעת מוקדם יותר אם ניתן ✨'
+const form = reactive({
+  name:       '',
+  phone:      '',
+  numPeople:  1,
 })
 
-function formatDate(d) {
-  if (!d) return ''
-  return new Date(d).toLocaleDateString('he-IL', { day: '2-digit', month: 'long', year: 'numeric' })
-}
+// Computed
 
-function petalStyle(i) {
-  return {
-    top: `${5 + (i * 7) % 80}%`,
-    right: `${(i * 13) % 95}%`,
-    fontSize: `${14 + (i % 4) * 6}px`,
-    animationDelay: `${(i * 0.4).toFixed(1)}s`,
-    animationDuration: `${6 + (i % 4) * 2}s`,
-    opacity: 0.15 + (i % 5) * 0.04
-  }
-}
-
-onMounted(async () => {
-  const code = route.params.code || route.query.code
-  if (code) await loadByCode(code)
+/**
+ * Only use images that come from our own server:
+ * 1. invitation.templateImageUrl  (from DB)
+ * 2. couple.couplePhoto           (from DB)
+ * No external fallbacks.
+ */
+const imageUrl = computed(() => {
+  return invitation.value?.templateImageUrl || couple.value?.couplePhoto || null
 })
 
-async function loadByCode(code) {
+const formattedDate = computed(() => {
+  if (!couple.value?.weddingDate) return ''
+  return new Date(couple.value.weddingDate).toLocaleDateString('he-IL', {
+    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+  })
+})
+
+const successMessage = computed(() => {
+  if (lastStatus.value === 'confirmed') return 'נרשמת! נתראה בחתונה 🎉'
+  if (lastStatus.value === 'declined')  return 'תודה שעדכנת. יהיה חסר לנו! 💙'
+  return 'תודה! נחכה לעדכון סופי 🙏'
+})
+
+// Methods
+function scrollToForm() {
+  formRef.value?.scrollIntoView({ behavior: 'smooth' })
+}
+
+async function loadEvent() {
+  const code = route.params.code
+  if (!code) return
   loading.value = true
   try {
     const res = await fetch(`/api/rsvp/${encodeURIComponent(code)}`)
     if (!res.ok) { loadError.value = true; return }
     const data = await res.json()
-    eventData.value  = data
-    coupleData.value = data.couple
+    couple.value     = data.couple     || {}
+    invitation.value = data.invitation || null
 
-    // Handle prefilledGuest (new format) or guest (old format backward compat)
-    const pf = data.prefilledGuest || (data.type === 'guest' ? data.guest : null)
-    if (pf) {
-      guestData.value       = pf
-      form.value.code       = code
-      form.value.name       = pf.name || ''
-      form.value.phone      = pf.phone || ''
-      form.value.numPeople  = pf.numPeople || 1
-      form.value.mealPref   = pf.mealPref || ''
-      form.value.rsvpStatus = pf.rsvpStatus === 'pending' ? '' : (pf.rsvpStatus || '')
+    if (data.prefilledGuest) {
+      form.name       = data.prefilledGuest.name       || ''
+      form.phone      = data.prefilledGuest.phone      || ''
+      form.numPeople  = data.prefilledGuest.numPeople  || 1
     }
-  } catch { loadError.value = true }
-  finally  { loading.value = false }
+  } catch {
+    loadError.value = true
+  } finally {
+    loading.value = false
+  }
 }
 
-async function onCodeInput() {
-  const code = form.value.code.trim()
-  if (code.length >= 5) await loadByCode(code)
-}
-
-function clearPrefill() {
-  guestData.value = null
-  form.value.code = ''
-  form.value.name = ''
-  form.value.phone = ''
-}
-
-function validate() {
-  errors.value = {}
-  if (!guestPreFilled.value && !form.value.name.trim()) errors.value.name = 'שם נדרש'
-  if (!form.value.rsvpStatus) errors.value.rsvpStatus = 'אנא בחר/י אישור הגעה'
-  return Object.keys(errors.value).length === 0
-}
-
-async function handleSubmit() {
-  if (!validate()) return
-  submitError.value = ''
-  submitting.value  = true
-  const coupleToken = route.params.code || route.query.code
+async function submit(rsvpStatus) {
+  if (!form.name.trim()) { error.value = 'נא להזין שם'; return }
+  sending.value = true
+  error.value   = ''
   try {
-    const payload = {
-      rsvpStatus: form.value.rsvpStatus,
-      numPeople:  form.value.numPeople,
-      mealPref:   form.value.mealPref  || undefined,
-      message:    form.value.message   || undefined
-    }
-    if (form.value.code) {
-      payload.code = form.value.code
-    } else {
-      payload.name = form.value.name.trim()
-      payload.phone = form.value.phone.trim() || undefined
-      payload.coupleToken = coupleToken
+    const code = route.params.code
+    const body = {
+      name:       form.name,
+      phone:      form.phone      || undefined,
+      numPeople:  form.numPeople,
+      rsvpStatus,
+      // backend resolves guest via code; send as both fields for compat
+      code,
+      coupleToken: code,
     }
     const res = await fetch('/api/rsvp/submit', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify(body),
     })
-    const data = await res.json()
-    if (!res.ok) { submitError.value = data.message || 'שגיאה בשליחה, אנא נסה/י שוב'; return }
-    if (data.couple) coupleData.value = data.couple
-    submitted.value = true
-  } catch { submitError.value = 'שגיאה בחיבור לשרת, אנא נסה/י שוב' }
-  finally  { submitting.value = false }
+    if (!res.ok) {
+      const d = await res.json().catch(() => ({}))
+      error.value = d.message || 'שגיאה בשמירה'
+      return
+    }
+    lastStatus.value = rsvpStatus
+    submitted.value  = true
+  } catch {
+    error.value = 'שגיאת רשת, אנא נסה שוב'
+  } finally {
+    sending.value = false
+  }
 }
 
-function reset() { submitted.value = false; submitError.value = ''; form.value.rsvpStatus = ''; form.value.message = '' }
+onMounted(loadEvent)
 </script>
 
 <style scoped>
-.rsvp-page {
-  min-height: 100vh;
-  background: linear-gradient(135deg, var(--color-primary-bg) 0%, #FFF0FA 50%, #F5F5F7 100%);
-  display: flex; align-items: center; justify-content: center;
-  padding: var(--space-8) var(--space-4); position: relative; overflow: hidden;
-}
-.rsvp-bg { position: absolute; inset: 0; pointer-events: none; }
-.petal { position: absolute; animation: floatPetal linear infinite; user-select: none; }
-@keyframes floatPetal {
-  0%   { transform: translateY(0) rotate(0deg); opacity: 0; }
-  10%  { opacity: 0.15; }
-  90%  { opacity: 0.15; }
-  100% { transform: translateY(-60px) rotate(20deg); opacity: 0; }
-}
-.rsvp-container { width: 100%; max-width: 520px; position: relative; z-index: 1; }
-.rsvp-card { background: var(--color-bg-card); border-radius: var(--radius-2xl); border: 1px solid var(--color-border); box-shadow: var(--shadow-xl); overflow: hidden; }
-.rsvp-header { background: linear-gradient(135deg, var(--color-primary) 0%, #C9177A 100%); color: #fff; padding: var(--space-8) var(--space-6) var(--space-6); text-align: center; }
-.header-decor { font-size: 2.5rem; margin-bottom: var(--space-3); animation: pulse 2s ease-in-out infinite; }
-@keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
-.rsvp-couple { font-size: var(--font-size-3xl); font-weight: 900; line-height: 1.2; margin-bottom: var(--space-3); }
-.rsvp-meta { display: flex; gap: var(--space-4); justify-content: center; flex-wrap: wrap; margin-bottom: var(--space-3); }
-.meta-item { font-size: var(--font-size-sm); opacity: 0.9; }
-.rsvp-invite { font-size: var(--font-size-sm); opacity: 0.85; }
-.rsvp-form { padding: var(--space-6); display: flex; flex-direction: column; gap: var(--space-1); }
-.form-section { padding: var(--space-4) 0; border-bottom: 1px solid var(--color-border); }
-.form-section:last-of-type { border-bottom: none; }
-.section-title { font-size: var(--font-size-sm); font-weight: 700; color: var(--color-navy); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: var(--space-3); }
-.prefilled-banner { display: flex; align-items: center; gap: var(--space-3); background: var(--color-primary-light); border-radius: var(--radius-lg); padding: var(--space-4); margin: var(--space-4) var(--space-6) 0; }
-.pf-icon { font-size: 2rem; }
-.pf-name { font-weight: 700; color: var(--color-navy); }
-.pf-hint { font-size: var(--font-size-sm); color: var(--color-text-muted); }
-.attendance-options { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-3); }
-.attend-btn { display: flex; flex-direction: column; align-items: center; gap: var(--space-1); padding: var(--space-4) var(--space-2); border: 2px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-bg-subtle); cursor: pointer; transition: all var(--transition); font-family: var(--font); }
-.attend-btn:hover { border-color: var(--color-primary); background: var(--color-primary-bg); }
-.attend-btn.active { border-color: var(--color-primary); background: var(--color-primary-light); box-shadow: 0 0 0 3px var(--color-primary-light); }
-.attend-emoji { font-size: 1.5rem; }
-.attend-label { font-size: var(--font-size-sm); font-weight: 600; color: var(--color-text); }
-.seats-row { display: flex; gap: var(--space-2); flex-wrap: wrap; align-items: center; }
-.seat-btn { width: 40px; height: 40px; border-radius: var(--radius-full); border: 2px solid var(--color-border); background: var(--color-bg-subtle); font-size: var(--font-size-base); font-weight: 700; cursor: pointer; transition: all var(--transition); font-family: var(--font); }
-.seat-btn:hover { border-color: var(--color-primary); background: var(--color-primary-bg); }
-.seat-btn.active { border-color: var(--color-primary); background: var(--color-primary); color: #fff; }
-.seats-hint { font-size: var(--font-size-sm); color: var(--color-text-muted); }
-.meal-options { display: flex; flex-wrap: wrap; gap: var(--space-2); }
-.meal-btn { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-2) var(--space-4); border: 2px solid var(--color-border); border-radius: var(--radius-full); background: var(--color-bg-subtle); font-size: var(--font-size-sm); font-weight: 600; cursor: pointer; transition: all var(--transition); font-family: var(--font); }
-.meal-btn:hover { border-color: var(--color-primary); background: var(--color-primary-bg); }
-.meal-btn.active { border-color: var(--color-primary); background: var(--color-primary-light); color: var(--color-primary); }
-.meal-emoji { font-size: 1rem; }
-.submit-error { background: var(--color-error-bg); color: var(--color-error); border-radius: var(--radius); padding: var(--space-3) var(--space-4); font-size: var(--font-size-sm); text-align: center; }
-.confirm-card { padding: var(--space-12) var(--space-6); text-align: center; display: flex; flex-direction: column; align-items: center; gap: var(--space-4); }
-.confirm-emoji { font-size: 4rem; line-height: 1; }
-.confirm-title { font-size: var(--font-size-2xl); font-weight: 800; color: var(--color-navy); }
-.confirm-sub { color: var(--color-text-muted); max-width: 320px; }
-.confirm-couple { display: flex; flex-direction: column; gap: var(--space-1); align-items: center; }
-.couple-name { font-weight: 700; font-size: var(--font-size-lg); color: var(--color-primary); }
-.couple-date, .couple-venue { font-size: var(--font-size-sm); color: var(--color-text-muted); }
-.error-card { padding: var(--space-12) var(--space-6); text-align: center; }
-.err-icon { font-size: 3rem; margin-bottom: var(--space-4); }
-.skeleton-wrap { padding: var(--space-6); display: flex; flex-direction: column; gap: var(--space-4); }
-.skel { height: 20px; border-radius: var(--radius); background: linear-gradient(90deg, var(--color-border) 25%, var(--color-bg-subtle) 50%, var(--color-border) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; }
-.skel-h2 { height: 32px; width: 70%; }
-.skel-line { width: 100%; }
-.skel-line.short { width: 55%; }
-@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
-.slide-down-enter-active, .slide-down-leave-active { transition: all var(--transition); overflow: hidden; }
-.slide-down-enter-from, .slide-down-leave-to { opacity: 0; max-height: 0; transform: translateY(-8px); }
-.slide-down-enter-to, .slide-down-leave-from { opacity: 1; max-height: 300px; }
-@media (max-width: 480px) {
-  .rsvp-page { padding: var(--space-4) var(--space-3); align-items: flex-start; }
-  .rsvp-couple { font-size: var(--font-size-2xl); }
-  .attendance-options { grid-template-columns: 1fr; }
-}
-/* Hero section */
-.rsvp-hero { margin-bottom: 0; overflow: hidden; }
-.invitation-hero { position: relative; max-height: 300px; overflow: hidden; }
-.invitation-hero img.invitation-bg { width: 100%; object-fit: cover; display: block; }
-.invitation-overlay {
-  position: absolute; bottom: 0; left: 0; right: 0;
-  background: linear-gradient(transparent, rgba(0,0,0,0.65));
-  padding: 20px 16px 16px; color: white; text-align: center;
-}
-.inv-names { font-size: 22px; font-weight: 700; margin: 0 0 4px; }
-.inv-date  { font-size: 14px; opacity: 0.9; margin: 0; }
-.couple-photo-hero img {
-  width: 100%; max-height: 280px; object-fit: cover; display: block;
-}
-.default-hero {
-  background: linear-gradient(135deg, #FFF0F7 0%, #F0F4FF 100%);
-  text-align: center;
-  padding: 32px 16px;
-}
-.hero-emoji  { font-size: 48px; }
-.hero-names  { font-size: 24px; font-weight: 700; color: var(--color-navy); margin: 8px 0; }
-.hero-date   { color: var(--color-primary); font-size: 15px; margin: 0; }
-.hero-venue  { color: #666; font-size: 14px; margin-top: 4px; }
-.rsvp-sub-header { padding: var(--space-3) var(--space-6); text-align: center; background: var(--color-bg-card); }
-.rsvp-sub-header .rsvp-invite { font-size: var(--font-size-sm); color: var(--color-text-muted); margin: 0; }
+/* ── Reset ────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-/* Invitation banner */
-.invitation-banner {
-  margin-bottom: var(--space-4);
+/* ── Page shell ───────────────────────────────────── */
+.rsvp-page {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 16px 16px 48px;
+  font-family: 'Heebo', sans-serif;
+  direction: rtl;
+  min-height: 100vh;
+  background: #F7F5F2;  /* warm almost-white, close to iv.matana.app */
+  color: #1A1F36;
 }
-.invitation-banner-inner {
+
+/* ── Invitation card ──────────────────────────────── */
+.inv-card {
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.10);
+  margin-bottom: 16px;
+  background: #fff;
+  /* square-ish: let the image determine height but cap it */
+  aspect-ratio: 3 / 4;
+  display: flex;
+  align-items: stretch;
+}
+
+.inv-img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+/* ── Gradient placeholder (no image) ─────────────── */
+.inv-placeholder {
+  flex: 1;
+  background: linear-gradient(145deg, #1A1F36 0%, #2D3561 55%, #E91E8C 100%);
   display: flex;
   align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-3) var(--space-4);
-  background: linear-gradient(135deg, #fff0f8 0%, #ffe6f4 100%);
-  border: 1.5px solid rgba(233,30,140,0.25);
-  border-radius: var(--radius-lg);
-  text-decoration: none;
-  color: var(--color-primary);
+  justify-content: center;
+  padding: 32px 24px;
+}
+.placeholder-inner {
+  text-align: center;
+  color: #fff;
+}
+.placeholder-icon {
+  font-size: 56px;
+  margin-bottom: 16px;
+  filter: drop-shadow(0 2px 8px rgba(0,0,0,0.3));
+}
+.placeholder-names {
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1.3;
+  margin-bottom: 12px;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+.placeholder-date {
+  font-size: 15px;
+  opacity: 0.85;
+  margin-bottom: 6px;
+}
+.placeholder-venue {
+  font-size: 14px;
+  opacity: 0.75;
+}
+
+/* ── Zoom button (top-left in RTL = visual left) ─── */
+.zoom-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;        /* RTL: right = visual right */
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.88);
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+  z-index: 2;
+  transition: transform 0.15s;
+}
+.zoom-btn:hover { transform: scale(1.1); }
+
+/* ── Fullscreen zoom overlay ──────────────────────── */
+.zoom-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.93);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.zoom-overlay img {
+  max-width: 95vw;
+  max-height: 95vh;
+  object-fit: contain;
+  border-radius: 8px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+}
+.zoom-close {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  background: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 38px;
+  height: 38px;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  transition: opacity 0.15s;
+}
+.zoom-close:hover { opacity: 0.8; }
+
+/* ── Event title ──────────────────────────────────── */
+.event-title {
+  text-align: center;
+  margin-bottom: 12px;
+  padding: 0 8px;
+}
+.event-title h1 {
+  font-size: 22px;
+  font-weight: 800;
+  color: #1A1F36;
+  margin-bottom: 6px;
+  line-height: 1.3;
+}
+.event-details {
+  font-size: 14px;
+  color: #666;
+  line-height: 1.6;
+}
+
+/* ── Scroll arrow ─────────────────────────────────── */
+.scroll-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: #3B82F6;
+  color: #fff;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(59, 130, 246, 0.45);
+  animation: bounce 1.6s ease-in-out infinite;
+  line-height: 1;
+  padding-top: 2px;  /* optical adjustment for ⌄ glyph */
+}
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(5px); }
+}
+
+/* ── Form card ────────────────────────────────────── */
+.rsvp-form {
+  background: #fff;
+  border-radius: 16px;
+  padding: 22px 20px;
+  box-shadow: 0 2px 14px rgba(0, 0, 0, 0.07);
+}
+
+/* ── Form groups ──────────────────────────────────── */
+.form-group {
+  margin-bottom: 18px;
+}
+.form-group label {
+  display: block;
+  font-size: 14px;
   font-weight: 700;
-  font-size: var(--font-size-sm);
-  transition: background 0.2s, transform 0.2s;
+  color: #1A1F36;
+  margin-bottom: 7px;
 }
-.invitation-banner-inner:hover {
-  background: linear-gradient(135deg, #ffe6f4 0%, #ffcce9 100%);
-  transform: translateY(-1px);
+.form-input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1.5px solid #E5E7EB;
+  border-radius: 10px;
+  font-family: 'Heebo', sans-serif;
+  font-size: 15px;
+  background: #F9FAFB;
+  color: #1A1F36;
+  transition: border-color 0.15s, background 0.15s;
 }
-.inv-banner-icon { font-size: 1.3rem; }
-.inv-banner-text { flex: 1; }
-.inv-banner-arrow { font-size: 1.2rem; }
+.form-input:focus {
+  outline: none;
+  border-color: #E91E8C;
+  background: #fff;
+}
+.form-input::placeholder { color: #B0B4BE; }
+
+/* ── People counter ───────────────────────────────── */
+.people-counter {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+.counter-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 2px solid #E5E7EB;
+  background: #fff;
+  font-size: 22px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #1A1F36;
+  line-height: 1;
+  transition: border-color 0.15s, color 0.15s;
+  font-family: 'Heebo', sans-serif;
+}
+.counter-btn:hover {
+  border-color: #E91E8C;
+  color: #E91E8C;
+}
+.counter-num {
+  font-size: 22px;
+  font-weight: 700;
+  color: #1A1F36;
+  min-width: 28px;
+  text-align: center;
+}
+
+/* ── RSVP action buttons ──────────────────────────── */
+.rsvp-buttons {
+  display: flex;
+  gap: 8px;
+  margin-top: 22px;
+}
+.rsvp-btn {
+  flex: 1;
+  padding: 13px 6px;
+  border: none;
+  border-radius: 10px;
+  font-family: 'Heebo', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+  letter-spacing: 0.01em;
+}
+.rsvp-btn:hover  { opacity: 0.92; }
+.rsvp-btn:active { transform: scale(0.97); }
+.rsvp-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+/* order: RTL — right = first visually */
+.btn-no    { background: #E91E8C; order: 1; }   /* declined — pink/red */
+.btn-yes   { background: #22C55E; order: 2; }   /* confirmed — green  */
+.btn-maybe { background: #1A1F36; order: 3; }   /* maybe — dark navy  */
+
+/* ── State boxes (success / error / loading) ──────── */
+.state-box {
+  text-align: center;
+  padding: 28px 16px;
+}
+.state-icon {
+  font-size: 54px;
+  margin-bottom: 14px;
+  line-height: 1;
+}
+.state-box h2 {
+  font-size: 22px;
+  font-weight: 800;
+  color: #1A1F36;
+  margin-bottom: 8px;
+}
+.state-box p {
+  font-size: 15px;
+  color: #555;
+}
+
+.error-msg {
+  color: #DC2626;
+  text-align: center;
+  font-size: 14px;
+  margin-top: 14px;
+}
+
+/* ── Skeleton loading ─────────────────────────────── */
+.skeleton-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 8px 0;
+}
+.skel {
+  height: 18px;
+  border-radius: 8px;
+  background: linear-gradient(90deg, #E5E7EB 25%, #F3F4F6 50%, #E5E7EB 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+}
+.skel-line       { width: 100%; }
+.skel-line.short { width: 55%; }
+@keyframes shimmer {
+  0%   { background-position:  200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ── Responsive ───────────────────────────────────── */
+@media (max-width: 360px) {
+  .rsvp-btn { font-size: 12px; padding: 11px 4px; }
+  .event-title h1 { font-size: 19px; }
+}
 </style>
