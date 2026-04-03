@@ -64,6 +64,9 @@ const routes = [
       { path: 'tasks',                  name: 'Tasks',          component: () => import('@/views/app/tasks/TasksView.vue') },
       { path: 'timeline',               name: 'Timeline',       component: () => import('@/views/app/tasks/TimelineView.vue') },
 
+      // Notifications
+      { path: 'notifications',          name: 'Notifications',  component: () => import('@/views/app/NotificationsView.vue') },
+
       // Settings
       { path: 'settings',               name: 'Settings',       component: () => import('@/views/app/settings/SettingsView.vue') },
       { path: 'settings/account',       name: 'Account',        component: () => import('@/views/app/settings/AccountView.vue') },

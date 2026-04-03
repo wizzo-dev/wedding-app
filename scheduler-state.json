@@ -133,23 +133,27 @@
     },
     {
       "name": "VendorsList",
-      "status": "pending",
-      "branch": null
+      "status": "pushed",
+      "branch": null,
+      "completedAt": "2026-04-02T23:24:00.000Z"
     },
     {
       "name": "VendorDetail",
-      "status": "pending",
-      "branch": null
+      "status": "pushed",
+      "branch": null,
+      "completedAt": "2026-04-02T23:24:00.000Z"
     },
     {
       "name": "MyVendors",
-      "status": "pending",
-      "branch": null
+      "status": "pushed",
+      "branch": null,
+      "completedAt": "2026-04-02T23:24:00.000Z"
     },
     {
       "name": "Tasks",
-      "status": "pending",
-      "branch": null
+      "status": "pushed",
+      "branch": null,
+      "completedAt": "2026-04-02T23:24:00.000Z"
     },
     {
       "name": "Timeline",

@@ -96,6 +96,10 @@
           <h1 class="page-title">{{ currentPageTitle }}</h1>
         </div>
         <div class="topbar-actions">
+          <RouterLink to="/app/notifications" class="notif-btn" :title="'התראות'" aria-label="התראות">
+            <span class="bell-icon">🔔</span>
+            <span v-if="unreadNotifCount > 0" class="notif-badge">{{ unreadNotifCount > 9 ? '9+' : unreadNotifCount }}</span>
+          </RouterLink>
           <div v-if="auth.user" class="topbar-user">
             <div class="user-avatar sm">{{ initials }}</div>
           </div>
@@ -118,6 +122,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import api from '@/composables/useApi'
 
 const auth = useAuthStore()
 const route = useRoute()
@@ -125,6 +130,7 @@ const router = useRouter()
 const collapsed = ref(false)
 const mobileOpen = ref(false)
 const isMobile = ref(false)
+const unreadNotifCount = ref(0)
 
 const navGroups = [
   {
@@ -165,6 +171,10 @@ const routeTitles = {
   '/app/timeline':             'ציר זמן',
   '/app/whatsapp':             'WhatsApp',
   '/app/vendors':              'ספקים',
+  '/app/notifications':        'התראות',
+  '/app/profile':              'פרופיל',
+  '/app/vendors/suggestions':  'הצעות ספקים',
+  '/app/subscription/payment': 'תוכניות ומנוי',
   '/app/settings':             'הגדרות',
   '/app/settings/account':     'פרטי חשבון',
   '/app/settings/subscription':'מנוי',
@@ -198,9 +208,17 @@ function checkMobile() {
   if (isMobile.value) collapsed.value = false
 }
 
+async function fetchUnreadCount() {
+  try {
+    const res = await api.get('/notifications')
+    unreadNotifCount.value = res.data.unreadCount || 0
+  } catch {}
+}
+
 onMounted(() => {
   checkMobile()
   window.addEventListener('resize', checkMobile)
+  fetchUnreadCount()
 })
 onUnmounted(() => window.removeEventListener('resize', checkMobile))
 </script>
@@ -480,6 +498,42 @@ onUnmounted(() => window.removeEventListener('resize', checkMobile))
   display: flex;
   align-items: center;
   gap: var(--space-3);
+}
+
+.notif-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius);
+  transition: background var(--transition-fast);
+  text-decoration: none;
+}
+.notif-btn:hover { background: var(--color-bg-subtle); }
+.bell-icon { font-size: 1.2rem; line-height: 1; }
+.notif-badge {
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  min-width: 18px;
+  height: 18px;
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  box-shadow: 0 0 0 2px var(--color-bg-card);
+  animation: pulse-badge 2s infinite;
+}
+@keyframes pulse-badge {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
 }
 
 .topbar-user {
