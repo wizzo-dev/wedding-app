@@ -425,3 +425,55 @@
 ### pm2
 - Restarted after Timeline (new Prisma model + route)
 - Restarted after Account (new endpoints)
+
+---
+
+## Freddy Round 8 — 2026-04-03
+
+### Pages Built
+1. **RSVP** (`feat/page/rsvp`)
+2. **GiftPublic** (`feat/page/gift-public`)
+3. **CardsExport** (`feat/page/cards-export`)
+4. **DashboardStats** (`feat/page/dashboard-stats`)
+
+### Schema Changes
+New models added to `backend/prisma/schema.prisma`:
+- `Gift` — received gifts (giverName, giverPhone, amount, message, status)
+- `GiftWish` — wish list items for public registry (name, desiredAmount, message, imageUrl, isContributed)
+- `Task` — tasks with status/priority/dueDate
+- New User fields: `bankInfo`, `bitPhone`
+- New Guest fields: `mealPref`, `rsvpMessage`
+
+### Backend Routes
+| Route | Method | Auth | Description |
+|-------|--------|------|-------------|
+| /api/rsvp/:code | GET | Public | Get couple/guest info by RSVP code |
+| /api/rsvp/submit | POST | Public | Submit RSVP (name/phone or code) |
+| /api/gifts/public/:userId | GET | Public | Public gift wish list |
+| /api/gifts/wishes | GET/POST/PUT/DELETE | Auth | Manage gift wish list |
+| /api/cards/export | GET | Auth | Create export job, return guest list |
+| /api/cards/export/:jobId | GET | Auth | Poll export job status |
+| /api/cards/export/:jobId/download | GET | Auth | Download export |
+| /api/stats/summary | GET | Auth | Aggregate all stats |
+
+### Frontend Views
+| View | Path | Auth |
+|------|------|------|
+| RsvpView.vue | /rsvp/:code? | Public |
+| GiftPublicView.vue | /gift/:userId | Public |
+| CardsExportView.vue | /app/cards/export | Auth |
+| DashboardStatsView.vue | /app/dashboard/stats | Auth |
+
+### Build Results
+| Branch | Build | Time |
+|--------|-------|------|
+| feat/page/rsvp | ✅ 0 errors | 811ms |
+| feat/page/gift-public | ✅ 0 errors | 829ms |
+| feat/page/cards-export | ✅ 0 errors | 835ms |
+| feat/page/dashboard-stats | ✅ 0 errors | 752ms |
+
+### Notes
+- Concurrent agents caused branch-switching issues during development; had to re-apply changes multiple times
+- Used `git checkout feat/page/X` before each commit to ensure correct branch
+- All 4 branches pushed to origin (force-push for gift-public to overwrite old branch)
+- pm2 restarted after backend changes
