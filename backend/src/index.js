@@ -109,9 +109,7 @@ app.register(dashboardRoutes, { prefix: '/api/dashboard' })
 app.register(timelineRoutes,        { prefix: '/api/timeline' })
 app.register(statsRoutes,           { prefix: '/api/stats' })
 app.register(notificationRoutes,    { prefix: '/api/notifications' })
-app.register(timelineRoutes,     { prefix: '/api/timeline' })
-app.register(statsRoutes,        { prefix: '/api/stats' })
-app.register(subscriptionRoutes, { prefix: '/api/subscription' })
+app.register(subscriptionRoutes,    { prefix: '/api/subscription' })
 
 // ── Static Frontend ───────────────────────────────────────────────────────────
 const frontendDist = join(__dirname, '../../frontend/dist')
