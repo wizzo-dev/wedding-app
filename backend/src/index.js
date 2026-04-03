@@ -24,7 +24,6 @@ import cardsRoutes from './routes/cards.js'
 import giftsRoutes from './routes/gifts.js'
 import vendorRoutes from './routes/vendors.js'
 import dashboardRoutes from './routes/dashboard.js'
-import rsvpRoutes from './routes/rsvp.js'
 import timelineRoutes from './routes/timeline.js'
 
 const app = Fastify({ logger: process.env.NODE_ENV === 'development' })
@@ -101,7 +100,6 @@ app.register(cardsRoutes,     { prefix: '/api/cards' })
 app.register(giftsRoutes,     { prefix: '/api/gifts' })
 app.register(vendorRoutes,    { prefix: '/api/vendors' })
 app.register(dashboardRoutes, { prefix: '/api/dashboard' })
-app.register(rsvpRoutes,      { prefix: '/api/rsvp' })
 app.register(timelineRoutes,  { prefix: '/api/timeline' })
 
 // ── Static Frontend ───────────────────────────────────────────────────────────

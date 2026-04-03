@@ -100,10 +100,30 @@ export default async function cardsRoutes(app) {
     return template
   })
 
-  // ── GET /api/cards/export — generate export job ───────────────────────────
-  // Creates a CardExport record (status: pending → ready)
-  // Returns job id + status; client polls GET /api/cards/export/:jobId
+  // ── GET /api/cards/export — check latest export job status (does NOT create) ─
   app.get('/export', { preHandler: [app.authenticate] }, async (req, reply) => {
+    const userId = req.user.userId
+
+    const job = await prisma.cardExport.findFirst({
+      where: { userId },
+      orderBy: { createdAt: 'desc' }
+    })
+
+    if (!job) {
+      return { job: null, message: 'אין ייצוא קיים — לחץ על כפתור הייצוא להתחלה' }
+    }
+
+    return {
+      jobId:       job.id,
+      status:      job.status,
+      pdfUrl:      job.pdfUrl,
+      downloadUrl: job.status === 'ready' ? job.pdfUrl : null,
+      createdAt:   job.createdAt
+    }
+  })
+
+  // ── POST /api/cards/export/start — explicitly trigger a new export job ────
+  app.post('/export/start', { preHandler: [app.authenticate] }, async (req, reply) => {
     const userId = req.user.userId
 
     // Get user info + guests for export
@@ -120,9 +140,7 @@ export default async function cardsRoutes(app) {
 
     const templateId = user.selectedCardTemplateId || 1
     const template   = TEMPLATES.find(t => t.id === templateId) || TEMPLATES[0]
-
-    // Find an existing layout or use 1 as dummy
-    const layoutId = 1
+    const layoutId   = 1
 
     // Create CardExport job
     const job = await prisma.cardExport.create({
@@ -139,15 +157,14 @@ export default async function cardsRoutes(app) {
       } catch {}
     })
 
-    return {
+    return reply.code(201).send({
       jobId:       job.id,
       status:      'pending',
       guestCount:  guests.length,
       template:    { id: template.id, name: template.name, slug: template.slug },
       couple:      { name1: user.name1, name2: user.name2, weddingDate: user.weddingDate, venue: user.venue },
-      guests:      guests,
       pollUrl:     `/api/cards/export/${job.id}`
-    }
+    })
   })
 
   // ── GET /api/cards/export/:jobId — poll export job status ────────────────

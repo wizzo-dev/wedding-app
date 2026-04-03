@@ -156,14 +156,22 @@ onUnmounted(() => { clearInterval(pollTimer); clearInterval(progressTimer) })
 async function loadGuests() {
   loading.value = true
   try {
-    // Use the export endpoint to get guests data
-    const res = await api.get('/cards/export')
-    exportData.value = res.data
-    jobId.value   = res.data.jobId
-    jobStatus.value = res.data.status
-    if (res.data.status !== 'ready') pollStatus()
-    else fakeProgress.value = 100
-    animateProgress()
+    // Load guests directly — do NOT trigger export on page load
+    const [guestsRes, jobRes] = await Promise.all([
+      api.get('/guests'),
+      api.get('/cards/export').catch(() => ({ data: { job: null } }))
+    ])
+    const guestList = guestsRes.data?.guests || []
+    exportData.value = { guests: guestList }
+
+    // Restore existing job status if present
+    const job = jobRes.data
+    if (job && job.jobId) {
+      jobId.value     = job.jobId
+      jobStatus.value = job.status
+      if (job.status === 'ready') fakeProgress.value = 100
+      else { animateProgress(); pollStatus() }
+    }
   } catch (e) {
     exportError.value = 'שגיאה בטעינת הנתונים'
   } finally {
@@ -177,8 +185,8 @@ async function startExport() {
   exportError.value = ''
   fakeProgress.value = 0
   try {
-    const res = await api.get('/cards/export')
-    exportData.value = res.data
+    // POST to explicitly create a new export job — never auto-trigger
+    const res = await api.post('/cards/export/start')
     jobId.value     = res.data.jobId
     jobStatus.value = res.data.status
     animateProgress()
@@ -217,7 +225,17 @@ function pollStatus() {
 
 async function downloadExport() {
   try {
-    window.open(`/api/cards/export/${jobId.value}/download`, '_blank')
+    // Use axios (which attaches JWT via interceptor) to fetch the download
+    const res = await api.get(`/cards/export/${jobId.value}/download`, {
+      responseType: 'blob'
+    })
+    const blob = new Blob([res.data], { type: res.headers['content-type'] || 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `invitations-${jobId.value}.json`
+    a.click()
+    URL.revokeObjectURL(url)
   } catch { exportError.value = 'שגיאה בהורדה' }
 }
 

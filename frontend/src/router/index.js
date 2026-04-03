@@ -5,7 +5,7 @@ import { useAuthStore } from '@/stores/auth'
 const routes = [
   // ── Public ──────────────────────────────────────────────────────────────────
   { path: '/',           name: 'Landing',     component: () => import('@/views/LandingView.vue'), meta: { public: true } },
-  { path: '/rsvp/:code?',  name: 'Rsvp',        component: () => import('@/views/RsvpView.vue'),       meta: { public: true } },
+  // RsvpView removed from cards-export branch (implemented in feat/page/rsvp)
   { path: '/gift/:userId', name: 'GiftPublic', component: () => import('@/views/GiftPublicView.vue'), meta: { public: true } },
 
   // ── Auth ─────────────────────────────────────────────────────────────────────
