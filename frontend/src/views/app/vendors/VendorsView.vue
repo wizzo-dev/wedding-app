@@ -1,108 +1,210 @@
 <template>
-  <div class="view-placeholder fade-in">
-    <h1>ספקים</h1>
-    <p style="color:var(--color-text-muted)">בבנייה... 🚧</p>
-    <!-- implemented by freddy: 2026-04-02T23:23:00Z -->
+  <div class="vendors-view fade-in" dir="rtl">
+
+    <!-- Header -->
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">ספקים 🏪</h1>
+        <p class="page-sub">מצאו את הספקים הטובים ביותר לחתונה שלכם</p>
+      </div>
+      <router-link to="/app/vendors/mine" class="btn btn-outline">⭐ הספקים שלי</router-link>
+    </div>
+
+    <!-- Search -->
+    <div class="search-row">
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input v-model="search" type="text" class="search-input" placeholder="חפש ספק לפי שם..." />
+        <button v-if="search" class="search-clear" @click="search = ''">✕</button>
+      </div>
+    </div>
+
+    <!-- Category Tabs -->
+    <div class="tabs-row">
+      <button
+        v-for="cat in ALL_CATS"
+        :key="cat"
+        class="tab-btn"
+        :class="{ active: activeCategory === cat }"
+        @click="activeCategory = cat"
+      >{{ cat }}</button>
+    </div>
+
+    <!-- Loading -->
+    <div v-if="loading" class="loading-center">
+      <div class="spinner"></div>
+    </div>
+
+    <!-- Error -->
+    <div v-else-if="error" class="error-card card card-body">
+      <p>{{ error }}</p>
+      <button class="btn btn-primary" @click="loadVendors">נסה שוב</button>
+    </div>
+
+    <!-- Empty -->
+    <div v-else-if="filtered.length === 0" class="empty-state card card-body">
+      <div style="font-size:2rem">🔍</div>
+      <p>לא נמצאו ספקים</p>
+    </div>
+
+    <!-- Vendors Grid -->
+    <div v-else class="vendors-grid">
+      <div v-for="v in filtered" :key="v.id" class="vendor-card card">
+        <router-link :to="`/app/vendors/${v.id}`" class="vendor-link">
+          <div class="vendor-body card-body">
+            <div class="vendor-top">
+              <div class="vendor-cat-badge" :class="catClass(v.category)">{{ v.category }}</div>
+              <div v-if="v.isFeatured" class="featured-badge">⭐ מומלץ</div>
+            </div>
+            <h3 class="vendor-name">{{ v.name }}</h3>
+            <p class="vendor-desc">{{ v.description }}</p>
+            <div class="vendor-meta">
+              <span class="vendor-city">📍 {{ v.city }}</span>
+              <span class="vendor-price">{{ v.priceRange }}</span>
+            </div>
+            <div class="vendor-rating">
+              <span v-for="s in 5" :key="s" class="star" :class="{ filled: s <= Math.round(v.rating) }">★</span>
+              <span class="rating-num">{{ v.rating }}</span>
+            </div>
+          </div>
+        </router-link>
+        <div class="vendor-footer">
+          <button
+            class="btn-save"
+            :class="{ saved: v.myStatus }"
+            @click="saveVendor(v)"
+            :disabled="savingId === v.id"
+          >
+            {{ v.myStatus ? '✓ נשמר' : '+ הוסף לשלי' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useAuthStore } from '@/stores/auth'
+import api from '@/composables/useApi'
 
-const auth = useAuthStore()
-const vendors = ref([])
-const loading = ref(false)
+const ALL_CATS = ['הכל', 'קייטרינג', 'צילום', 'להקה', 'פרחים', 'אולם']
+
+const loading = ref(true)
 const error = ref(null)
+const vendors = ref([])
+const search = ref('')
 const activeCategory = ref('הכל')
-const adding = ref(null)
+const savingId = ref(null)
 
-const categories = computed(() => [...new Set(vendors.value.map(v => v.category))])
-const filtered = computed(() =>
-  activeCategory.value === 'הכל' ? vendors.value : vendors.value.filter(v => v.category === activeCategory.value)
-)
+const filtered = computed(() => {
+  let list = vendors.value
+  if (activeCategory.value !== 'הכל') list = list.filter(v => v.category === activeCategory.value)
+  if (search.value) {
+    const q = search.value.toLowerCase()
+    list = list.filter(v => v.name.toLowerCase().includes(q) || v.description?.toLowerCase().includes(q))
+  }
+  return list
+})
 
-async function load() {
-  loading.value = true; error.value = null
-  try {
-    const res = await fetch('/api/vendors', { headers: { Authorization: `Bearer ${auth.token}` } })
-    if (!res.ok) throw new Error('שגיאה בטעינת ספקים')
-    vendors.value = await res.json()
-  } catch (e) { error.value = e.message }
-  finally { loading.value = false }
+function catClass(cat) {
+  const map = { 'קייטרינג': 'cat-food', 'צילום': 'cat-photo', 'להקה': 'cat-music', 'פרחים': 'cat-flowers', 'אולם': 'cat-hall' }
+  return map[cat] || 'cat-other'
 }
 
-async function addToMine(v) {
-  adding.value = v.id
+async function loadVendors() {
+  loading.value = true
+  error.value = null
   try {
-    const res = await fetch('/api/vendors/user', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${auth.token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ vendorId: v.id })
-    })
-    if (!res.ok) throw new Error('שגיאה')
+    const res = await api.get('/vendors')
+    vendors.value = res.data
+  } catch (e) {
+    error.value = e.response?.data?.message || 'שגיאה בטעינת ספקים'
+  } finally {
+    loading.value = false
+  }
+}
+
+async function saveVendor(v) {
+  if (v.myStatus) return
+  savingId.value = v.id
+  try {
+    await api.post('/vendors/user', { vendorId: v.id })
     v.myStatus = 'considering'
-  } catch (e) { alert(e.message) }
-  finally { adding.value = null }
+  } catch (e) {
+    alert(e.response?.data?.message || 'שגיאה בשמירה')
+  } finally {
+    savingId.value = null
+  }
 }
 
-function catIcon(cat) {
-  const map = { 'קייטרינג':'🍽️', 'צילום':'📷', 'להקה':'🎵', 'פרחים':'🌸', 'אולם':'🏛️', 'הכל':'🔍' }
-  return map[cat] || '📋'
-}
-
-onMounted(load)
+onMounted(loadVendors)
 </script>
 
 <style scoped>
-.vendors-view { max-width: 1100px; margin: 0 auto; padding: var(--space-6); }
+.vendors-view { padding: var(--space-6); max-width: 1100px; margin: 0 auto; }
 
-.page-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: var(--space-5); gap: var(--space-4); flex-wrap: wrap; }
-.page-title { font-size: var(--font-size-2xl); font-weight: 800; color: var(--color-navy); margin: 0 0 4px; }
-.page-subtitle { color: var(--color-text-muted); font-size: var(--font-size-sm); margin: 0; }
+.page-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: var(--space-5); }
+.page-title { font-size: var(--font-size-2xl); font-weight: 800; color: var(--color-navy); }
+.page-sub { color: var(--color-text-muted); margin-top: var(--space-1); }
 
-.cat-tabs { display: flex; gap: var(--space-2); flex-wrap: wrap; margin-bottom: var(--space-6); border-bottom: 2px solid var(--color-border); padding-bottom: 0; }
-.cat-tab { background: none; border: none; border-bottom: 2px solid transparent; margin-bottom: -2px; padding: var(--space-3) var(--space-4); font-family: var(--font); font-size: var(--font-size-sm); font-weight: 600; color: var(--color-text-muted); cursor: pointer; transition: all var(--transition-fast); display: flex; align-items: center; gap: var(--space-1); border-radius: var(--radius-sm) var(--radius-sm) 0 0; }
-.cat-tab:hover { color: var(--color-navy); }
-.cat-tab.active { color: var(--color-primary); border-bottom-color: var(--color-primary); }
+.search-row { margin-bottom: var(--space-4); }
+.search-wrap { position: relative; max-width: 400px; }
+.search-icon { position: absolute; right: var(--space-3); top: 50%; transform: translateY(-50%); }
+.search-input { width: 100%; padding: var(--space-3) var(--space-10) var(--space-3) var(--space-3); border: 1.5px solid var(--color-border); border-radius: var(--radius); font-size: var(--font-size-sm); outline: none; }
+.search-input:focus { border-color: var(--color-primary); }
+.search-clear { position: absolute; left: var(--space-3); top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--color-text-muted); }
 
-.center-state { text-align: center; padding: var(--space-12) var(--space-4); color: var(--color-text-muted); }
-.spinner { width: 40px; height: 40px; border: 3px solid var(--color-border); border-top-color: var(--color-primary); border-radius: 50%; animation: spin .8s linear infinite; margin: 0 auto var(--space-4); }
+.tabs-row { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-bottom: var(--space-5); }
+.tab-btn { padding: var(--space-2) var(--space-4); border-radius: var(--radius-full); border: 1.5px solid var(--color-border); background: white; font-size: var(--font-size-sm); cursor: pointer; transition: all var(--transition-fast); }
+.tab-btn:hover, .tab-btn.active { border-color: var(--color-primary); background: var(--color-primary); color: white; }
+
+.loading-center { display: flex; justify-content: center; padding: var(--space-16); }
+.spinner { width: 40px; height: 40px; border: 3px solid var(--color-border); border-top-color: var(--color-primary); border-radius: 50%; animation: spin 0.8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
+.error-card { text-align: center; display: flex; flex-direction: column; align-items: center; gap: var(--space-3); }
+.empty-state { text-align: center; padding: var(--space-10); display: flex; flex-direction: column; align-items: center; gap: var(--space-3); color: var(--color-text-muted); }
 
-.vendors-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: var(--space-5); }
-.vendor-card { background: var(--color-bg-card); border-radius: var(--radius-xl); box-shadow: var(--shadow-sm); padding: var(--space-5); position: relative; transition: box-shadow var(--transition); border: 2px solid transparent; }
-.vendor-card:hover { box-shadow: var(--shadow); }
-.vendor-card.featured { border-color: var(--color-primary); }
-.featured-badge { position: absolute; top: -1px; right: var(--space-4); background: var(--color-primary); color: #fff; font-size: var(--font-size-xs); font-weight: 700; padding: 2px 10px; border-radius: 0 0 var(--radius-sm) var(--radius-sm); }
+.vendors-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: var(--space-4); }
+.vendor-card { display: flex; flex-direction: column; overflow: hidden; transition: transform var(--transition-fast), box-shadow var(--transition-fast); }
+.vendor-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
+.vendor-link { text-decoration: none; color: inherit; flex: 1; }
+.vendor-body { flex: 1; }
 
-.vendor-header { display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-4); margin-top: var(--space-2); }
-.vendor-icon { font-size: 2rem; background: var(--color-primary-bg); border-radius: var(--radius-lg); width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.vendor-name { font-size: var(--font-size-base); font-weight: 800; color: var(--color-navy); margin: 0 0 2px; }
-.vendor-cat { font-size: var(--font-size-xs); color: var(--color-text-muted); }
+.vendor-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: var(--space-3); }
+.vendor-cat-badge { padding: 3px 10px; border-radius: var(--radius-full); font-size: var(--font-size-xs); font-weight: 600; }
+.cat-food { background: #fef3c7; color: #d97706; }
+.cat-photo { background: #dbeafe; color: #2563eb; }
+.cat-music { background: #ede9fe; color: #7c3aed; }
+.cat-flowers { background: #dcfce7; color: #16a34a; }
+.cat-hall { background: #fce7f3; color: #be185d; }
+.cat-other { background: var(--color-bg); color: var(--color-text-muted); }
+.featured-badge { font-size: var(--font-size-xs); color: var(--color-warning); font-weight: 600; }
 
-.vendor-body { margin-bottom: var(--space-4); }
-.vendor-desc { font-size: var(--font-size-sm); color: var(--color-text-muted); line-height: 1.5; margin-bottom: var(--space-3); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-.vendor-details { display: flex; flex-direction: column; gap: var(--space-1); }
-.detail-row { font-size: var(--font-size-xs); color: var(--color-navy); display: flex; align-items: center; gap: var(--space-1); }
-.detail-icon { width: 16px; text-align: center; }
+.vendor-name { font-size: var(--font-size-lg); font-weight: 700; color: var(--color-navy); margin-bottom: var(--space-2); }
+.vendor-desc { font-size: var(--font-size-sm); color: var(--color-text-muted); line-height: 1.5; margin-bottom: var(--space-3); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.vendor-meta { display: flex; justify-content: space-between; font-size: var(--font-size-sm); margin-bottom: var(--space-2); }
+.vendor-city { color: var(--color-text-muted); }
+.vendor-price { font-weight: 600; color: var(--color-navy); }
+.vendor-rating { display: flex; align-items: center; gap: var(--space-1); }
+.star { color: var(--color-border); font-size: 0.9rem; }
+.star.filled { color: var(--color-warning); }
+.rating-num { font-size: var(--font-size-sm); color: var(--color-text-muted); margin-right: var(--space-1); }
 
-.vendor-footer { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; border-top: 1px solid var(--color-border); padding-top: var(--space-3); }
-.added-badge { font-size: var(--font-size-xs); color: var(--color-success); font-weight: 700; }
+.vendor-footer { padding: var(--space-3) var(--space-5) var(--space-4); border-top: 1px solid var(--color-border); }
+.btn-save { width: 100%; padding: var(--space-2) var(--space-4); border-radius: var(--radius); border: 1.5px solid var(--color-primary); background: white; color: var(--color-primary); font-size: var(--font-size-sm); font-weight: 600; cursor: pointer; transition: all var(--transition-fast); }
+.btn-save:hover { background: var(--color-primary); color: white; }
+.btn-save.saved { background: var(--color-primary-light); border-color: var(--color-primary); cursor: default; }
+.btn-save:disabled { opacity: 0.6; cursor: not-allowed; }
 
-.btn { display: inline-flex; align-items: center; gap: var(--space-1); padding: var(--space-2) var(--space-4); border-radius: var(--radius-lg); font-family: var(--font); font-size: var(--font-size-sm); font-weight: 600; cursor: pointer; border: none; text-decoration: none; transition: all var(--transition); white-space: nowrap; }
-.btn-sm { padding: var(--space-1) var(--space-3); font-size: var(--font-size-xs); }
-.btn-primary { background: var(--color-primary); color: #fff; }
-.btn-primary:hover { filter: brightness(1.08); }
-.btn-primary:disabled { opacity: .6; cursor: not-allowed; }
-.btn-outline { background: transparent; border: 1.5px solid var(--color-primary); color: var(--color-primary); }
-.btn-outline:hover { background: var(--color-primary-bg); }
-.btn-ghost { background: var(--color-bg-subtle); color: var(--color-navy); }
-.btn-ghost:hover { background: var(--color-border); }
+.btn { padding: var(--space-3) var(--space-5); border-radius: var(--radius); border: none; font-size: var(--font-size-sm); font-weight: 600; cursor: pointer; transition: all var(--transition-fast); }
+.btn-outline { background: transparent; border: 1.5px solid var(--color-border); color: var(--color-text); text-decoration: none; display: inline-flex; align-items: center; }
+.btn-outline:hover { border-color: var(--color-primary); color: var(--color-primary); }
+.btn-primary { background: var(--color-primary); color: white; }
+.btn-primary:hover { background: var(--color-primary-hover); }
 
-@media (max-width: 680px) {
-  .vendors-view { padding: var(--space-4); }
-  .page-header { flex-direction: column; }
+@media (max-width: 600px) {
   .vendors-grid { grid-template-columns: 1fr; }
+  .page-header { flex-direction: column; gap: var(--space-3); }
 }
 </style>

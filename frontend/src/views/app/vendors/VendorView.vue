@@ -1,147 +1,175 @@
 <template>
-  <div class="view-placeholder fade-in">
-    <h1>ספק</h1>
-    <p style="color:var(--color-text-muted)">בבנייה... 🚧</p>
-    <!-- implemented by freddy: 2026-04-02T23:23:00Z -->
+  <div class="vendor-view fade-in" dir="rtl">
+
+    <!-- Back -->
+    <button class="back-btn" @click="$router.push('/app/vendors')">← חזרה לספקים</button>
+
+    <!-- Loading -->
+    <div v-if="loading" class="loading-center">
+      <div class="spinner"></div>
+    </div>
+
+    <!-- Error -->
+    <div v-else-if="error" class="error-card card card-body">
+      <p>{{ error }}</p>
+      <button class="btn btn-primary" @click="loadVendor">נסה שוב</button>
+    </div>
+
+    <template v-else-if="vendor">
+      <!-- Header Card -->
+      <div class="vendor-header card card-body">
+        <div class="vendor-top">
+          <div>
+            <div class="vendor-cat-badge" :class="catClass(vendor.category)">{{ vendor.category }}</div>
+            <h1 class="vendor-name">{{ vendor.name }}</h1>
+            <div class="vendor-city">📍 {{ vendor.city }}</div>
+          </div>
+          <div class="vendor-rating-box">
+            <div class="stars">
+              <span v-for="s in 5" :key="s" class="star" :class="{ filled: s <= Math.round(vendor.rating || 0) }">★</span>
+            </div>
+            <div class="rating-num">{{ vendor.rating }}</div>
+          </div>
+        </div>
+
+        <div v-if="vendor.isFeatured" class="featured-banner">⭐ ספק מומלץ</div>
+
+        <p class="vendor-desc">{{ vendor.description }}</p>
+
+        <div class="vendor-info-row">
+          <div class="info-chip">
+            <span class="chip-icon">💰</span>
+            <span>{{ vendor.priceRange }}</span>
+          </div>
+          <div v-if="vendor.phone" class="info-chip">
+            <span class="chip-icon">📞</span>
+            <a :href="`tel:${vendor.phone}`">{{ vendor.phone }}</a>
+          </div>
+          <div v-if="vendor.website" class="info-chip">
+            <span class="chip-icon">🌐</span>
+            <a :href="vendor.website" target="_blank" rel="noopener">אתר אינטרנט</a>
+          </div>
+        </div>
+
+        <button
+          class="btn btn-primary save-btn"
+          :class="{ saved: vendor.myVendor }"
+          @click="saveVendor"
+          :disabled="saving"
+        >
+          {{ saving ? 'שומר...' : (vendor.myVendor ? '✓ נשמר בספקים שלי' : '+ הוסף לספקים שלי') }}
+        </button>
+      </div>
+
+      <!-- Reviews placeholder -->
+      <div class="reviews-section card card-body">
+        <h2 class="section-title">ביקורות</h2>
+        <div class="reviews-placeholder">
+          <div style="font-size:2rem">💬</div>
+          <p>ביקורות יתווספו בקרוב</p>
+        </div>
+      </div>
+    </template>
+
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
+import { useRoute, useRouter } from 'vue-router'
+import api from '@/composables/useApi'
 
 const route = useRoute()
-const auth = useAuthStore()
-const vendor = ref(null)
-const myVendor = ref(null)
-const loading = ref(false)
+const router = useRouter()
+const id = route.params.id
+
+const loading = ref(true)
 const error = ref(null)
-const adding = ref(false)
-const editStatus = ref('considering')
-const editPrice = ref('')
-const editNotes = ref('')
+const vendor = ref(null)
+const saving = ref(false)
 
-async function load() {
-  loading.value = true; error.value = null
+function catClass(cat) {
+  const map = { 'קייטרינג': 'cat-food', 'צילום': 'cat-photo', 'להקה': 'cat-music', 'פרחים': 'cat-flowers', 'אולם': 'cat-hall' }
+  return map[cat] || 'cat-other'
+}
+
+async function loadVendor() {
+  loading.value = true
+  error.value = null
   try {
-    const res = await fetch(`/api/vendors/${route.params.id}`, {
-      headers: { Authorization: `Bearer ${auth.token}` }
-    })
-    if (!res.ok) throw new Error('ספק לא נמצא')
-    const data = await res.json()
-    vendor.value = data
-    if (data.myVendor) {
-      myVendor.value = data.myVendor
-      editStatus.value = data.myVendor.status || 'considering'
-      editPrice.value = data.myVendor.priceAgreed || ''
-      editNotes.value = data.myVendor.notes || ''
-    }
-  } catch (e) { error.value = e.message }
-  finally { loading.value = false }
+    const res = await api.get(`/vendors/${id}`)
+    vendor.value = res.data
+  } catch (e) {
+    error.value = e.response?.data?.message || 'ספק לא נמצא'
+  } finally {
+    loading.value = false
+  }
 }
 
-async function addToMine() {
-  adding.value = true
+async function saveVendor() {
+  if (vendor.value?.myVendor) return
+  saving.value = true
   try {
-    const res = await fetch('/api/vendors/user', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${auth.token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ vendorId: vendor.value.id })
-    })
-    if (!res.ok) throw new Error('שגיאה')
-    const data = await res.json()
-    myVendor.value = data
-    editStatus.value = 'considering'
-  } catch (e) { alert(e.message) }
-  finally { adding.value = false }
+    const res = await api.post('/vendors/user', { vendorId: vendor.value.id })
+    vendor.value.myVendor = res.data
+  } catch (e) {
+    alert(e.response?.data?.message || 'שגיאה בשמירה')
+  } finally {
+    saving.value = false
+  }
 }
 
-async function updateStatus() {
-  if (!myVendor.value) return
-  try {
-    await fetch(`/api/vendors/user/${myVendor.value.id}`, {
-      method: 'PATCH',
-      headers: { Authorization: `Bearer ${auth.token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: editStatus.value, priceAgreed: parseFloat(editPrice.value) || null, notes: editNotes.value })
-    })
-  } catch (e) { console.error(e) }
-}
-
-async function removeFromMine() {
-  if (!confirm('להסיר ספק זה מהרשימה שלך?')) return
-  try {
-    await fetch(`/api/vendors/user/${myVendor.value.id}`, {
-      method: 'DELETE', headers: { Authorization: `Bearer ${auth.token}` }
-    })
-    myVendor.value = null
-  } catch (e) { alert(e.message) }
-}
-
-function catIcon(cat) {
-  return { 'קייטרינג':'🍽️', 'צילום':'📷', 'להקה':'🎵', 'פרחים':'🌸', 'אולם':'🏛️' }[cat] || '📋'
-}
-function statusLabel(s) {
-  return { considering:'בודק', negotiating:'במשא ומתן', booked:'סגרתי' }[s] || s
-}
-
-onMounted(load)
+onMounted(loadVendor)
 </script>
 
 <style scoped>
-.vendor-view { max-width: 900px; margin: 0 auto; padding: var(--space-6); }
-.back-btn { background: none; border: none; color: var(--color-primary); font-family: var(--font); font-size: var(--font-size-sm); font-weight: 600; cursor: pointer; margin-bottom: var(--space-5); padding: 0; }
+.vendor-view { padding: var(--space-6); max-width: 800px; margin: 0 auto; }
 
-.center-state { text-align: center; padding: var(--space-12); color: var(--color-text-muted); }
-.spinner { width: 40px; height: 40px; border: 3px solid var(--color-border); border-top-color: var(--color-primary); border-radius: 50%; animation: spin .8s linear infinite; margin: 0 auto var(--space-4); }
+.back-btn { background: none; border: none; color: var(--color-primary); font-size: var(--font-size-sm); cursor: pointer; margin-bottom: var(--space-5); padding: 0; font-weight: 600; }
+.back-btn:hover { text-decoration: underline; }
+
+.loading-center { display: flex; justify-content: center; padding: var(--space-16); }
+.spinner { width: 40px; height: 40px; border: 3px solid var(--color-border); border-top-color: var(--color-primary); border-radius: 50%; animation: spin 0.8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
+.error-card { text-align: center; display: flex; flex-direction: column; align-items: center; gap: var(--space-3); }
 
-.vendor-hero { background: var(--color-bg-card); border-radius: var(--radius-xl); padding: var(--space-6); box-shadow: var(--shadow-sm); margin-bottom: var(--space-6); display: flex; align-items: center; gap: var(--space-5); position: relative; border: 2px solid transparent; }
-.vendor-hero.featured { border-color: var(--color-primary); }
-.featured-badge { position: absolute; top: -1px; right: var(--space-5); background: var(--color-primary); color: #fff; font-size: var(--font-size-xs); font-weight: 700; padding: 2px 12px; border-radius: 0 0 var(--radius-sm) var(--radius-sm); }
-.hero-icon { font-size: 3rem; background: var(--color-primary-bg); border-radius: var(--radius-xl); width: 80px; height: 80px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.hero-cat { font-size: var(--font-size-xs); color: var(--color-primary); font-weight: 700; text-transform: uppercase; display: block; margin-bottom: 4px; }
-.hero-name { font-size: var(--font-size-3xl); font-weight: 900; color: var(--color-navy); margin: 0 0 var(--space-3); }
-.hero-meta { display: flex; gap: var(--space-4); font-size: var(--font-size-sm); color: var(--color-text-muted); flex-wrap: wrap; }
+.vendor-header { margin-bottom: var(--space-4); }
+.vendor-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: var(--space-3); }
+.vendor-cat-badge { display: inline-block; padding: 3px 10px; border-radius: var(--radius-full); font-size: var(--font-size-xs); font-weight: 600; margin-bottom: var(--space-2); }
+.cat-food { background: #fef3c7; color: #d97706; }
+.cat-photo { background: #dbeafe; color: #2563eb; }
+.cat-music { background: #ede9fe; color: #7c3aed; }
+.cat-flowers { background: #dcfce7; color: #16a34a; }
+.cat-hall { background: #fce7f3; color: #be185d; }
+.cat-other { background: var(--color-bg); color: var(--color-text-muted); }
 
-.vendor-body { display: grid; grid-template-columns: 1fr 320px; gap: var(--space-6); }
-.info-card { background: var(--color-bg-card); border-radius: var(--radius-xl); padding: var(--space-5); box-shadow: var(--shadow-sm); margin-bottom: var(--space-5); }
-.section-title { font-size: var(--font-size-lg); font-weight: 800; color: var(--color-navy); margin: 0 0 var(--space-3); }
-.vendor-desc { font-size: var(--font-size-sm); color: var(--color-text-muted); line-height: 1.7; }
+.vendor-name { font-size: var(--font-size-2xl); font-weight: 800; color: var(--color-navy); margin-bottom: var(--space-1); }
+.vendor-city { font-size: var(--font-size-sm); color: var(--color-text-muted); }
+.vendor-rating-box { text-align: center; }
+.stars { display: flex; gap: 2px; margin-bottom: var(--space-1); }
+.star { font-size: 1.2rem; color: var(--color-border); }
+.star.filled { color: var(--color-warning); }
+.rating-num { font-size: var(--font-size-xl); font-weight: 800; color: var(--color-navy); }
 
-.contact-list { display: flex; flex-direction: column; gap: var(--space-2); }
-.contact-row { display: flex; align-items: center; gap: var(--space-3); text-decoration: none; color: var(--color-navy); font-size: var(--font-size-sm); padding: var(--space-2); border-radius: var(--radius); transition: background var(--transition-fast); }
-.contact-row:hover { background: var(--color-bg-subtle); }
-.contact-icon { font-size: 1.2rem; }
+.featured-banner { background: linear-gradient(135deg, #fef3c7, #fffbeb); border: 1px solid #fde68a; color: #92400e; padding: var(--space-2) var(--space-4); border-radius: var(--radius); font-size: var(--font-size-sm); font-weight: 600; margin-bottom: var(--space-4); display: inline-block; }
 
-.status-card { background: var(--color-bg-card); border-radius: var(--radius-xl); padding: var(--space-5); box-shadow: var(--shadow-sm); position: sticky; top: 80px; }
-.status-title { font-size: var(--font-size-base); font-weight: 800; color: var(--color-navy); margin: 0 0 var(--space-4); }
-.not-added p { font-size: var(--font-size-sm); color: var(--color-text-muted); margin-bottom: var(--space-3); }
-.added-state { display: flex; flex-direction: column; gap: var(--space-3); }
-.status-row { display: flex; flex-direction: column; gap: 4px; }
-.status-label { font-size: var(--font-size-xs); font-weight: 600; color: var(--color-text-muted); }
-.status-select { padding: var(--space-2) var(--space-3); border: 1.5px solid var(--color-border); border-radius: var(--radius); font-family: var(--font); font-size: var(--font-size-sm); background: var(--color-bg-card); color: var(--color-navy); cursor: pointer; }
-.price-input { padding: var(--space-2) var(--space-3); border: 1.5px solid var(--color-border); border-radius: var(--radius); font-family: var(--font); font-size: var(--font-size-sm); }
-.notes-input { padding: var(--space-2) var(--space-3); border: 1.5px solid var(--color-border); border-radius: var(--radius); font-family: var(--font); font-size: var(--font-size-sm); resize: vertical; }
-.status-badge-wrap { text-align: center; }
-.my-status-badge { display: inline-block; padding: 4px 14px; border-radius: var(--radius-full); font-size: var(--font-size-xs); font-weight: 700; }
-.my-status-badge.booked { background: var(--color-success-bg); color: #065f46; }
-.my-status-badge.negotiating { background: var(--color-warning-bg); color: #92400e; }
-.my-status-badge.considering { background: var(--color-info-bg); color: #1e40af; }
+.vendor-desc { font-size: var(--font-size-base); color: var(--color-text); line-height: 1.7; margin-bottom: var(--space-4); }
 
-.btn { display: inline-flex; align-items: center; gap: var(--space-2); padding: var(--space-2) var(--space-4); border-radius: var(--radius-lg); font-family: var(--font); font-size: var(--font-size-sm); font-weight: 600; cursor: pointer; border: none; text-decoration: none; transition: all var(--transition); }
-.btn-full { width: 100%; justify-content: center; }
-.btn-sm { padding: var(--space-1) var(--space-3); font-size: var(--font-size-xs); }
-.btn-primary { background: var(--color-primary); color: #fff; }
-.btn-primary:hover { filter: brightness(1.08); }
-.btn-primary:disabled { opacity: .6; cursor: not-allowed; }
-.btn-danger { background: var(--color-error-bg); color: var(--color-error); border: 1px solid var(--color-error); }
-.btn-danger:hover { background: var(--color-error); color: #fff; }
+.vendor-info-row { display: flex; flex-wrap: wrap; gap: var(--space-3); margin-bottom: var(--space-5); }
+.info-chip { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-2) var(--space-3); background: var(--color-bg); border-radius: var(--radius-full); font-size: var(--font-size-sm); }
+.chip-icon { font-size: 0.9rem; }
+.info-chip a { color: var(--color-primary); text-decoration: none; }
+.info-chip a:hover { text-decoration: underline; }
 
-@media (max-width: 768px) {
-  .vendor-view { padding: var(--space-4); }
-  .vendor-body { grid-template-columns: 1fr; }
-  .vendor-hero { flex-direction: column; text-align: center; }
-  .hero-meta { justify-content: center; }
-}
+.save-btn { width: 100%; padding: var(--space-4); font-size: var(--font-size-base); }
+.save-btn.saved { background: var(--color-success); }
+.save-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.reviews-section { }
+.section-title { font-size: var(--font-size-lg); font-weight: 700; color: var(--color-navy); margin-bottom: var(--space-4); }
+.reviews-placeholder { text-align: center; padding: var(--space-8); color: var(--color-text-muted); display: flex; flex-direction: column; align-items: center; gap: var(--space-3); }
+
+.btn { padding: var(--space-3) var(--space-5); border-radius: var(--radius); border: none; font-size: var(--font-size-sm); font-weight: 600; cursor: pointer; transition: all var(--transition-fast); }
+.btn-primary { background: var(--color-primary); color: white; }
+.btn-primary:hover { background: var(--color-primary-hover); }
 </style>

@@ -55,10 +55,10 @@ export default async function authRoutes(app) {
 
     reply.setCookie('refresh_token', refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      secure: false,
+      sameSite: 'lax',
       maxAge: REFRESH_EXPIRES_MS / 1000,
-      path: '/api/auth/refresh'
+      path: '/'
     })
 
     return {
@@ -91,10 +91,10 @@ export default async function authRoutes(app) {
 
     reply.setCookie('refresh_token', refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      secure: false,
+      sameSite: 'lax',
       maxAge: REFRESH_EXPIRES_MS / 1000,
-      path: '/api/auth/refresh'
+      path: '/'
     })
 
     return {
@@ -122,10 +122,10 @@ export default async function authRoutes(app) {
 
     reply.setCookie('refresh_token', refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      secure: false,
+      sameSite: 'lax',
       maxAge: REFRESH_EXPIRES_MS / 1000,
-      path: '/api/auth/refresh'
+      path: '/'
     })
 
     return { accessToken }
@@ -135,7 +135,7 @@ export default async function authRoutes(app) {
   app.post('/logout', { preHandler: [app.authenticate] }, async (req, reply) => {
     const token = req.cookies.refresh_token
     if (token) await prisma.refreshToken.deleteMany({ where: { token } })
-    reply.clearCookie('refresh_token', { path: '/api/auth/refresh' })
+    reply.clearCookie('refresh_token', { path: '/' })
     return { success: true }
   })
 
