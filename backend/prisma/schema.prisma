@@ -341,6 +341,7 @@ model Gift {
   @@map("gifts")
 }
 
+
 model GiftWish {
   id            Int      @id @default(autoincrement())
   userId        Int      @map("user_id")

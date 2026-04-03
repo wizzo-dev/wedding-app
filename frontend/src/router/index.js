@@ -6,6 +6,7 @@ const routes = [
   // ── Public ──────────────────────────────────────────────────────────────────
   { path: '/',           name: 'Landing',     component: () => import('@/views/LandingView.vue'), meta: { public: true } },
   { path: '/rsvp/:code?', name: 'Rsvp',        component: () => import('@/views/RsvpView.vue'),    meta: { public: true } },
+  { path: '/gift/:userId', name: 'GiftPublic', component: () => import('@/views/GiftPublicView.vue'), meta: { public: true } },
 
   // ── Auth ─────────────────────────────────────────────────────────────────────
   { path: '/login',          name: 'Login',         component: () => import('@/views/auth/LoginView.vue'),    meta: { guest: true } },
