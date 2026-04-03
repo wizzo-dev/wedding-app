@@ -273,6 +273,18 @@
         {{ sending ? 'שולח הודעות...' : `📤 שלח ל-${selectedGuests.length} אורחים` }}
       </button>
 
+      <!-- Disconnect recommendation after success -->
+      <div v-if="sendResult?.ok" class="disconnect-recommendation">
+        <div class="disconnect-icon">🔒</div>
+        <div class="disconnect-text">
+          <strong>ההודעות נשלחו בהצלחה!</strong>
+          <span>אנו ממליצים להתנתק מ-WhatsApp עד לשליחה הבאה</span>
+        </div>
+        <button class="btn-disconnect" @click="disconnectWA" :disabled="disconnecting">
+          {{ disconnecting ? 'מתנתק...' : 'התנתק' }}
+        </button>
+      </div>
+
       <!-- Start over after success -->
       <button v-if="sendResult?.ok" class="btn btn-secondary reset-btn" @click="resetWizard">
         📋 שליחה חדשה
@@ -307,6 +319,7 @@ const scheduleMode = ref('now')
 const scheduledAt = ref('')
 const sending = ref(false)
 const sendResult = ref(null)
+const disconnecting = ref(false)
 const confirmMissingVars = ref(false)
 
 // ── Constants ────────────────────────────────────────────────────────────────
@@ -463,6 +476,19 @@ function selectTemplate(tmpl) {
 function goToStep(n) {
   currentStep.value = n
   window.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
+async function disconnectWA() {
+  disconnecting.value = true
+  try {
+    await api.post('/whatsapp/disconnect')
+    waStatus.value = 'disconnected'
+    sendResult.value = { ok: true, message: '✅ התנתקת מ-WhatsApp בהצלחה' }
+  } catch(e) {
+    console.error('disconnect error', e)
+  } finally {
+    disconnecting.value = false
+  }
 }
 
 function resetWizard() {
@@ -1146,6 +1172,42 @@ onMounted(async () => {
   font-size: 16px;
   letter-spacing: 0.3px;
 }
+
+.disconnect-recommendation {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #fffbeb;
+  border: 1.5px solid #fcd34d;
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+}
+.disconnect-icon { font-size: 22px; flex-shrink: 0; }
+.disconnect-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 13px;
+  color: #92400e;
+}
+.disconnect-text strong { font-size: 14px; color: #78350f; }
+.btn-disconnect {
+  flex-shrink: 0;
+  padding: 8px 14px;
+  background: #1A1F36;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-family: Heebo, sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity .15s;
+}
+.btn-disconnect:disabled { opacity: 0.6; cursor: not-allowed; }
+.btn-disconnect:hover:not(:disabled) { opacity: 0.85; }
 
 .reset-btn {
   width: 100%;
