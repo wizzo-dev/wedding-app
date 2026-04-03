@@ -306,7 +306,12 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
+
+const router = useRouter()
+const auth = useAuthStore()
 
 const mobileMenu = ref(false)
 const scrolled = ref(false)
@@ -314,6 +319,17 @@ const scrolled = ref(false)
 function onScroll() {
   scrolled.value = window.scrollY > 20
 }
+
+// If user is already logged in (or becomes logged in after init), redirect to dashboard
+watch(
+  () => auth.authReady,
+  (ready) => {
+    if (ready && auth.isLoggedIn) {
+      router.replace('/app/dashboard')
+    }
+  },
+  { immediate: true }
+)
 
 onMounted(() => window.addEventListener('scroll', onScroll, { passive: true }))
 onUnmounted(() => window.removeEventListener('scroll', onScroll))
