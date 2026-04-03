@@ -1,7 +1,7 @@
 <template>
   <div class="landing" dir="rtl">
     <!-- ── Navbar ── -->
-    <nav class="lnav">
+    <nav class="lnav" :class="{ scrolled: scrolled }">
       <div class="lnav-inner">
         <RouterLink to="/" class="lnav-brand">
           <span class="brand-logo">💍</span>
@@ -9,247 +9,281 @@
         </RouterLink>
         <div class="lnav-links">
           <a href="#features" class="lnav-link">תכונות</a>
+          <a href="#how-it-works" class="lnav-link">איך זה עובד</a>
           <a href="#pricing" class="lnav-link">מחירים</a>
         </div>
         <div class="lnav-actions">
           <RouterLink to="/login" class="btn btn-ghost btn-sm">כניסה</RouterLink>
-          <RouterLink to="/register" class="btn btn-primary btn-sm">התחלה חינמית</RouterLink>
+          <RouterLink to="/register" class="btn btn-primary btn-sm">התחל בחינם</RouterLink>
         </div>
-        <button class="mobile-menu-btn" @click="mobileMenu = !mobileMenu">☰</button>
+        <button class="mobile-menu-btn" @click="mobileMenu = !mobileMenu" aria-label="תפריט">
+          <span class="hamburger" :class="{ open: mobileMenu }"></span>
+        </button>
       </div>
-      <!-- Mobile menu -->
-      <div class="mobile-menu" v-if="mobileMenu">
-        <a href="#features" class="mobile-link" @click="mobileMenu = false">תכונות</a>
-        <a href="#pricing" class="mobile-link" @click="mobileMenu = false">מחירים</a>
-        <RouterLink to="/login" class="mobile-link" @click="mobileMenu = false">כניסה</RouterLink>
-        <RouterLink to="/register" class="btn btn-primary" @click="mobileMenu = false" style="margin-top:8px">התחלה חינמית</RouterLink>
-      </div>
+      <Transition name="slide-down">
+        <div class="mobile-menu" v-if="mobileMenu">
+          <a href="#features" class="mobile-link" @click="mobileMenu = false">תכונות</a>
+          <a href="#how-it-works" class="mobile-link" @click="mobileMenu = false">איך זה עובד</a>
+          <a href="#pricing" class="mobile-link" @click="mobileMenu = false">מחירים</a>
+          <RouterLink to="/login" class="mobile-link" @click="mobileMenu = false">כניסה</RouterLink>
+          <RouterLink to="/register" class="btn btn-primary" @click="mobileMenu = false" style="margin-top:8px">התחל בחינם</RouterLink>
+        </div>
+      </Transition>
     </nav>
 
     <main>
-    <!-- ── Hero ── -->
-    <section class="hero">
-      <div class="hero-inner">
-        <div class="hero-text">
-          <div class="hero-badge">✨ ניהול חתונה חכם</div>
-          <h1 class="hero-h1">
-            הצד הכי יפה בחתונה?<br>
-            <span class="gradient-text">שאתם נהנים ממנה.</span>
-          </h1>
-          <p class="hero-sub">
-            יאללה חתונה מרכזת את כל הניהול במקום אחד — אורחים, תקציב, הושבה,
-            WhatsApp ועוד. אתם מתמקדים באהבה, אנחנו בפרטים.
-          </p>
-          <div class="hero-ctas">
-            <RouterLink to="/register" class="btn btn-primary btn-lg">
-              התחילו חינם 💕
-            </RouterLink>
-            <a href="#features" class="btn btn-outline btn-lg">
-              גלו איך זה עובד
-            </a>
-          </div>
-          <div class="hero-stats">
-            <div class="stat-item">
-              <span class="stat-num">500+</span>
-              <span class="stat-label">זוגות</span>
-            </div>
-            <div class="stat-sep" />
-            <div class="stat-item">
-              <span class="stat-num">50K+</span>
-              <span class="stat-label">אורחים</span>
-            </div>
-            <div class="stat-sep" />
-            <div class="stat-item">
-              <span class="stat-num">4.9 ⭐</span>
-              <span class="stat-label">דירוג</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Hero visual -->
-        <div class="hero-visual">
-          <div class="hero-mockup">
-            <div class="mockup-topbar">
-              <span class="mockup-dot red" />
-              <span class="mockup-dot yellow" />
-              <span class="mockup-dot green" />
-            </div>
-            <div class="mockup-body">
-              <div class="mockup-sidebar">
-                <div v-for="item in mockNavItems" :key="item" class="mockup-nav-item" :class="{ active: item === mockNavItems[0] }">
-                  <span class="mockup-dot-small" />
-                  <div class="mockup-nav-line" />
-                </div>
-              </div>
-              <div class="mockup-content">
-                <div class="mockup-header-row">
-                  <div class="mockup-title-block">
-                    <div class="mockup-line w70 dark" />
-                    <div class="mockup-line w40 muted" />
-                  </div>
-                </div>
-                <div class="mockup-cards-grid">
-                  <div class="mockup-card pink">
-                    <div class="mockup-card-icon">👥</div>
-                    <div class="mockup-line w60 white" />
-                    <div class="mockup-line w40 white-muted" />
-                  </div>
-                  <div class="mockup-card navy">
-                    <div class="mockup-card-icon">💰</div>
-                    <div class="mockup-line w60 white" />
-                    <div class="mockup-line w40 white-muted" />
-                  </div>
-                  <div class="mockup-card purple">
-                    <div class="mockup-card-icon">🪑</div>
-                    <div class="mockup-line w60 white" />
-                    <div class="mockup-line w40 white-muted" />
-                  </div>
-                  <div class="mockup-card green">
-                    <div class="mockup-card-icon">✅</div>
-                    <div class="mockup-line w60 white" />
-                    <div class="mockup-line w40 white-muted" />
-                  </div>
-                </div>
-                <div class="mockup-table">
-                  <div class="mockup-table-row header">
-                    <div class="mockup-line w25 muted" />
-                    <div class="mockup-line w20 muted" />
-                    <div class="mockup-line w15 muted" />
-                  </div>
-                  <div v-for="i in 4" :key="i" class="mockup-table-row">
-                    <div class="mockup-line w35 dark" />
-                    <div class="mockup-line w20 muted" />
-                    <div class="mockup-chip" :class="chipColors[i-1]" />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <!-- Floating badges -->
-          <div class="float-badge badge-guests">
-            <span>🎉</span>
-            <div>
-              <div class="fb-num">312</div>
-              <div class="fb-label">אורחים אישרו</div>
-            </div>
-          </div>
-          <div class="float-badge badge-whatsapp">
-            <span>💬</span>
-            <div>
-              <div class="fb-num">הזמנות נשלחו</div>
-              <div class="fb-label">100% פתיחה</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ── Features ── -->
-    <section class="features" id="features">
-      <div class="section-inner">
-        <div class="section-badge">🛠️ תכונות</div>
-        <h2 class="section-h2">כל מה שצריך לחתונה מושלמת</h2>
-        <p class="section-sub">מהאורח הראשון ועד ריקוד החתן — הכל במקום אחד</p>
-
-        <div class="features-grid">
-          <div v-for="feature in features" :key="feature.title" class="feature-card card card-hover">
-            <div class="card-body">
-              <div class="feature-icon" :style="{ background: feature.bg }">{{ feature.icon }}</div>
-              <h3 class="feature-title">{{ feature.title }}</h3>
-              <p class="feature-desc">{{ feature.desc }}</p>
-              <ul class="feature-bullets">
-                <li v-for="b in feature.bullets" :key="b">✓ {{ b }}</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ── How it works ── -->
-    <section class="how-it-works">
-      <div class="section-inner">
-        <div class="section-badge">🚀 איך זה עובד</div>
-        <h2 class="section-h2">שלושה צעדים לחתונה מנוהלת</h2>
-        <div class="steps-row">
-          <div v-for="(step, i) in steps" :key="i" class="step-item">
-            <div class="step-num">{{ i + 1 }}</div>
-            <div class="step-icon">{{ step.icon }}</div>
-            <h3 class="step-title">{{ step.title }}</h3>
-            <p class="step-desc">{{ step.desc }}</p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ── Pricing ── -->
-    <section class="pricing" id="pricing">
-      <div class="section-inner">
-        <div class="section-badge">💎 מחירים</div>
-        <h2 class="section-h2">תכנית שמתאימה לכם</h2>
-        <p class="section-sub">מתחילים בחינם, משדרגים כשרוצים</p>
-
-        <div class="pricing-grid">
-          <div class="pricing-card card" v-for="plan in plans" :key="plan.name" :class="{ featured: plan.featured }">
-            <div class="card-body">
-              <div class="plan-badge" v-if="plan.featured">הכי פופולרי 🔥</div>
-              <div class="plan-name">{{ plan.name }}</div>
-              <div class="plan-price">
-                <span class="price-num">{{ plan.price }}</span>
-                <span class="price-period" v-if="plan.period">{{ plan.period }}</span>
-              </div>
-              <p class="plan-desc">{{ plan.desc }}</p>
-              <ul class="plan-features">
-                <li v-for="f in plan.features" :key="f" class="plan-feature">
-                  <span class="feature-check">✓</span> {{ f }}
-                </li>
-              </ul>
-              <RouterLink :to="plan.featured ? '/register?plan=premium' : '/register'" class="btn w-full" :class="plan.featured ? 'btn-primary' : 'btn-outline'">
-                {{ plan.cta }}
+      <!-- ── Hero ── -->
+      <section class="hero">
+        <div class="hero-inner">
+          <div class="hero-text animate-fade-up">
+            <div class="hero-badge">✨ ניהול חתונה חכם לזוגות ישראלים</div>
+            <h1 class="hero-h1">
+              הצד הכי יפה בחתונה?<br>
+              <span class="gradient-text">שאתם נהנים ממנה.</span>
+            </h1>
+            <p class="hero-sub">
+              יאללה חתונה מרכזת את כל הניהול במקום אחד — אורחים, תקציב, ספקים,
+              WhatsApp ועוד. אתם מתמקדים באהבה, אנחנו בפרטים.
+            </p>
+            <div class="hero-ctas">
+              <RouterLink to="/register" class="btn btn-primary btn-lg hero-cta-primary">
+                התחל בחינם 💕
+              </RouterLink>
+              <RouterLink to="/login" class="btn btn-outline btn-lg">
+                כניסה
               </RouterLink>
             </div>
+            <div class="hero-stats">
+              <div class="stat-item">
+                <span class="stat-num">500+</span>
+                <span class="stat-label">זוגות</span>
+              </div>
+              <div class="stat-sep" />
+              <div class="stat-item">
+                <span class="stat-num">50K+</span>
+                <span class="stat-label">אורחים</span>
+              </div>
+              <div class="stat-sep" />
+              <div class="stat-item">
+                <span class="stat-num">4.9 ⭐</span>
+                <span class="stat-label">דירוג</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Hero visual -->
+          <div class="hero-visual animate-fade-left">
+            <div class="hero-mockup">
+              <div class="mockup-topbar">
+                <span class="mockup-dot red" />
+                <span class="mockup-dot yellow" />
+                <span class="mockup-dot green" />
+              </div>
+              <div class="mockup-body">
+                <div class="mockup-sidebar">
+                  <div v-for="item in mockNavItems" :key="item" class="mockup-nav-item" :class="{ active: item === mockNavItems[0] }">
+                    <span class="mockup-dot-small" />
+                    <div class="mockup-nav-line" />
+                  </div>
+                </div>
+                <div class="mockup-content">
+                  <div class="mockup-header-row">
+                    <div class="mockup-title-block">
+                      <div class="mockup-line w70 dark" />
+                      <div class="mockup-line w40 muted" />
+                    </div>
+                  </div>
+                  <div class="mockup-cards-grid">
+                    <div class="mockup-card pink">
+                      <div class="mockup-card-icon">👥</div>
+                      <div class="mockup-line w60 white" />
+                      <div class="mockup-line w40 white-muted" />
+                    </div>
+                    <div class="mockup-card navy">
+                      <div class="mockup-card-icon">💰</div>
+                      <div class="mockup-line w60 white" />
+                      <div class="mockup-line w40 white-muted" />
+                    </div>
+                    <div class="mockup-card purple">
+                      <div class="mockup-card-icon">🪑</div>
+                      <div class="mockup-line w60 white" />
+                      <div class="mockup-line w40 white-muted" />
+                    </div>
+                    <div class="mockup-card green">
+                      <div class="mockup-card-icon">✅</div>
+                      <div class="mockup-line w60 white" />
+                      <div class="mockup-line w40 white-muted" />
+                    </div>
+                  </div>
+                  <div class="mockup-table">
+                    <div class="mockup-table-row header">
+                      <div class="mockup-line w25 muted" />
+                      <div class="mockup-line w20 muted" />
+                      <div class="mockup-line w15 muted" />
+                    </div>
+                    <div v-for="i in 4" :key="i" class="mockup-table-row">
+                      <div class="mockup-line w35 dark" />
+                      <div class="mockup-line w20 muted" />
+                      <div class="mockup-chip" :class="chipColors[i-1]" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- Floating badges -->
+            <div class="float-badge badge-guests">
+              <span>🎉</span>
+              <div>
+                <div class="fb-num">312</div>
+                <div class="fb-label">אורחים אישרו</div>
+              </div>
+            </div>
+            <div class="float-badge badge-whatsapp">
+              <span>💬</span>
+              <div>
+                <div class="fb-num">הזמנות נשלחו</div>
+                <div class="fb-label">100% פתיחה</div>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-    </section>
 
-    <!-- ── Testimonials ── -->
-    <section class="testimonials">
-      <div class="section-inner">
-        <div class="section-badge">💬 ביקורות</div>
-        <h2 class="section-h2">מה הזוגות אומרים</h2>
-        <div class="reviews-grid">
-          <div v-for="review in reviews" :key="review.name" class="review-card card">
-            <div class="card-body">
-              <div class="review-stars">⭐⭐⭐⭐⭐</div>
-              <p class="review-text">"{{ review.text }}"</p>
-              <div class="reviewer">
-                <div class="reviewer-avatar">{{ review.initials }}</div>
-                <div>
-                  <div class="reviewer-name">{{ review.name }}</div>
-                  <div class="reviewer-date">{{ review.date }}</div>
+        <!-- Wave divider -->
+        <div class="hero-wave">
+          <svg viewBox="0 0 1440 80" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+            <path d="M0 40 Q360 80 720 40 Q1080 0 1440 40 L1440 80 L0 80 Z" fill="white"/>
+          </svg>
+        </div>
+      </section>
+
+      <!-- ── Features ── -->
+      <section class="features" id="features">
+        <div class="section-inner">
+          <div class="section-label">
+            <div class="section-badge">🛠️ תכונות</div>
+            <h2 class="section-h2">כל מה שצריך לחתונה מושלמת</h2>
+            <p class="section-sub">מהאורח הראשון ועד ריקוד החתן — הכל במקום אחד</p>
+          </div>
+
+          <div class="features-grid">
+            <div v-for="(feature, i) in features" :key="feature.title"
+                 class="feature-card card card-hover"
+                 :style="{ animationDelay: `${i * 80}ms` }">
+              <div class="card-body">
+                <div class="feature-icon-wrap" :style="{ background: feature.bg }">
+                  <span class="feature-icon-emoji">{{ feature.icon }}</span>
+                </div>
+                <h3 class="feature-title">{{ feature.title }}</h3>
+                <p class="feature-desc">{{ feature.desc }}</p>
+                <ul class="feature-bullets">
+                  <li v-for="b in feature.bullets" :key="b">
+                    <span class="bullet-check">✓</span> {{ b }}
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── How it works ── -->
+      <section class="how-it-works" id="how-it-works">
+        <div class="section-inner">
+          <div class="section-label">
+            <div class="section-badge">🚀 איך זה עובד</div>
+            <h2 class="section-h2">שלושה צעדים לחתונה מנוהלת</h2>
+            <p class="section-sub">מרגע ההרשמה ועד הלילה הגדול — יאללה לצדכם</p>
+          </div>
+          <div class="steps-row">
+            <div v-for="(step, i) in steps" :key="i" class="step-item">
+              <div class="step-connector" v-if="i < steps.length - 1" />
+              <div class="step-num">{{ i + 1 }}</div>
+              <div class="step-icon">{{ step.icon }}</div>
+              <h3 class="step-title">{{ step.title }}</h3>
+              <p class="step-desc">{{ step.desc }}</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Pricing ── -->
+      <section class="pricing" id="pricing">
+        <div class="section-inner">
+          <div class="section-label">
+            <div class="section-badge">💎 מחירים</div>
+            <h2 class="section-h2">תכנית שמתאימה לכם</h2>
+            <p class="section-sub">מתחילים בחינם, משדרגים כשרוצים</p>
+          </div>
+
+          <div class="pricing-grid">
+            <div class="pricing-card card" v-for="plan in plans" :key="plan.name" :class="{ featured: plan.featured }">
+              <div class="card-body">
+                <div class="plan-badge" v-if="plan.featured">הכי פופולרי 🔥</div>
+                <div class="plan-name">{{ plan.name }}</div>
+                <div class="plan-price">
+                  <span class="price-num">{{ plan.price }}</span>
+                  <span class="price-period" v-if="plan.period">{{ plan.period }}</span>
+                </div>
+                <p class="plan-desc">{{ plan.desc }}</p>
+                <ul class="plan-features">
+                  <li v-for="f in plan.features" :key="f" class="plan-feature">
+                    <span class="feature-check">✓</span> {{ f }}
+                  </li>
+                </ul>
+                <RouterLink
+                  :to="plan.featured ? '/register?plan=premium' : '/register'"
+                  class="btn w-full"
+                  :class="plan.featured ? 'btn-primary' : 'btn-outline'">
+                  {{ plan.cta }}
+                </RouterLink>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Testimonials ── -->
+      <section class="testimonials">
+        <div class="section-inner">
+          <div class="section-label">
+            <div class="section-badge">💬 ביקורות</div>
+            <h2 class="section-h2">מה הזוגות אומרים</h2>
+          </div>
+          <div class="reviews-grid">
+            <div v-for="review in reviews" :key="review.name" class="review-card card">
+              <div class="card-body">
+                <div class="review-stars">⭐⭐⭐⭐⭐</div>
+                <p class="review-text">"{{ review.text }}"</p>
+                <div class="reviewer">
+                  <div class="reviewer-avatar">{{ review.initials }}</div>
+                  <div>
+                    <div class="reviewer-name">{{ review.name }}</div>
+                    <div class="reviewer-date">{{ review.date }}</div>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
 
-    <!-- ── CTA banner ── -->
-    <section class="cta-banner">
-      <div class="section-inner text-center">
-        <h2 class="cta-h2">מוכנים להתחיל לתכנן?</h2>
-        <p class="cta-sub">הצטרפו ל-500+ זוגות שמנהלים את החתונה שלהם עם יאללה</p>
-        <div class="cta-btns">
-          <RouterLink to="/register" class="btn btn-primary btn-lg">
-            התחלה חינמית — ללא כרטיס אשראי 💕
-          </RouterLink>
+      <!-- ── CTA Bottom ── -->
+      <section class="cta-banner">
+        <div class="section-inner text-center">
+          <div class="cta-emoji">💍</div>
+          <h2 class="cta-h2">מוכנים להתחיל לתכנן?</h2>
+          <p class="cta-sub">הצטרפו ל-500+ זוגות שמנהלים את החתונה שלהם עם יאללה</p>
+          <div class="cta-btns">
+            <RouterLink to="/register" class="btn btn-primary btn-lg cta-btn-main">
+              התחל בחינם — ללא כרטיס אשראי 💕
+            </RouterLink>
+            <RouterLink to="/login" class="btn btn-outline-white btn-lg">
+              כניסה לחשבון קיים
+            </RouterLink>
+          </div>
+          <p class="cta-note">ניסיון חינמי מלא · אין צורך בכרטיס אשראי · ביטול בכל עת</p>
         </div>
-        <p class="cta-note">ניסיון חינמי מלא. אין צורך בכרטיס אשראי.</p>
-      </div>
-    </section>
-
+      </section>
     </main>
 
     <!-- ── Footer ── -->
@@ -263,6 +297,7 @@
         <div class="lfoot-links">
           <RouterLink to="/login" class="lfoot-link">כניסה</RouterLink>
           <RouterLink to="/register" class="lfoot-link">הרשמה</RouterLink>
+          <a href="#features" class="lfoot-link">תכונות</a>
         </div>
         <p class="lfoot-copy">© 2026 יאללה חתונה. כל הזכויות שמורות.</p>
       </div>
@@ -271,9 +306,17 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 
 const mobileMenu = ref(false)
+const scrolled = ref(false)
+
+function onScroll() {
+  scrolled.value = window.scrollY > 20
+}
+
+onMounted(() => window.addEventListener('scroll', onScroll, { passive: true }))
+onUnmounted(() => window.removeEventListener('scroll', onScroll))
 
 const mockNavItems = ['dashboard', 'guests', 'budget', 'seating', 'whatsapp']
 const chipColors = ['chip-green', 'chip-green', 'chip-orange', 'chip-red']
@@ -288,38 +331,38 @@ const features = [
   },
   {
     icon: '💰',
-    title: 'ניהול תקציב',
+    title: 'תקציב',
     desc: 'עקבו אחרי כל הוצאה, ראו סטטוס חריגה בזמן אמת.',
     bg: 'rgba(26,31,54,0.08)',
     bullets: ['קטגוריות מותאמות אישית', 'גרפים ואנליטיקה', 'מעקב ספקים', 'ייצוא PDF']
   },
   {
-    icon: '💬',
-    title: 'WhatsApp חכם',
-    desc: 'שלחו הזמנות, תזכורות ועדכונים ישירות דרך WhatsApp.',
-    bg: 'rgba(34,197,94,0.1)',
-    bullets: ['תבניות מותאמות', 'שליחה מרובה', 'היסטוריית הודעות', 'תזמון הודעות']
+    icon: '🏪',
+    title: 'ספקים',
+    desc: 'מצאו ספקים מומלצים, השוו, שמרו מועדפים, נהלו חוזים.',
+    bg: 'rgba(168,85,247,0.1)',
+    bullets: ['ספריית ספקים', 'ביקורות ודירוגים', 'ניהול חוזים', 'תקציב לספקים']
+  },
+  {
+    icon: '💌',
+    title: 'הזמנות דיגיטליות',
+    desc: 'צרו הזמנות יפות, שלחו בלינק, קבלו RSVP אוטומטי.',
+    bg: 'rgba(233,30,140,0.08)',
+    bullets: ['עיצובים מוכנים', 'לינק אישי לכל זוג', 'אישור הגעה דיגיטלי', 'ייצוא PDF']
   },
   {
     icon: '🪑',
-    title: 'סידורי הושבה',
+    title: 'ארגון שולחנות',
     desc: 'גרור ושחרר שולחנות, שבצו אורחים ויצרו כרטיסי הושבה יפים.',
     bg: 'rgba(59,130,246,0.1)',
     bullets: ['תצוגת אולם אינטראקטיבית', 'ייצוא כרטיסים ל-PDF', 'עיצובים מוכנים', 'גרירה ושחרור']
   },
   {
-    icon: '🎁',
-    title: 'מעקב מתנות',
-    desc: 'רשמו מתנות, עקבו אחרי מי נתן מה, ראו סכומים.',
-    bg: 'rgba(245,158,11,0.1)',
-    bullets: ['רישום בזמן אמת', 'סטטיסטיקות מתנות', 'ייצוא לאקסל', 'מתנות לפי קבוצה']
-  },
-  {
-    icon: '🏪',
-    title: 'ספקים',
-    desc: 'מצאו ספקים מומלצים, השוו, שמרו מועדפים.',
-    bg: 'rgba(168,85,247,0.1)',
-    bullets: ['ספריית ספקים', 'ביקורות ודירוגים', 'ניהול חוזים', 'תקציב לספקים']
+    icon: '💬',
+    title: 'תזכורות WhatsApp',
+    desc: 'שלחו הזמנות ותזכורות ישירות דרך WhatsApp לכל האורחים.',
+    bg: 'rgba(34,197,94,0.1)',
+    bullets: ['תבניות מותאמות', 'שליחה מרובה', 'היסטוריית הודעות', 'תזמון הודעות']
   }
 ]
 
@@ -347,14 +390,14 @@ const plans = [
     price: '₪0',
     period: '/ תמיד',
     desc: 'לזוגות שמתחילים לתכנן',
-    cta: 'התחלה חינמית',
+    cta: 'התחל בחינם',
     featured: false,
     features: [
       'עד 100 אורחים',
       'ניהול תקציב בסיסי',
       'RSVP דיגיטלי',
       '1 תבנית WhatsApp',
-      'סידורי הושבה'
+      'ארגון שולחנות'
     ]
   },
   {
@@ -368,7 +411,7 @@ const plans = [
       'אורחים ללא הגבלה',
       'ניהול תקציב מתקדם',
       'WhatsApp ללא הגבלה',
-      'כרטיסי הושבה פרמיום',
+      'הזמנות דיגיטליות פרמיום',
       'ייצוא PDF מותאם',
       'ספריית ספקים מלאה',
       'ציר זמן אוטומטי',
@@ -407,6 +450,36 @@ const reviews = [
   overflow-x: hidden;
 }
 
+/* ── Entrance Animations ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(32px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeLeft {
+  from { opacity: 0; transform: translateX(40px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+@keyframes pulse-ring {
+  0% { box-shadow: 0 0 0 0 rgba(233,30,140,0.3); }
+  70% { box-shadow: 0 0 0 12px rgba(233,30,140,0); }
+  100% { box-shadow: 0 0 0 0 rgba(233,30,140,0); }
+}
+
+.animate-fade-up {
+  animation: fadeUp 0.7s ease both;
+}
+
+.animate-fade-left {
+  animation: fadeLeft 0.7s 0.2s ease both;
+}
+
 /* ── Navbar ── */
 .lnav {
   position: sticky;
@@ -414,7 +487,13 @@ const reviews = [
   z-index: 200;
   background: rgba(255,255,255,0.92);
   backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--color-border);
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.lnav.scrolled {
+  border-bottom-color: var(--color-border);
+  box-shadow: var(--shadow-sm);
 }
 
 .lnav-inner {
@@ -435,6 +514,7 @@ const reviews = [
   font-size: var(--font-size-xl);
   color: var(--color-navy);
   text-decoration: none;
+  flex-shrink: 0;
 }
 
 .brand-logo { font-size: 1.5rem; }
@@ -464,12 +544,47 @@ const reviews = [
 
 .mobile-menu-btn {
   display: none;
-  font-size: 1.3rem;
+  width: 36px;
+  height: 36px;
   cursor: pointer;
   background: none;
   border: none;
   margin-right: auto;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 0;
 }
+
+.hamburger,
+.hamburger::before,
+.hamburger::after {
+  display: block;
+  width: 22px;
+  height: 2px;
+  background: var(--color-navy);
+  border-radius: 2px;
+  transition: 0.3s ease;
+}
+
+.hamburger {
+  position: relative;
+}
+
+.hamburger::before,
+.hamburger::after {
+  content: '';
+  position: absolute;
+  right: 0;
+}
+
+.hamburger::before { top: -7px; }
+.hamburger::after  { top: 7px; }
+
+.hamburger.open { background: transparent; }
+.hamburger.open::before { transform: rotate(45deg); top: 0; }
+.hamburger.open::after  { transform: rotate(-45deg); top: 0; }
 
 .mobile-menu {
   padding: var(--space-4) var(--space-6);
@@ -477,6 +592,7 @@ const reviews = [
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
+  background: #fff;
 }
 
 .mobile-link {
@@ -488,11 +604,30 @@ const reviews = [
   border-bottom: 1px solid var(--color-border);
 }
 
+/* Slide down transition */
+.slide-down-enter-active,
+.slide-down-leave-active {
+  transition: max-height 0.3s ease, opacity 0.3s ease;
+  overflow: hidden;
+  max-height: 400px;
+}
+
+.slide-down-enter-from,
+.slide-down-leave-to {
+  max-height: 0;
+  opacity: 0;
+}
+
 /* ── Shared section layout ── */
 .section-inner {
   max-width: 1200px;
   margin: 0 auto;
   padding: 0 var(--space-6);
+}
+
+.section-label {
+  text-align: center;
+  margin-bottom: var(--space-12);
 }
 
 .section-badge {
@@ -520,21 +655,22 @@ const reviews = [
 .section-sub {
   font-size: var(--font-size-lg);
   color: var(--color-text-muted);
-  margin-bottom: var(--space-12);
   max-width: 560px;
+  margin: 0 auto;
 }
 
 /* ── Hero ── */
 .hero {
-  background: linear-gradient(160deg, var(--color-primary-bg) 0%, #fff 60%);
-  padding: var(--space-20) 0 var(--space-16);
+  background: linear-gradient(160deg, var(--color-primary-bg) 0%, #fff5fb 40%, #fff 70%);
+  padding: var(--space-20) 0 0;
   overflow: hidden;
+  position: relative;
 }
 
 .hero-inner {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 0 var(--space-6);
+  padding: 0 var(--space-6) var(--space-16);
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: var(--space-16);
@@ -582,6 +718,10 @@ const reviews = [
   gap: var(--space-4);
   flex-wrap: wrap;
   margin-bottom: var(--space-8);
+}
+
+.hero-cta-primary {
+  animation: pulse-ring 2.5s 1.5s ease infinite;
 }
 
 .hero-stats {
@@ -643,9 +783,9 @@ const reviews = [
   border-radius: 50%;
 }
 
-.mockup-dot.red { background: #ff5f57; }
+.mockup-dot.red    { background: #ff5f57; }
 .mockup-dot.yellow { background: #ffbd2e; }
-.mockup-dot.green { background: #28c840; }
+.mockup-dot.green  { background: #28c840; }
 
 .mockup-body {
   display: flex;
@@ -698,9 +838,7 @@ const reviews = [
   gap: var(--space-3);
 }
 
-.mockup-header-row {
-  margin-bottom: var(--space-2);
-}
+.mockup-header-row { margin-bottom: var(--space-2); }
 
 .mockup-title-block {
   display: flex;
@@ -722,10 +860,10 @@ const reviews = [
   gap: 6px;
 }
 
-.mockup-card.pink { background: linear-gradient(135deg, #e91e8c, #ff6bca); }
-.mockup-card.navy { background: linear-gradient(135deg, #1a1f36, #2d3454); }
+.mockup-card.pink   { background: linear-gradient(135deg, #e91e8c, #ff6bca); }
+.mockup-card.navy   { background: linear-gradient(135deg, #1a1f36, #2d3454); }
 .mockup-card.purple { background: linear-gradient(135deg, #7c3aed, #a855f7); }
-.mockup-card.green { background: linear-gradient(135deg, #16a34a, #22c55e); }
+.mockup-card.green  { background: linear-gradient(135deg, #16a34a, #22c55e); }
 
 .mockup-card-icon { font-size: 1.1rem; }
 
@@ -756,9 +894,9 @@ const reviews = [
   border-radius: var(--radius-full);
 }
 
-.chip-green { background: var(--color-success-bg); }
+.chip-green  { background: var(--color-success-bg); }
 .chip-orange { background: var(--color-warning-bg); }
-.chip-red { background: var(--color-error-bg); }
+.chip-red    { background: var(--color-error-bg); }
 
 .mockup-line {
   height: 8px;
@@ -772,9 +910,9 @@ const reviews = [
 .mockup-line.w40 { width: 40%; }
 .mockup-line.w60 { width: 60%; }
 .mockup-line.w70 { width: 70%; }
-.mockup-line.dark { background: var(--color-navy); opacity: 0.7; }
-.mockup-line.muted { background: var(--color-border); }
-.mockup-line.white { background: rgba(255,255,255,0.9); }
+.mockup-line.dark       { background: var(--color-navy); opacity: 0.7; }
+.mockup-line.muted      { background: var(--color-border); }
+.mockup-line.white      { background: rgba(255,255,255,0.9); }
 .mockup-line.white-muted { background: rgba(255,255,255,0.4); }
 
 /* ── Floating badges ── */
@@ -789,19 +927,18 @@ const reviews = [
   align-items: center;
   gap: var(--space-3);
   font-size: 1.2rem;
-  animation: float 3s ease-in-out infinite;
 }
 
 .badge-guests {
   bottom: -20px;
   right: -20px;
-  animation-delay: 0s;
+  animation: float 3s ease-in-out infinite;
 }
 
 .badge-whatsapp {
   top: -16px;
   left: -16px;
-  animation-delay: 1.5s;
+  animation: float 3s 1.5s ease-in-out infinite;
 }
 
 .fb-num {
@@ -816,15 +953,22 @@ const reviews = [
   font-weight: 600;
 }
 
-@keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-6px); }
+/* ── Hero Wave ── */
+.hero-wave {
+  line-height: 0;
+  margin-bottom: -4px;
+}
+
+.hero-wave svg {
+  display: block;
+  width: 100%;
+  height: 80px;
 }
 
 /* ── Features ── */
 .features {
   padding: var(--space-20) 0;
-  background: var(--color-bg-card);
+  background: #fff;
 }
 
 .features-grid {
@@ -833,17 +977,23 @@ const reviews = [
   gap: var(--space-6);
 }
 
-.feature-card { height: 100%; }
+.feature-card {
+  height: 100%;
+}
 
-.feature-icon {
-  width: 52px;
-  height: 52px;
+.feature-icon-wrap {
+  width: 56px;
+  height: 56px;
   border-radius: var(--radius-lg);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.5rem;
   margin-bottom: var(--space-4);
+  flex-shrink: 0;
+}
+
+.feature-icon-emoji {
+  font-size: 1.5rem;
 }
 
 .feature-title {
@@ -864,14 +1014,24 @@ const reviews = [
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
+  list-style: none;
+  padding: 0;
+  margin: 0;
 }
 
 .feature-bullets li {
   font-size: var(--font-size-sm);
   color: var(--color-text-muted);
+  display: flex;
+  gap: var(--space-2);
+  align-items: flex-start;
 }
 
-.feature-bullets li::marker { display: none; }
+.bullet-check {
+  color: var(--color-primary);
+  font-weight: 700;
+  flex-shrink: 0;
+}
 
 /* ── How it works ── */
 .how-it-works {
@@ -893,20 +1053,22 @@ const reviews = [
   border-radius: var(--radius-2xl);
   box-shadow: var(--shadow-sm);
   border: 1px solid var(--color-border);
+  position: relative;
 }
 
 .step-num {
-  width: 36px;
-  height: 36px;
-  background: var(--color-primary);
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, var(--color-primary), #ff6bca);
   color: #fff;
   border-radius: var(--radius-full);
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 800;
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-base);
   margin: 0 auto var(--space-4);
+  box-shadow: var(--shadow-pink);
 }
 
 .step-icon {
@@ -927,10 +1089,6 @@ const reviews = [
   line-height: 1.6;
 }
 
-.step-arrow {
-  display: none;
-}
-
 /* ── Pricing ── */
 .pricing {
   padding: var(--space-20) 0;
@@ -947,7 +1105,7 @@ const reviews = [
 
 .pricing-card {
   position: relative;
-  transition: transform var(--transition);
+  transition: transform 0.2s ease;
 }
 
 .pricing-card.featured {
@@ -1007,6 +1165,8 @@ const reviews = [
   flex-direction: column;
   gap: var(--space-3);
   margin-bottom: var(--space-6);
+  list-style: none;
+  padding: 0;
 }
 
 .plan-feature {
@@ -1027,7 +1187,7 @@ const reviews = [
 /* ── Testimonials ── */
 .testimonials {
   padding: var(--space-20) 0;
-  background: var(--color-bg-card);
+  background: #fff;
 }
 
 .reviews-grid {
@@ -1084,9 +1244,26 @@ const reviews = [
 .cta-banner {
   padding: var(--space-20) 0;
   background: linear-gradient(135deg, var(--color-navy) 0%, #2d3454 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.cta-banner::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 50%, rgba(233,30,140,0.15) 0%, transparent 70%);
+  pointer-events: none;
 }
 
 .text-center { text-align: center; }
+
+.cta-emoji {
+  font-size: 3rem;
+  margin-bottom: var(--space-4);
+  display: block;
+  animation: float 3s ease-in-out infinite;
+}
 
 .cta-h2 {
   font-size: var(--font-size-4xl);
@@ -1102,18 +1279,45 @@ const reviews = [
 }
 
 .cta-btns {
+  display: flex;
+  gap: var(--space-4);
+  justify-content: center;
+  flex-wrap: wrap;
   margin-bottom: var(--space-4);
+}
+
+.cta-btn-main {
+  box-shadow: 0 8px 32px rgba(233,30,140,0.4);
+}
+
+.btn-outline-white {
+  border: 2px solid rgba(255,255,255,0.4);
+  color: #fff;
+  background: transparent;
+  border-radius: var(--radius-full);
+  padding: 0.75rem 1.75rem;
+  font-weight: 700;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+}
+
+.btn-outline-white:hover {
+  border-color: rgba(255,255,255,0.8);
+  background: rgba(255,255,255,0.1);
 }
 
 .cta-note {
   font-size: var(--font-size-sm);
-  color: rgba(255,255,255,0.4);
+  color: rgba(255,255,255,0.35);
 }
 
 /* ── Footer ── */
 .lfoot {
   background: var(--color-navy);
-  border-top: 1px solid rgba(255,255,255,0.08);
+  border-top: 1px solid rgba(255,255,255,0.06);
   padding: var(--space-10) 0;
 }
 
@@ -1161,14 +1365,12 @@ const reviews = [
 
 .lfoot-copy {
   font-size: var(--font-size-xs);
-  color: rgba(255,255,255,0.25);
+  color: rgba(255,255,255,0.2);
 }
 
 /* ── Responsive ── */
 @media (max-width: 1024px) {
-  .features-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
+  .features-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
 @media (max-width: 768px) {
@@ -1177,13 +1379,9 @@ const reviews = [
     gap: var(--space-10);
   }
 
-  .hero-visual {
-    order: -1;
-  }
+  .hero-visual { order: -1; }
 
-  .hero-h1 {
-    font-size: var(--font-size-3xl);
-  }
+  .hero-h1 { font-size: var(--font-size-3xl); }
 
   .features-grid,
   .steps-row,
@@ -1195,31 +1393,26 @@ const reviews = [
     grid-template-columns: 1fr;
   }
 
-  .pricing-card.featured {
-    transform: none;
-  }
+  .pricing-card.featured { transform: none; }
 
   .lnav-links,
-  .lnav-actions {
-    display: none;
-  }
+  .lnav-actions { display: none; }
 
   .mobile-menu-btn {
-    display: block;
+    display: flex;
   }
 
-  .section-h2 {
-    font-size: var(--font-size-3xl);
-  }
+  .section-h2 { font-size: var(--font-size-3xl); }
 
-  .cta-h2 {
-    font-size: var(--font-size-3xl);
-  }
+  .cta-h2 { font-size: var(--font-size-3xl); }
+
+  .cta-btns { flex-direction: column; align-items: center; }
+
+  .badge-guests,
+  .badge-whatsapp { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  * {
-    animation-duration: 0.01ms !important;
-  }
+  * { animation: none !important; }
 }
 </style>
