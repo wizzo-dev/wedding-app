@@ -250,7 +250,7 @@ async function loadSeating() {
   loading.value = true
   error.value   = null
   try {
-    const { data } = await api.get('/api/seating/tables')
+    const { data } = await api.get('/seating/tables')
     tables.value     = data.tables
     unassigned.value = data.unassigned
   } catch (e) {
@@ -316,7 +316,7 @@ async function onDrop(evt, targetTable) {
 
 async function assignGuestToTable(guestId, tableId) {
   try {
-    await api.put('/api/seating/assign', { guestId, tableId })
+    await api.put('/seating/assign', { guestId, tableId })
     // Optimistic update
     const guest = unassigned.value.find(g => g.id === guestId)
     if (guest) {
@@ -333,7 +333,7 @@ async function assignGuestToTable(guestId, tableId) {
 
 async function unassignGuest(guest, table) {
   try {
-    await api.put('/api/seating/assign', { guestId: guest.id, tableId: null })
+    await api.put('/seating/assign', { guestId: guest.id, tableId: null })
     // Optimistic update
     table.guests = table.guests.filter(g => g.id !== guest.id)
     unassigned.value.push(guest)
@@ -386,7 +386,7 @@ async function saveTable() {
       if (idx !== -1) tables.value[idx] = { ...tables.value[idx], ...data }
       showToast('שולחן עודכן בהצלחה', 'success')
     } else {
-      const { data } = await api.post('/api/seating/tables', {
+      const { data } = await api.post('/seating/tables', {
         name: tableForm.name,
         seats: tableForm.seats
       })

@@ -282,8 +282,8 @@ async function loadSettings() {
 
   try {
     const [settingsRes, tablesRes] = await Promise.all([
-      api.get('/api/seating/settings'),
-      api.get('/api/seating/tables')
+      api.get('/seating/settings'),
+      api.get('/seating/tables')
     ])
 
     const s = settingsRes.data
@@ -320,7 +320,7 @@ async function saveSettings() {
 
   savingSettings.value = true
   try {
-    await api.put('/api/seating/settings', {
+    await api.put('/seating/settings', {
       hallName:      form.hallName,
       totalCapacity: form.totalCapacity
     })
@@ -350,7 +350,7 @@ async function generateTables() {
 
   generatingTables.value = true
   try {
-    const { data } = await api.post('/api/seating/generate-tables', {
+    const { data } = await api.post('/seating/generate-tables', {
       count:        genForm.count,
       seatsPerTable: genForm.seatsPerTable,
       namingStyle:  genForm.namingStyle,
