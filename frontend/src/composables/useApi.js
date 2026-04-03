@@ -41,7 +41,7 @@ api.interceptors.response.use(
         queue = []
         refreshing = false
         tokenRegistry.clear()
-        window.location.href = '/login'
+        if (window.location.pathname !== "/login") window.location.href = "/login"
         return Promise.reject(err)
       }
 
@@ -60,7 +60,7 @@ api.interceptors.response.use(
         queue.forEach(p => p.reject(refreshErr))
         queue = []
         tokenRegistry.clear()
-        window.location.href = '/login'
+        if (window.location.pathname !== "/login") window.location.href = "/login"
         return Promise.reject(refreshErr)
       } finally {
         refreshing = false

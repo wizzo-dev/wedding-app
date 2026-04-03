@@ -1,8 +1,8 @@
 {
   "paused": false,
-  "currentIndex": 24,
-  "lastCompleted": "NotFound",
-  "lastCompletedAt": "2026-04-03T02:45:00Z",
+  "currentIndex": 39,
+  "lastCompleted": "DashboardStats",
+  "lastCompletedAt": "2026-04-03T03:52:00Z",
   "waitingForApproval": [],
   "pages": [
     {
@@ -181,23 +181,27 @@
     },
     {
       "name": "RSVP",
-      "status": "pending",
-      "branch": null
+      "status": "pushed",
+      "branch": "feat/page/rsvp",
+      "completedAt": "2026-04-03T03:52:00Z"
     },
     {
       "name": "GiftPublic",
-      "status": "pending",
-      "branch": null
+      "status": "pushed",
+      "branch": "feat/page/gift-public",
+      "completedAt": "2026-04-03T03:52:00Z"
     },
     {
       "name": "CardsExport",
-      "status": "pending",
-      "branch": null
+      "status": "pushed",
+      "branch": "feat/page/cards-export",
+      "completedAt": "2026-04-03T03:52:00Z"
     },
     {
       "name": "DashboardStats",
-      "status": "pending",
-      "branch": null
+      "status": "pushed",
+      "branch": "feat/page/dashboard-stats",
+      "completedAt": "2026-04-03T03:52:00Z"
     },
     {
       "name": "Notifications",
