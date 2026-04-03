@@ -155,7 +155,7 @@ async function loadHistory() {
     if (filters.status)   params.status   = filters.status
     if (filters.dateFrom) params.dateFrom = filters.dateFrom
     if (filters.dateTo)   params.dateTo   = filters.dateTo
-    const { data } = await axios.get('/api/whatsapp/history', { params })
+    const { data } = await axios.get('/api/whatsapp/messages', { params })
     items.value = data.items; totalPages.value = data.totalPages
   } catch (e) { error.value = e.response?.data?.error || e.message || 'שגיאה בטעינת הנתונים' }
   finally { loading.value = false }
