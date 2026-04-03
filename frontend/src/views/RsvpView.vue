@@ -176,8 +176,9 @@ async function loadEvent() {
     const res = await fetch(`/api/rsvp/${encodeURIComponent(code)}`)
     if (!res.ok) { loadError.value = true; return }
     const data = await res.json()
-    couple.value     = data.couple     || {}
-    invitation.value = data.invitation || null
+    couple.value        = data.couple     || {}
+    invitation.value    = data.invitation || null
+    prefilledGuest.value = data.prefilledGuest || null
 
     if (data.prefilledGuest) {
       form.name       = data.prefilledGuest.name       || ''
@@ -221,8 +222,12 @@ async function submit(rsvpStatus) {
     }
     lastStatus.value = rsvpStatus
     submitted.value  = true
-  } catch {
-    error.value = 'שגיאת רשת, אנא נסה שוב'
+  } catch(e) {
+    console.error('[RSVP submit error]', e)
+    // Show detailed error in dev, generic in prod
+    error.value = e?.message
+      ? `שגיאה: ${e.message}`
+      : 'שגיאת רשת, אנא נסה שוב'
   } finally {
     sending.value = false
   }
