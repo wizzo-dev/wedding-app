@@ -309,7 +309,7 @@ onMounted(loadGifts)
 .search-row { margin-bottom: var(--space-4); }
 .search-wrap { position: relative; max-width: 400px; }
 .search-icon { position: absolute; right: var(--space-3); top: 50%; transform: translateY(-50%); }
-.search-input { width: 100%; padding: var(--space-3) var(--space-10) var(--space-3) var(--space-3); border: 1.5px solid var(--color-border); border-radius: var(--radius); font-size: var(--font-size-sm); outline: none; }
+.search-input { width: 100%; padding: var(--space-3) var(--space-10) var(--space-3) var(--space-3); border: 1.5px solid var(--color-border); border-radius: var(--radius-xl); font-size: var(--font-size-sm); outline: none; }
 .search-input:focus { border-color: var(--color-primary); }
 .search-clear { position: absolute; left: var(--space-3); top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--color-text-muted); }
 
@@ -356,7 +356,7 @@ onMounted(loadGifts)
 .form-input:focus { border-color: var(--color-primary); }
 .form-error-msg { color: var(--color-error); font-size: var(--font-size-sm); }
 
-.btn { padding: var(--space-3) var(--space-5); border-radius: var(--radius); border: none; font-size: var(--font-size-sm); font-weight: 600; cursor: pointer; transition: all var(--transition-fast); }
+.btn { padding: var(--space-3) var(--space-5); border-radius: var(--radius-xl); border: none; font-size: var(--font-size-sm); font-weight: 600; cursor: pointer; transition: all var(--transition-fast); }
 .btn-primary { background: var(--color-primary); color: white; }
 .btn-primary:hover { background: var(--color-primary-hover); }
 .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }

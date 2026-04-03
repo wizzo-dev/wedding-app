@@ -430,11 +430,11 @@ onMounted(load)
 /* Quick actions */
 .quick-actions-card { grid-column: span 1; }
 .quick-actions { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2); margin-bottom: var(--space-2); }
-.quick-btn { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-3) var(--space-3); border-radius: var(--radius); font-family: var(--font); font-size: var(--font-size-sm); font-weight: 600; cursor: pointer; border: 1.5px solid var(--color-border); background: var(--color-bg-subtle); color: var(--color-navy); text-decoration: none; transition: var(--transition-fast); }
+.quick-btn { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-3) var(--space-3); border-radius: var(--radius-xl); font-family: var(--font); font-size: var(--font-size-sm); font-weight: 600; cursor: pointer; border: 1.5px solid var(--color-border); background: var(--color-bg-subtle); color: var(--color-navy); text-decoration: none; transition: var(--transition-fast); }
 .quick-btn:hover { border-color: var(--color-primary); background: var(--color-primary-bg); color: var(--color-primary); }
 .quick-btn.wa:hover { border-color: #22c55e; background: #dcfce7; color: #16a34a; }
 .rsvp-btns { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2); }
-.rsvp-quick-btn { padding: var(--space-2) var(--space-3); border-radius: var(--radius); font-family: var(--font); font-size: var(--font-size-xs); font-weight: 700; cursor: pointer; border: 2px solid transparent; background: var(--color-bg-subtle); transition: var(--transition-fast); }
+.rsvp-quick-btn { padding: var(--space-2) var(--space-3); border-radius: var(--radius-xl); font-family: var(--font); font-size: var(--font-size-xs); font-weight: 700; cursor: pointer; border: 2px solid transparent; background: var(--color-bg-subtle); transition: var(--transition-fast); }
 .rsvp-quick-btn.opt-confirmed.active, .rsvp-quick-btn.opt-confirmed:hover { background: var(--color-success-bg); color: var(--color-success); border-color: var(--color-success); }
 .rsvp-quick-btn.opt-declined.active, .rsvp-quick-btn.opt-declined:hover { background: var(--color-error-bg); color: var(--color-error); border-color: var(--color-error); }
 .rsvp-quick-btn.opt-maybe.active, .rsvp-quick-btn.opt-maybe:hover { background: var(--color-warning-bg); color: var(--color-warning); border-color: var(--color-warning); }
@@ -456,13 +456,13 @@ onMounted(load)
 .timestamps { display: flex; gap: var(--space-5); font-size: var(--font-size-xs); color: var(--color-text-muted); margin-top: var(--space-2); }
 
 /* Buttons */
-.btn { display: inline-flex; align-items: center; gap: var(--space-2); padding: var(--space-2) var(--space-4); border-radius: var(--radius); font-family: var(--font); font-size: var(--font-size-sm); font-weight: 600; cursor: pointer; border: none; transition: var(--transition-fast); }
+.btn { display: inline-flex; align-items: center; gap: var(--space-2); padding: var(--space-2) var(--space-4); border-radius: var(--radius-xl); font-family: var(--font); font-size: var(--font-size-sm); font-weight: 600; cursor: pointer; border: none; transition: var(--transition-fast); }
 .btn-primary { background: var(--color-primary); color: #fff; }
 .btn-primary:hover { background: var(--color-primary-hover); }
 .btn-primary:disabled { opacity: .6; cursor: not-allowed; }
 .btn-outline { background: rgba(255,255,255,.15); color: #fff; border: 1.5px solid rgba(255,255,255,.4); }
 .btn-outline:hover { background: rgba(255,255,255,.25); }
-.btn-danger-outline { background: rgba(239,68,68,.15); color: #fca5a5; border: 1.5px solid rgba(239,68,68,.4); border-radius: var(--radius); font-family: var(--font); font-size: var(--font-size-sm); font-weight: 600; cursor: pointer; transition: var(--transition-fast); padding: var(--space-2) var(--space-4); }
+.btn-danger-outline { background: rgba(239,68,68,.15); color: #fca5a5; border: 1.5px solid rgba(239,68,68,.4); border-radius: var(--radius-xl); font-family: var(--font); font-size: var(--font-size-sm); font-weight: 600; cursor: pointer; transition: var(--transition-fast); padding: var(--space-2) var(--space-4); }
 .btn-danger-outline:hover { background: rgba(239,68,68,.25); }
 .btn-danger { background: var(--color-error); color: #fff; }
 .btn-danger:disabled { opacity: .6; cursor: not-allowed; }

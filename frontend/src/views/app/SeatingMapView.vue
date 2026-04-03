@@ -521,7 +521,7 @@ onMounted(loadSeating)
   min-height: 160px;
 }
 .table-card:hover { box-shadow: var(--shadow); }
-.table-card.drag-over { border-color: var(--color-primary); background: var(--color-primary-bg); box-shadow: 0 0 0 3px rgba(233,30,140,0.15); }
+.table-card.drag-over { border-color: var(--color-primary); background: var(--color-primary-bg); border: 2px solid var(--color-primary); }
 .table-card.table-full { border-color: var(--color-success); }
 .table-card.being-dragged { opacity: 0.4; }
 

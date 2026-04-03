@@ -328,7 +328,7 @@ onMounted(load)
 }
 
 .event-card {
-  transition: box-shadow var(--transition), transform var(--transition);
+  transition: transform var(--transition);
 }
 .event-card:hover {
   box-shadow: var(--shadow);

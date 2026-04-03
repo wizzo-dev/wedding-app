@@ -205,7 +205,7 @@ onMounted(loadInvitations)
 
 .invitation-card {
   overflow: hidden;
-  transition: transform var(--transition), box-shadow var(--transition);
+  transition: transform var(--transition);
 }
 .invitation-card:hover {
   transform: translateY(-4px);

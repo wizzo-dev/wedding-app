@@ -288,7 +288,7 @@ onMounted(loadNotifications)
   border-radius: 50%;
   flex-shrink: 0;
   margin-top: 6px;
-  box-shadow: 0 0 6px var(--color-primary);
+  border: 2px solid var(--color-primary);
 }
 
 /* Buttons */

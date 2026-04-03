@@ -677,7 +677,7 @@ onUnmounted(() => window.removeEventListener('resize', onResize))
 .form-input:focus {
   outline: none;
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px var(--color-primary-light);
+  border: 2px solid var(--color-primary);
 }
 
 textarea.form-input { resize: vertical; min-height: 60px; }

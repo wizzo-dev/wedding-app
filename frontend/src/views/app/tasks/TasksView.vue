@@ -181,7 +181,7 @@ onMounted(load)
 
 .checkbox {
   width: 26px; height: 26px;
-  border-radius: 8px;
+  border-radius: 50%;
   border: 2px solid var(--color-border);
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
@@ -190,8 +190,8 @@ onMounted(load)
   font-weight: 700;
 }
 .checkbox.checked {
-  background: var(--color-success);
-  border-color: var(--color-success);
+  background: var(--color-primary);
+  border-color: var(--color-primary);
   color: white;
 }
 
@@ -202,7 +202,7 @@ onMounted(load)
 .task-cat-badge { padding: 2px 8px; background: var(--color-primary-light); color: var(--color-primary); border-radius: var(--radius-full); font-size: var(--font-size-xs); font-weight: 600; }
 .task-days { font-size: var(--font-size-xs); color: var(--color-text-muted); }
 
-.btn { padding: var(--space-3) var(--space-5); border-radius: var(--radius); border: none; font-size: var(--font-size-sm); font-weight: 600; cursor: pointer; transition: all var(--transition-fast); }
+.btn { padding: var(--space-3) var(--space-5); border-radius: var(--radius-xl); border: none; font-size: var(--font-size-sm); font-weight: 600; cursor: pointer; transition: all var(--transition-fast); }
 .btn-outline { background: transparent; border: 1.5px solid var(--color-border); color: var(--color-text); }
 .btn-outline:hover { border-color: var(--color-primary); color: var(--color-primary); }
 </style>

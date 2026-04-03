@@ -151,7 +151,7 @@ onMounted(loadVendors)
 .search-row { margin-bottom: var(--space-4); }
 .search-wrap { position: relative; max-width: 400px; }
 .search-icon { position: absolute; right: var(--space-3); top: 50%; transform: translateY(-50%); }
-.search-input { width: 100%; padding: var(--space-3) var(--space-10) var(--space-3) var(--space-3); border: 1.5px solid var(--color-border); border-radius: var(--radius); font-size: var(--font-size-sm); outline: none; }
+.search-input { width: 100%; padding: var(--space-3) var(--space-10) var(--space-3) var(--space-3); border: 1.5px solid var(--color-border); border-radius: var(--radius-xl); font-size: var(--font-size-sm); outline: none; }
 .search-input:focus { border-color: var(--color-primary); }
 .search-clear { position: absolute; left: var(--space-3); top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--color-text-muted); }
 
@@ -166,7 +166,7 @@ onMounted(loadVendors)
 .empty-state { text-align: center; padding: var(--space-10); display: flex; flex-direction: column; align-items: center; gap: var(--space-3); color: var(--color-text-muted); }
 
 .vendors-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: var(--space-4); }
-.vendor-card { display: flex; flex-direction: column; overflow: hidden; transition: transform var(--transition-fast), box-shadow var(--transition-fast); }
+.vendor-card { display: flex; flex-direction: column; overflow: hidden; transition: transform var(--transition-fast); }
 .vendor-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
 .vendor-link { text-decoration: none; color: inherit; flex: 1; }
 .vendor-body { flex: 1; }
@@ -192,12 +192,12 @@ onMounted(loadVendors)
 .rating-num { font-size: var(--font-size-sm); color: var(--color-text-muted); margin-right: var(--space-1); }
 
 .vendor-footer { padding: var(--space-3) var(--space-5) var(--space-4); border-top: 1px solid var(--color-border); }
-.btn-save { width: 100%; padding: var(--space-2) var(--space-4); border-radius: var(--radius); border: 1.5px solid var(--color-primary); background: white; color: var(--color-primary); font-size: var(--font-size-sm); font-weight: 600; cursor: pointer; transition: all var(--transition-fast); }
+.btn-save { width: 100%; padding: var(--space-2) var(--space-4); border-radius: var(--radius-xl); border: 1.5px solid var(--color-primary); background: white; color: var(--color-primary); font-size: var(--font-size-sm); font-weight: 600; cursor: pointer; transition: all var(--transition-fast); }
 .btn-save:hover { background: var(--color-primary); color: white; }
 .btn-save.saved { background: var(--color-primary-light); border-color: var(--color-primary); cursor: default; }
 .btn-save:disabled { opacity: 0.6; cursor: not-allowed; }
 
-.btn { padding: var(--space-3) var(--space-5); border-radius: var(--radius); border: none; font-size: var(--font-size-sm); font-weight: 600; cursor: pointer; transition: all var(--transition-fast); }
+.btn { padding: var(--space-3) var(--space-5); border-radius: var(--radius-xl); border: none; font-size: var(--font-size-sm); font-weight: 600; cursor: pointer; transition: all var(--transition-fast); }
 .btn-outline { background: transparent; border: 1.5px solid var(--color-border); color: var(--color-text); text-decoration: none; display: inline-flex; align-items: center; }
 .btn-outline:hover { border-color: var(--color-primary); color: var(--color-primary); }
 .btn-primary { background: var(--color-primary); color: white; }

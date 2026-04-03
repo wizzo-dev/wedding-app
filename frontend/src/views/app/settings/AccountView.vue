@@ -370,13 +370,13 @@ onMounted(loadProfile)
   color: var(--color-text);
   background: var(--color-bg);
   outline: none;
-  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  transition: border-color var(--transition-fast);
   text-align: right;
 }
 .form-input:focus {
   border-color: var(--color-primary);
   background: #fff;
-  box-shadow: 0 0 0 3px var(--color-primary-light);
+  border: 2px solid var(--color-primary);
 }
 .form-error { font-size: var(--font-size-xs); color: var(--color-error); }
 
@@ -435,7 +435,7 @@ onMounted(loadProfile)
 
 /* Danger section */
 .danger-section { border-color: #fecaca !important; }
-.danger-section:hover { box-shadow: 0 4px 20px rgba(239,68,68,0.12) !important; }
+.danger-section:hover { border: 2px solid var(--color-error) !important; }
 .danger-title { color: var(--color-error) !important; }
 
 .danger-card {

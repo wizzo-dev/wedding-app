@@ -606,7 +606,7 @@ onMounted(async () => {
 .step-dot-wrapper.active .step-dot {
   background: var(--color-primary, #E91E8C);
   color: white;
-  box-shadow: 0 0 0 4px rgba(233, 30, 140, 0.18);
+  border: 2px solid var(--color-primary);
 }
 
 .step-dot-wrapper.done .step-dot {
@@ -713,19 +713,19 @@ onMounted(async () => {
   padding: 16px;
   cursor: pointer;
   transition: all 200ms;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  border: 1px solid var(--color-border);
 }
 
 .template-card:hover {
   border-color: var(--color-primary, #E91E8C);
-  box-shadow: 0 4px 12px rgba(233,30,140,0.12);
+  border: 1px solid var(--color-primary);
   transform: translateY(-2px);
 }
 
 .template-card.selected {
   border-color: var(--color-primary, #E91E8C);
   background: #FDF0F8;
-  box-shadow: 0 0 0 3px rgba(233,30,140,0.18);
+  border: 2px solid var(--color-primary);
 }
 
 .tmpl-emoji { font-size: 26px; margin-bottom: 8px; }
@@ -796,7 +796,7 @@ onMounted(async () => {
   border-radius: 12px;
   padding: 16px;
   margin-top: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+  border: 1px solid var(--color-border);
 }
 
 .preview-header {
@@ -1017,7 +1017,7 @@ onMounted(async () => {
   border-radius: 12px;
   padding: 16px;
   margin-bottom: 16px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+  border: 1px solid var(--color-border);
 }
 
 .summary-row {
@@ -1040,7 +1040,7 @@ onMounted(async () => {
   border-radius: 12px;
   padding: 16px;
   margin-bottom: 16px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+  border: 1px solid var(--color-border);
 }
 
 .schedule-toggle-row {
@@ -1115,7 +1115,7 @@ onMounted(async () => {
 
 .btn-primary:hover:not(:disabled) {
   background: #c4177a;
-  box-shadow: 0 4px 12px rgba(233,30,140,0.35);
+  border: 2px solid var(--color-primary);
 }
 
 .btn-secondary {

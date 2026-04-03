@@ -101,7 +101,7 @@ onMounted(loadTemplates)
 .template-card {
   cursor: pointer;
   overflow: hidden;
-  transition: transform var(--transition), box-shadow var(--transition);
+  transition: transform var(--transition);
   outline: 2px solid transparent;
   outline-offset: 2px;
 }
