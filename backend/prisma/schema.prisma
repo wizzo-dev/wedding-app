@@ -49,6 +49,7 @@ model User {
   gifts             Gift[]
   giftWishes        GiftWish[]
   tasks             Task[]
+  notifications     Notification[]
 
   @@map("users")
 }
@@ -373,5 +374,19 @@ model Task {
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("tasks")
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  type      String   @default("system")
+  title     String
+  body      String
+  isRead    Boolean  @default(false) @map("is_read")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
 }
 
