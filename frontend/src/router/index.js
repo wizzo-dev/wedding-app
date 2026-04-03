@@ -5,7 +5,8 @@ import { useAuthStore } from '@/stores/auth'
 const routes = [
   // ── Public ──────────────────────────────────────────────────────────────────
   { path: '/',           name: 'Landing',     component: () => import('@/views/LandingView.vue'), meta: { public: true } },
-  { path: '/rsvp/:token', name: 'Rsvp',       component: () => import('@/views/RsvpView.vue'),    meta: { public: true } },
+  { path: '/rsvp/:code?',  name: 'Rsvp',        component: () => import('@/views/RsvpView.vue'),       meta: { public: true } },
+  { path: '/gift/:userId', name: 'GiftPublic', component: () => import('@/views/GiftPublicView.vue'), meta: { public: true } },
 
   // ── Auth ─────────────────────────────────────────────────────────────────────
   { path: '/login',          name: 'Login',         component: () => import('@/views/auth/LoginView.vue'),    meta: { guest: true } },
@@ -21,7 +22,8 @@ const routes = [
     meta: { requiresAuth: true },
     children: [
       { path: '',           redirect: '/app/dashboard' },
-      { path: 'dashboard',  name: 'Dashboard',  component: () => import('@/views/app/DashboardView.vue') },
+      { path: 'dashboard',       name: 'Dashboard',      component: () => import('@/views/app/DashboardView.vue') },
+      { path: 'dashboard/stats', name: 'DashboardStats', component: () => import('@/views/app/DashboardStatsView.vue') },
 
       // Budget
       { path: 'budget',                 name: 'Budget',         component: () => import('@/views/app/budget/BudgetView.vue') },
@@ -47,6 +49,7 @@ const routes = [
       // Cards
       { path: 'cards',                  name: 'Cards',          component: () => import('@/views/app/cards/CardsView.vue') },
       { path: 'cards/preview/:id',      name: 'CardPreview',    component: () => import('@/views/app/cards/PreviewView.vue') },
+      { path: 'cards/export',           name: 'CardsExport',    component: () => import('@/views/app/CardsExportView.vue') },
 
       // Gifts
       { path: 'gifts',                  name: 'Gifts',          component: () => import('@/views/app/gifts/GiftsView.vue') },
