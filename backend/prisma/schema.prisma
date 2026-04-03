@@ -44,6 +44,7 @@ model User {
   subscription      Subscription?
   refreshTokens     RefreshToken[]
   timelineEvents    TimelineEvent[]
+  tasks             Task[]
 
   @@map("users")
 }
@@ -318,4 +319,22 @@ model TimelineEvent {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("timeline_events")
+}
+
+model Task {
+  id          Int       @id @default(autoincrement())
+  userId      Int       @map("user_id")
+  title       String
+  description String?
+  dueDate     DateTime? @map("due_date")
+  priority    String    @default("medium")
+  status      String    @default("todo")
+  category    String?
+  sortOrder   Int       @default(0) @map("sort_order")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("tasks")
 }
