@@ -28,6 +28,8 @@ model User {
   plan                    String     @default("free")
   totalBudget             Float      @default(0) @map("total_budget")
   selectedCardTemplateId  Int?       @map("selected_card_template_id")
+  bankInfo                String?    @map("bank_info")
+  bitPhone                String?    @map("bit_phone")
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
 
@@ -44,6 +46,7 @@ model User {
   subscription      Subscription?
   refreshTokens     RefreshToken[]
   timelineEvents    TimelineEvent[]
+  giftWishes        GiftWish[]
 
   @@map("users")
 }
@@ -318,4 +321,20 @@ model TimelineEvent {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("timeline_events")
+}
+
+model GiftWish {
+  id            Int      @id @default(autoincrement())
+  userId        Int      @map("user_id")
+  name          String
+  desiredAmount Float    @map("desired_amount")
+  message       String?
+  imageUrl      String?  @map("image_url")
+  isContributed Boolean  @default(false) @map("is_contributed")
+  contributedBy String?  @map("contributed_by")
+  sortOrder     Int      @default(0) @map("sort_order")
+  createdAt     DateTime @default(now()) @map("created_at")
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("gift_wishes")
 }

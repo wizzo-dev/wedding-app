@@ -183,7 +183,9 @@ export default async function giftsRoutes(app) {
     return reply.code(204).send()
   })
 
-  // ── GET /api/gifts/public/:userId — public wish list (no auth) ───────────
+  // ── GET /api/gifts/public/:userId — public wish list ─────────────────────
+  // Payment details (bankInfo, bitPhone) require a valid guestToken
+  // belonging to a guest of this user (query param ?guestToken=... or header x-guest-token)
   app.get('/public/:userId', async (req, reply) => {
     const userId = parseInt(req.params.userId, 10)
     if (isNaN(userId)) return reply.code(400).send({ error: 'VALIDATION', message: 'מזהה לא תקין' })
@@ -197,6 +199,21 @@ export default async function giftsRoutes(app) {
       }
     })
     if (!user) return reply.code(404).send({ error: 'NOT_FOUND', message: 'זוג לא נמצא' })
+
+    // Verify guestToken to allow payment info disclosure
+    const guestToken = req.query.guestToken || req.headers['x-guest-token']
+    let paymentInfo = null
+    if (guestToken) {
+      const guest = await prisma.guest.findFirst({
+        where: { guestToken: String(guestToken), userId }
+      })
+      if (guest) {
+        paymentInfo = {
+          bankInfo: user.bankInfo || null,
+          bitPhone: user.bitPhone || null
+        }
+      }
+    }
 
     const wishes = await prisma.giftWish.findMany({
       where: { userId },
@@ -212,10 +229,7 @@ export default async function giftsRoutes(app) {
         id: user.id, name1: user.name1, name2: user.name2,
         weddingDate: user.weddingDate, venue: user.venue
       },
-      payment: {
-        bankInfo: user.bankInfo || null,
-        bitPhone: user.bitPhone || null
-      },
+      payment: paymentInfo,
       wishes
     }
   })
