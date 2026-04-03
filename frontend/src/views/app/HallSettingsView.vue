@@ -246,7 +246,7 @@
 
 <script setup>
 import { ref, computed, reactive, onMounted } from 'vue'
-import axios from 'axios'
+import api from '@/composables/useApi'
 
 // ── State ──────────────────────────────────────────────────────────────────────
 const loading  = ref(true)
@@ -282,8 +282,8 @@ async function loadSettings() {
 
   try {
     const [settingsRes, tablesRes] = await Promise.all([
-      axios.get('/api/seating/settings'),
-      axios.get('/api/seating/tables')
+      api.get('/api/seating/settings'),
+      api.get('/api/seating/tables')
     ])
 
     const s = settingsRes.data
@@ -320,7 +320,7 @@ async function saveSettings() {
 
   savingSettings.value = true
   try {
-    await axios.put('/api/seating/settings', {
+    await api.put('/api/seating/settings', {
       hallName:      form.hallName,
       totalCapacity: form.totalCapacity
     })
@@ -350,7 +350,7 @@ async function generateTables() {
 
   generatingTables.value = true
   try {
-    const { data } = await axios.post('/api/seating/generate-tables', {
+    const { data } = await api.post('/api/seating/generate-tables', {
       count:        genForm.count,
       seatsPerTable: genForm.seatsPerTable,
       namingStyle:  genForm.namingStyle,
