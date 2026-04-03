@@ -122,7 +122,7 @@
             </div>
             <div class="task-meta">
               <span v-if="task.category" class="task-cat">{{ task.category }}</span>
-              <span v-if="task.dueDate" class="task-due" :class="{ overdue: isOverdue(task.dueDate) }">
+              <span v-if="task.dueDate" class="task-due" :class="{ overdue: isOverdue(task) }">
                 📅 {{ formatDate(task.dueDate) }}
               </span>
               <span v-if="task.description" class="task-desc">{{ task.description }}</span>
@@ -281,8 +281,8 @@ function statusClass(s) {
   const map = { todo: 'badge-neutral', in_progress: 'badge-info', done: 'badge-success' }
   return map[s] || 'badge-neutral'
 }
-function isOverdue(d) {
-  return d && new Date(d) < new Date() && !d.startsWith('done')
+function isOverdue(task) {
+  return task.status !== 'done' && task.dueDate && new Date(task.dueDate) < new Date()
 }
 function formatDate(d) {
   if (!d) return ''

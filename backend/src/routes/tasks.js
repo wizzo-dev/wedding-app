@@ -1,5 +1,8 @@
 import { prisma } from '../models/db.js'
 
+const VALID_PRIORITY = ['low', 'medium', 'high']
+const VALID_STATUS   = ['todo', 'in_progress', 'done']
+
 // Default task templates for new users
 const SEED_TASKS = [
   { title: 'קבע תאריך חתונה', category: 'תכנון כללי', priority: 'high', status: 'todo' },
@@ -32,8 +35,10 @@ export default async function tasksRoutes(app) {
       orderBy: [{ status: 'asc' }, { priority: 'desc' }, { sortOrder: 'asc' }, { createdAt: 'asc' }]
     })
 
-    // Seed default tasks for new users
-    if (tasks.length === 0) {
+    // Seed default tasks for new users — use unfiltered count to avoid re-seeding
+    // when user has tasks but the current filter returns 0 results
+    const totalCount = await prisma.task.count({ where: { userId } })
+    if (totalCount === 0) {
       const seeded = await prisma.task.createMany({
         data: SEED_TASKS.map((t, i) => ({ ...t, userId, sortOrder: i }))
       })
@@ -80,6 +85,8 @@ export default async function tasksRoutes(app) {
     const { title, description, dueDate, priority, status, category, sortOrder } = req.body || {}
 
     if (!title?.trim()) return { statusCode: 400, error: 'כותרת חובה' }
+    if (priority && !VALID_PRIORITY.includes(priority)) return { statusCode: 400, error: 'Invalid priority' }
+    if (status   && !VALID_STATUS.includes(status))     return { statusCode: 400, error: 'Invalid status' }
 
     const task = await prisma.task.create({
       data: {
@@ -104,6 +111,9 @@ export default async function tasksRoutes(app) {
     if (!task) return { statusCode: 404, error: 'משימה לא נמצאה' }
 
     const { title, description, dueDate, priority, status, category, sortOrder } = req.body || {}
+
+    if (priority && !VALID_PRIORITY.includes(priority)) return { statusCode: 400, error: 'Invalid priority' }
+    if (status   && !VALID_STATUS.includes(status))     return { statusCode: 400, error: 'Invalid status' }
 
     const updated = await prisma.task.update({
       where: { id },
