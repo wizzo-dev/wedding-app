@@ -1,147 +1,411 @@
 <template>
-  <div class="view-placeholder fade-in">
-    <h1>ספק</h1>
-    <p style="color:var(--color-text-muted)">בבנייה... 🚧</p>
-    <!-- implemented by freddy: 2026-04-02T23:23:00Z -->
+  <div class="vendor-detail fade-in" dir="rtl">
+
+    <!-- Back -->
+    <button class="back-btn" @click="$router.back()">← חזרה</button>
+
+    <!-- Loading -->
+    <div v-if="loading" class="loading-wrap">
+      <div class="skeleton-hero"></div>
+      <div class="detail-body">
+        <div class="skeleton" style="height:28px;width:50%;margin-bottom:12px;"></div>
+        <div class="skeleton" style="height:18px;width:35%;margin-bottom:8px;"></div>
+        <div class="skeleton" style="height:18px;width:40%;"></div>
+      </div>
+    </div>
+
+    <!-- Error -->
+    <div v-else-if="error" class="empty-state">
+      <div class="empty-state-icon">⚠️</div>
+      <p class="empty-state-title">{{ error }}</p>
+      <button class="btn btn-primary" @click="load">נסה שוב</button>
+    </div>
+
+    <!-- Content -->
+    <div v-else-if="vendor" class="detail-wrap">
+
+      <!-- Hero -->
+      <div class="hero-card card">
+        <div class="hero-bg" :style="{ background: catGradient(vendor.category) }">
+          <span class="hero-icon">{{ catIcon(vendor.category) }}</span>
+          <div v-if="vendor.isFeatured" class="featured-badge">⭐ מומלץ</div>
+        </div>
+        <div class="hero-body">
+          <div class="hero-top">
+            <div>
+              <h1 class="vendor-name">{{ vendor.name }}</h1>
+              <div class="vendor-category">{{ vendor.category }}</div>
+            </div>
+            <div class="hero-rating" v-if="vendor.rating">
+              <span class="star">★</span>
+              <span class="rating-num">{{ vendor.rating.toFixed(1) }}</span>
+            </div>
+          </div>
+          <div class="vendor-tags">
+            <span v-if="vendor.city" class="v-tag">📍 {{ vendor.city }}</span>
+            <span v-if="vendor.priceRange" class="v-tag price-tag">💰 {{ vendor.priceRange }}</span>
+          </div>
+          <p v-if="vendor.description" class="vendor-desc">{{ vendor.description }}</p>
+          <div class="vendor-contacts">
+            <a v-if="vendor.phone" :href="`tel:${vendor.phone}`" class="contact-btn">
+              📞 {{ vendor.phone }}
+            </a>
+            <a v-if="vendor.website" :href="vendor.website" target="_blank" rel="noopener" class="contact-btn website-btn">
+              🌐 אתר הספק
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- My Vendor Panel -->
+      <div class="my-vendor-card card">
+        <div class="card-body">
+          <h2 class="section-title">הספק שלי</h2>
+
+          <!-- Not in list -->
+          <div v-if="!myVendor" class="add-section">
+            <p class="add-desc">הוסף ספק זה לרשימת הספקים שלך כדי לנהל אותו</p>
+            <div class="status-options">
+              <button
+                v-for="opt in statusOptions"
+                :key="opt.value"
+                class="status-opt-btn"
+                :class="{ selected: selectedStatus === opt.value }"
+                @click="selectedStatus = opt.value"
+              >
+                <span class="opt-icon">{{ opt.icon }}</span>
+                <span class="opt-label">{{ opt.label }}</span>
+              </button>
+            </div>
+            <button
+              class="btn btn-primary btn-full"
+              @click="addToList"
+              :disabled="actionLoading"
+            >
+              <span v-if="actionLoading">⏳ מוסיף...</span>
+              <span v-else>+ הוסף לרשימה שלי</span>
+            </button>
+          </div>
+
+          <!-- In list -->
+          <div v-else class="manage-section">
+            <div class="current-status">
+              <span class="status-label">סטטוס:</span>
+              <span class="status-badge" :class="statusClass(myVendor.status)">
+                {{ statusLabel(myVendor.status) }}
+              </span>
+            </div>
+
+            <!-- Status Buttons -->
+            <div class="status-options">
+              <button
+                v-for="opt in statusOptions"
+                :key="opt.value"
+                class="status-opt-btn"
+                :class="{ selected: editStatus === opt.value }"
+                @click="editStatus = opt.value"
+              >
+                <span class="opt-icon">{{ opt.icon }}</span>
+                <span class="opt-label">{{ opt.label }}</span>
+              </button>
+            </div>
+
+            <!-- Price Agreed -->
+            <div class="form-group">
+              <label class="form-label">מחיר סוכם (₪)</label>
+              <input
+                v-model.number="editPrice"
+                class="input"
+                type="number"
+                min="0"
+                placeholder="0"
+              />
+            </div>
+
+            <!-- Notes -->
+            <div class="form-group">
+              <label class="form-label">הערות</label>
+              <textarea
+                v-model="editNotes"
+                class="input textarea"
+                rows="3"
+                placeholder="הערות על הספק..."
+              ></textarea>
+            </div>
+
+            <div class="manage-actions">
+              <button
+                class="btn btn-primary"
+                @click="updateVendor"
+                :disabled="actionLoading"
+              >
+                <span v-if="actionLoading">⏳ שומר...</span>
+                <span v-else>💾 שמור שינויים</span>
+              </button>
+              <button
+                class="btn btn-ghost btn-danger"
+                @click="confirmRemove = true"
+                :disabled="actionLoading"
+              >🗑️ הסר</button>
+            </div>
+
+            <div v-if="saveSuccess" class="success-msg">✓ השינויים נשמרו בהצלחה</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Remove Confirm Modal -->
+    <div v-if="confirmRemove" class="modal-backdrop" @click.self="confirmRemove = false">
+      <div class="modal card">
+        <div class="card-body">
+          <h3 class="modal-title">הסר ספק</h3>
+          <p class="modal-text">האם להסיר את <strong>{{ vendor?.name }}</strong> מהרשימה שלך?</p>
+          <div class="modal-actions">
+            <button class="btn btn-ghost" @click="confirmRemove = false">ביטול</button>
+            <button class="btn btn-error" @click="removeFromList" :disabled="actionLoading">הסר</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
+import { useRoute, useRouter } from 'vue-router'
+import api from '@/composables/useApi'
 
-const route = useRoute()
-const auth = useAuthStore()
-const vendor = ref(null)
-const myVendor = ref(null)
-const loading = ref(false)
-const error = ref(null)
-const adding = ref(false)
-const editStatus = ref('considering')
-const editPrice = ref('')
-const editNotes = ref('')
+const route  = useRoute()
+const router = useRouter()
+
+const vendor       = ref(null)
+const myVendor     = ref(null)
+const loading      = ref(true)
+const error        = ref(null)
+const actionLoading = ref(false)
+const confirmRemove = ref(false)
+const saveSuccess  = ref(false)
+
+const selectedStatus = ref('considering')
+const editStatus     = ref('')
+const editPrice      = ref('')
+const editNotes      = ref('')
+
+const statusOptions = [
+  { value: 'considering', label: 'שוקל/ת',   icon: '🤔' },
+  { value: 'contacted',   label: 'יצרתי קשר', icon: '📞' },
+  { value: 'booked',      label: 'הוזמן',     icon: '✅' },
+  { value: 'rejected',    label: 'לא מתאים',  icon: '❌' },
+]
+
+const CAT_ICONS = {
+  'קייטרינג': '🍽️',
+  'צילום':    '📸',
+  'להקה':     '🎵',
+  'פרחים':    '💐',
+  'אולם':     '🏛️',
+}
+const CAT_GRADIENTS = {
+  'קייטרינג': 'linear-gradient(135deg,#FF6B6B,#FFE66D)',
+  'צילום':    'linear-gradient(135deg,#667EEA,#764BA2)',
+  'להקה':     'linear-gradient(135deg,#F093FB,#F5576C)',
+  'פרחים':    'linear-gradient(135deg,#4FACFE,#00F2FE)',
+  'אולם':     'linear-gradient(135deg,#43E97B,#38F9D7)',
+}
+
+function catIcon(cat)     { return CAT_ICONS[cat] || '🏢' }
+function catGradient(cat) { return CAT_GRADIENTS[cat] || 'linear-gradient(135deg,#E91E8C,#1A1F36)' }
+
+function statusLabel(s) {
+  return statusOptions.find(o => o.value === s)?.label || s
+}
+function statusClass(s) {
+  const map = { considering: 'badge-warning', contacted: 'badge-info', booked: 'badge-success', rejected: 'badge-error' }
+  return map[s] || 'badge-neutral'
+}
 
 async function load() {
-  loading.value = true; error.value = null
+  loading.value = true
+  error.value   = null
   try {
-    const res = await fetch(`/api/vendors/${route.params.id}`, {
-      headers: { Authorization: `Bearer ${auth.token}` }
-    })
-    if (!res.ok) throw new Error('ספק לא נמצא')
-    const data = await res.json()
-    vendor.value = data
-    if (data.myVendor) {
-      myVendor.value = data.myVendor
-      editStatus.value = data.myVendor.status || 'considering'
-      editPrice.value = data.myVendor.priceAgreed || ''
-      editNotes.value = data.myVendor.notes || ''
+    const res = await api.get(`/vendors/${route.params.id}`)
+    vendor.value   = res.data
+    myVendor.value = res.data.myVendor || null
+    if (myVendor.value) {
+      editStatus.value = myVendor.value.status
+      editPrice.value  = myVendor.value.priceAgreed || ''
+      editNotes.value  = myVendor.value.notes || ''
     }
-  } catch (e) { error.value = e.message }
-  finally { loading.value = false }
+  } catch (e) {
+    error.value = e.response?.data?.error || 'ספק לא נמצא'
+  } finally {
+    loading.value = false
+  }
 }
 
-async function addToMine() {
-  adding.value = true
+async function addToList() {
+  actionLoading.value = true
   try {
-    const res = await fetch('/api/vendors/user', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${auth.token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ vendorId: vendor.value.id })
+    const res = await api.post('/vendors/user', {
+      vendorId: vendor.value.id,
+      status: selectedStatus.value,
     })
-    if (!res.ok) throw new Error('שגיאה')
-    const data = await res.json()
-    myVendor.value = data
-    editStatus.value = 'considering'
-  } catch (e) { alert(e.message) }
-  finally { adding.value = false }
+    myVendor.value = res.data
+    editStatus.value = res.data.status
+    editPrice.value  = res.data.priceAgreed || ''
+    editNotes.value  = res.data.notes || ''
+  } finally {
+    actionLoading.value = false
+  }
 }
 
-async function updateStatus() {
-  if (!myVendor.value) return
+async function updateVendor() {
+  actionLoading.value = true
+  saveSuccess.value   = false
   try {
-    await fetch(`/api/vendors/user/${myVendor.value.id}`, {
-      method: 'PATCH',
-      headers: { Authorization: `Bearer ${auth.token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: editStatus.value, priceAgreed: parseFloat(editPrice.value) || null, notes: editNotes.value })
+    const res = await api.patch(`/vendors/user/${myVendor.value.id}`, {
+      status:      editStatus.value,
+      priceAgreed: editPrice.value || null,
+      notes:       editNotes.value || null,
     })
-  } catch (e) { console.error(e) }
+    myVendor.value   = { ...myVendor.value, ...res.data }
+    saveSuccess.value = true
+    setTimeout(() => { saveSuccess.value = false }, 3000)
+  } finally {
+    actionLoading.value = false
+  }
 }
 
-async function removeFromMine() {
-  if (!confirm('להסיר ספק זה מהרשימה שלך?')) return
+async function removeFromList() {
+  actionLoading.value = true
   try {
-    await fetch(`/api/vendors/user/${myVendor.value.id}`, {
-      method: 'DELETE', headers: { Authorization: `Bearer ${auth.token}` }
-    })
-    myVendor.value = null
-  } catch (e) { alert(e.message) }
-}
-
-function catIcon(cat) {
-  return { 'קייטרינג':'🍽️', 'צילום':'📷', 'להקה':'🎵', 'פרחים':'🌸', 'אולם':'🏛️' }[cat] || '📋'
-}
-function statusLabel(s) {
-  return { considering:'בודק', negotiating:'במשא ומתן', booked:'סגרתי' }[s] || s
+    await api.delete(`/vendors/user/${myVendor.value.id}`)
+    myVendor.value  = null
+    confirmRemove.value = false
+  } finally {
+    actionLoading.value = false
+  }
 }
 
 onMounted(load)
 </script>
 
 <style scoped>
-.vendor-view { max-width: 900px; margin: 0 auto; padding: var(--space-6); }
-.back-btn { background: none; border: none; color: var(--color-primary); font-family: var(--font); font-size: var(--font-size-sm); font-weight: 600; cursor: pointer; margin-bottom: var(--space-5); padding: 0; }
+.vendor-detail { max-width: 760px; margin: 0 auto; padding: var(--space-6); }
 
-.center-state { text-align: center; padding: var(--space-12); color: var(--color-text-muted); }
-.spinner { width: 40px; height: 40px; border: 3px solid var(--color-border); border-top-color: var(--color-primary); border-radius: 50%; animation: spin .8s linear infinite; margin: 0 auto var(--space-4); }
-@keyframes spin { to { transform: rotate(360deg); } }
+.back-btn {
+  display: inline-flex; align-items: center; gap: var(--space-1);
+  background: none; border: none; cursor: pointer;
+  color: var(--color-text-muted); font-size: var(--font-size-sm);
+  font-family: var(--font); padding: var(--space-1) 0;
+  margin-bottom: var(--space-5); transition: var(--transition-fast);
+}
+.back-btn:hover { color: var(--color-primary); }
 
-.vendor-hero { background: var(--color-bg-card); border-radius: var(--radius-xl); padding: var(--space-6); box-shadow: var(--shadow-sm); margin-bottom: var(--space-6); display: flex; align-items: center; gap: var(--space-5); position: relative; border: 2px solid transparent; }
-.vendor-hero.featured { border-color: var(--color-primary); }
-.featured-badge { position: absolute; top: -1px; right: var(--space-5); background: var(--color-primary); color: #fff; font-size: var(--font-size-xs); font-weight: 700; padding: 2px 12px; border-radius: 0 0 var(--radius-sm) var(--radius-sm); }
-.hero-icon { font-size: 3rem; background: var(--color-primary-bg); border-radius: var(--radius-xl); width: 80px; height: 80px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.hero-cat { font-size: var(--font-size-xs); color: var(--color-primary); font-weight: 700; text-transform: uppercase; display: block; margin-bottom: 4px; }
-.hero-name { font-size: var(--font-size-3xl); font-weight: 900; color: var(--color-navy); margin: 0 0 var(--space-3); }
-.hero-meta { display: flex; gap: var(--space-4); font-size: var(--font-size-sm); color: var(--color-text-muted); flex-wrap: wrap; }
+.detail-wrap { display: flex; flex-direction: column; gap: var(--space-5); }
 
-.vendor-body { display: grid; grid-template-columns: 1fr 320px; gap: var(--space-6); }
-.info-card { background: var(--color-bg-card); border-radius: var(--radius-xl); padding: var(--space-5); box-shadow: var(--shadow-sm); margin-bottom: var(--space-5); }
-.section-title { font-size: var(--font-size-lg); font-weight: 800; color: var(--color-navy); margin: 0 0 var(--space-3); }
-.vendor-desc { font-size: var(--font-size-sm); color: var(--color-text-muted); line-height: 1.7; }
+/* Hero */
+.hero-card { overflow: hidden; }
+.hero-bg {
+  height: 140px; display: flex; align-items: center; justify-content: center;
+  position: relative;
+}
+.hero-icon { font-size: 4rem; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.2)); }
+.featured-badge {
+  position: absolute; top: var(--space-3); right: var(--space-3);
+  background: rgba(255,255,255,0.95); color: var(--color-warning);
+  font-size: var(--font-size-xs); font-weight: 700;
+  padding: 3px var(--space-3); border-radius: var(--radius-full);
+  box-shadow: var(--shadow-xs);
+}
 
-.contact-list { display: flex; flex-direction: column; gap: var(--space-2); }
-.contact-row { display: flex; align-items: center; gap: var(--space-3); text-decoration: none; color: var(--color-navy); font-size: var(--font-size-sm); padding: var(--space-2); border-radius: var(--radius); transition: background var(--transition-fast); }
-.contact-row:hover { background: var(--color-bg-subtle); }
-.contact-icon { font-size: 1.2rem; }
+.hero-body { padding: var(--space-5); }
+.hero-top { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-4); margin-bottom: var(--space-3); }
+.vendor-name { font-size: var(--font-size-2xl); font-weight: 800; color: var(--color-navy); line-height: 1.2; }
+.vendor-category { font-size: var(--font-size-sm); color: var(--color-text-muted); margin-top: 4px; }
 
-.status-card { background: var(--color-bg-card); border-radius: var(--radius-xl); padding: var(--space-5); box-shadow: var(--shadow-sm); position: sticky; top: 80px; }
-.status-title { font-size: var(--font-size-base); font-weight: 800; color: var(--color-navy); margin: 0 0 var(--space-4); }
-.not-added p { font-size: var(--font-size-sm); color: var(--color-text-muted); margin-bottom: var(--space-3); }
-.added-state { display: flex; flex-direction: column; gap: var(--space-3); }
-.status-row { display: flex; flex-direction: column; gap: 4px; }
-.status-label { font-size: var(--font-size-xs); font-weight: 600; color: var(--color-text-muted); }
-.status-select { padding: var(--space-2) var(--space-3); border: 1.5px solid var(--color-border); border-radius: var(--radius); font-family: var(--font); font-size: var(--font-size-sm); background: var(--color-bg-card); color: var(--color-navy); cursor: pointer; }
-.price-input { padding: var(--space-2) var(--space-3); border: 1.5px solid var(--color-border); border-radius: var(--radius); font-family: var(--font); font-size: var(--font-size-sm); }
-.notes-input { padding: var(--space-2) var(--space-3); border: 1.5px solid var(--color-border); border-radius: var(--radius); font-family: var(--font); font-size: var(--font-size-sm); resize: vertical; }
-.status-badge-wrap { text-align: center; }
-.my-status-badge { display: inline-block; padding: 4px 14px; border-radius: var(--radius-full); font-size: var(--font-size-xs); font-weight: 700; }
-.my-status-badge.booked { background: var(--color-success-bg); color: #065f46; }
-.my-status-badge.negotiating { background: var(--color-warning-bg); color: #92400e; }
-.my-status-badge.considering { background: var(--color-info-bg); color: #1e40af; }
+.hero-rating { display: flex; align-items: center; gap: 4px; background: var(--color-bg-subtle); padding: var(--space-2) var(--space-3); border-radius: var(--radius-full); }
+.star { color: var(--color-warning); font-size: var(--font-size-lg); }
+.rating-num { font-size: var(--font-size-lg); font-weight: 700; color: var(--color-navy); }
 
-.btn { display: inline-flex; align-items: center; gap: var(--space-2); padding: var(--space-2) var(--space-4); border-radius: var(--radius-lg); font-family: var(--font); font-size: var(--font-size-sm); font-weight: 600; cursor: pointer; border: none; text-decoration: none; transition: all var(--transition); }
+.vendor-tags { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-bottom: var(--space-4); }
+.v-tag { font-size: var(--font-size-sm); background: var(--color-bg-subtle); color: var(--color-text-muted); padding: var(--space-1) var(--space-3); border-radius: var(--radius-full); }
+.price-tag { background: var(--color-primary-light); color: var(--color-primary); font-weight: 600; }
+
+.vendor-desc { font-size: var(--font-size-base); color: var(--color-text-muted); line-height: 1.7; margin-bottom: var(--space-4); }
+
+.vendor-contacts { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.contact-btn {
+  display: inline-flex; align-items: center; gap: var(--space-1);
+  padding: var(--space-2) var(--space-4); border-radius: var(--radius-full);
+  background: var(--color-bg-subtle); color: var(--color-text);
+  text-decoration: none; font-size: var(--font-size-sm); font-weight: 600;
+  border: 1.5px solid var(--color-border); transition: var(--transition-fast);
+}
+.contact-btn:hover { background: var(--color-primary-light); border-color: var(--color-primary); color: var(--color-primary); }
+.website-btn {}
+
+/* My Vendor Panel */
+.section-title { font-size: var(--font-size-xl); font-weight: 700; color: var(--color-navy); margin-bottom: var(--space-4); }
+
+.add-desc { font-size: var(--font-size-sm); color: var(--color-text-muted); margin-bottom: var(--space-4); }
+
+.status-options { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-bottom: var(--space-4); }
+.status-opt-btn {
+  display: flex; align-items: center; gap: var(--space-1);
+  padding: var(--space-2) var(--space-3); border-radius: var(--radius-full);
+  border: 1.5px solid var(--color-border); background: #fff;
+  cursor: pointer; font-size: var(--font-size-sm); font-family: var(--font);
+  transition: var(--transition-fast);
+}
+.status-opt-btn:hover { border-color: var(--color-primary); color: var(--color-primary); }
+.status-opt-btn.selected { border-color: var(--color-primary); background: var(--color-primary); color: #fff; font-weight: 600; }
+.opt-icon { font-size: var(--font-size-base); }
+
 .btn-full { width: 100%; justify-content: center; }
-.btn-sm { padding: var(--space-1) var(--space-3); font-size: var(--font-size-xs); }
-.btn-primary { background: var(--color-primary); color: #fff; }
-.btn-primary:hover { filter: brightness(1.08); }
-.btn-primary:disabled { opacity: .6; cursor: not-allowed; }
-.btn-danger { background: var(--color-error-bg); color: var(--color-error); border: 1px solid var(--color-error); }
-.btn-danger:hover { background: var(--color-error); color: #fff; }
 
-@media (max-width: 768px) {
-  .vendor-view { padding: var(--space-4); }
-  .vendor-body { grid-template-columns: 1fr; }
-  .vendor-hero { flex-direction: column; text-align: center; }
-  .hero-meta { justify-content: center; }
+/* Current Status */
+.current-status { display: flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-4); }
+.status-label { font-size: var(--font-size-sm); font-weight: 600; color: var(--color-text-muted); }
+.status-badge { font-size: var(--font-size-xs); font-weight: 600; padding: 3px var(--space-3); border-radius: var(--radius-full); }
+.badge-warning  { background: var(--color-warning-bg);  color: var(--color-warning); }
+.badge-info     { background: var(--color-info-bg);     color: var(--color-info); }
+.badge-success  { background: var(--color-success-bg);  color: var(--color-success); }
+.badge-error    { background: var(--color-error-bg);    color: var(--color-error); }
+.badge-neutral  { background: var(--color-bg-subtle);   color: var(--color-text-muted); }
+
+.form-group { margin-bottom: var(--space-4); }
+.form-label { display: block; font-size: var(--font-size-sm); font-weight: 600; color: var(--color-text); margin-bottom: var(--space-1); }
+.textarea { resize: vertical; min-height: 80px; }
+
+.manage-actions { display: flex; gap: var(--space-2); flex-wrap: wrap; margin-top: var(--space-4); }
+.btn-danger { color: var(--color-error); }
+.btn-danger:hover { background: var(--color-error-bg); }
+
+.success-msg { margin-top: var(--space-3); color: var(--color-success); font-size: var(--font-size-sm); font-weight: 600; }
+
+/* Modal */
+.modal-backdrop { position: fixed; inset: 0; background: var(--color-overlay); z-index: 100; display: flex; align-items: center; justify-content: center; padding: var(--space-4); }
+.modal { max-width: 400px; width: 100%; }
+.modal-title { font-size: var(--font-size-xl); font-weight: 700; color: var(--color-navy); margin-bottom: var(--space-2); }
+.modal-text { font-size: var(--font-size-sm); color: var(--color-text-muted); margin-bottom: var(--space-4); }
+.modal-actions { display: flex; gap: var(--space-2); justify-content: flex-end; }
+
+/* Loading skeletons */
+.loading-wrap { display: flex; flex-direction: column; gap: var(--space-5); }
+.skeleton-hero { height: 140px; border-radius: var(--radius-lg); }
+.detail-body { background: #fff; border-radius: var(--radius-lg); padding: var(--space-5); }
+
+/* Empty */
+.empty-state { text-align: center; padding: var(--space-16) var(--space-8); }
+.empty-state-icon { font-size: 3rem; margin-bottom: var(--space-4); }
+.empty-state-title { font-size: var(--font-size-xl); font-weight: 700; color: var(--color-navy); margin-bottom: var(--space-4); }
+
+@media (max-width: 640px) {
+  .vendor-detail { padding: var(--space-4); }
+  .hero-top { flex-direction: column; }
 }
 </style>
