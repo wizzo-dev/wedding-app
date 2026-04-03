@@ -190,6 +190,7 @@
 
   </div>
 </template>
+
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
@@ -300,6 +301,7 @@ async function deleteAccount() {
 
 onMounted(loadProfile)
 </script>
+
 <style scoped>
 .account-view {
   padding: var(--space-6);

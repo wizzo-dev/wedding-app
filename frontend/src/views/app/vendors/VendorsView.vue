@@ -1,108 +1,347 @@
 <template>
-  <div class="view-placeholder fade-in">
-    <h1>ספקים</h1>
-    <p style="color:var(--color-text-muted)">בבנייה... 🚧</p>
-    <!-- implemented by freddy: 2026-04-02T23:23:00Z -->
+  <div class="vendors-list fade-in" dir="rtl">
+
+    <!-- Page Header -->
+    <div class="page-header">
+      <div class="page-header-text">
+        <h1 class="page-title">ספקים לחתונה</h1>
+        <p class="page-subtitle">מצאו את הספקים המושלמים לאירוע שלכם</p>
+      </div>
+      <div class="page-actions">
+        <router-link to="/app/vendors/mine" class="btn btn-outline btn-sm">
+          ❤️ הספקים שלי
+        </router-link>
+      </div>
+    </div>
+
+    <!-- Category Filter -->
+    <div class="category-scroll">
+      <button
+        class="cat-pill"
+        :class="{ active: activeCategory === '' }"
+        @click="setCategory('')"
+      >הכל</button>
+      <button
+        v-for="cat in store.categories"
+        :key="cat"
+        class="cat-pill"
+        :class="{ active: activeCategory === cat }"
+        @click="setCategory(cat)"
+      >{{ catIcon(cat) }} {{ cat }}</button>
+    </div>
+
+    <!-- Search -->
+    <div class="search-bar card">
+      <div class="card-body search-body">
+        <span class="search-icon">🔍</span>
+        <input
+          v-model="search"
+          class="input search-input"
+          placeholder="חפש ספק לפי שם, עיר..."
+          @input="onSearch"
+        />
+        <button v-if="search" class="clear-btn" @click="clearSearch">✕</button>
+      </div>
+    </div>
+
+    <!-- Loading -->
+    <div v-if="store.loading" class="vendors-grid">
+      <div v-for="i in 6" :key="i" class="vendor-card skeleton-card">
+        <div class="skeleton" style="height:120px;border-radius:var(--radius) var(--radius) 0 0;"></div>
+        <div class="vc-body">
+          <div class="skeleton" style="height:18px;width:60%;margin-bottom:8px;"></div>
+          <div class="skeleton" style="height:14px;width:40%;margin-bottom:6px;"></div>
+          <div class="skeleton" style="height:14px;width:55%;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Error -->
+    <div v-else-if="store.error" class="empty-state">
+      <div class="empty-state-icon">⚠️</div>
+      <p class="empty-state-title">שגיאה בטעינת ספקים</p>
+      <p class="empty-state-text">{{ store.error }}</p>
+      <button class="btn btn-primary" @click="load">נסה שוב</button>
+    </div>
+
+    <!-- Empty -->
+    <div v-else-if="filtered.length === 0" class="empty-state">
+      <div class="empty-state-icon">🔍</div>
+      <p class="empty-state-title">לא נמצאו ספקים</p>
+      <p class="empty-state-text">נסה לשנות את הסינון או החיפוש</p>
+      <button class="btn btn-ghost" @click="clearAll">נקה סינון</button>
+    </div>
+
+    <!-- Vendors Grid -->
+    <div v-else class="vendors-grid">
+      <div
+        v-for="vendor in filtered"
+        :key="vendor.id"
+        class="vendor-card"
+        @click="$router.push(`/app/vendors/${vendor.id}`)"
+      >
+        <!-- Featured badge -->
+        <div v-if="vendor.isFeatured" class="featured-badge">⭐ מומלץ</div>
+
+        <!-- Card Header Color -->
+        <div class="vc-header" :style="{ background: catGradient(vendor.category) }">
+          <span class="vc-cat-icon">{{ catIcon(vendor.category) }}</span>
+        </div>
+
+        <div class="vc-body">
+          <div class="vc-top">
+            <h3 class="vc-name">{{ vendor.name }}</h3>
+            <div v-if="vendor.rating" class="vc-rating">
+              <span class="star">★</span> {{ vendor.rating.toFixed(1) }}
+            </div>
+          </div>
+          <div class="vc-meta">
+            <span v-if="vendor.city" class="vc-tag">📍 {{ vendor.city }}</span>
+            <span v-if="vendor.priceRange" class="vc-tag price-tag">{{ vendor.priceRange }}</span>
+          </div>
+          <p v-if="vendor.description" class="vc-desc">{{ truncate(vendor.description, 80) }}</p>
+
+          <div class="vc-footer">
+            <router-link
+              :to="`/app/vendors/${vendor.id}`"
+              class="btn btn-ghost btn-xs"
+              @click.stop
+            >פרטים</router-link>
+            <button
+              v-if="vendor.myStatus"
+              class="btn btn-success btn-xs saved-btn"
+              @click.stop="removeVendor(vendor)"
+              :disabled="actionLoading === vendor.id"
+            >✓ שמור</button>
+            <button
+              v-else
+              class="btn btn-primary btn-xs"
+              @click.stop="addVendor(vendor)"
+              :disabled="actionLoading === vendor.id"
+            >+ הוסף</button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useAuthStore } from '@/stores/auth'
+import { useVendorsStore } from '@/stores/vendors'
 
-const auth = useAuthStore()
-const vendors = ref([])
-const loading = ref(false)
-const error = ref(null)
-const activeCategory = ref('הכל')
-const adding = ref(null)
+const store         = useVendorsStore()
+const search        = ref('')
+const activeCategory = ref('')
+const actionLoading = ref(null)
 
-const categories = computed(() => [...new Set(vendors.value.map(v => v.category))])
-const filtered = computed(() =>
-  activeCategory.value === 'הכל' ? vendors.value : vendors.value.filter(v => v.category === activeCategory.value)
-)
+// Category → icon mapping
+const CAT_ICONS = {
+  'קייטרינג': '🍽️',
+  'צילום':    '📸',
+  'להקה':     '🎵',
+  'פרחים':    '💐',
+  'אולם':     '🏛️',
+}
+const CAT_GRADIENTS = {
+  'קייטרינג': 'linear-gradient(135deg,#FF6B6B,#FFE66D)',
+  'צילום':    'linear-gradient(135deg,#667EEA,#764BA2)',
+  'להקה':     'linear-gradient(135deg,#F093FB,#F5576C)',
+  'פרחים':    'linear-gradient(135deg,#4FACFE,#00F2FE)',
+  'אולם':     'linear-gradient(135deg,#43E97B,#38F9D7)',
+}
+
+function catIcon(cat) { return CAT_ICONS[cat] || '🏢' }
+function catGradient(cat) { return CAT_GRADIENTS[cat] || 'linear-gradient(135deg,#E91E8C,#1A1F36)' }
+function truncate(s, n) { return s && s.length > n ? s.slice(0, n) + '...' : s }
+
+const filtered = computed(() => {
+  let list = store.vendors
+  if (search.value) {
+    const q = search.value.toLowerCase()
+    list = list.filter(v =>
+      v.name.toLowerCase().includes(q) ||
+      (v.city && v.city.toLowerCase().includes(q)) ||
+      (v.description && v.description.toLowerCase().includes(q))
+    )
+  }
+  return list
+})
 
 async function load() {
-  loading.value = true; error.value = null
-  try {
-    const res = await fetch('/api/vendors', { headers: { Authorization: `Bearer ${auth.token}` } })
-    if (!res.ok) throw new Error('שגיאה בטעינת ספקים')
-    vendors.value = await res.json()
-  } catch (e) { error.value = e.message }
-  finally { loading.value = false }
+  await store.fetchCategories()
+  await store.fetchVendors(activeCategory.value)
 }
 
-async function addToMine(v) {
-  adding.value = v.id
-  try {
-    const res = await fetch('/api/vendors/user', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${auth.token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ vendorId: v.id })
-    })
-    if (!res.ok) throw new Error('שגיאה')
-    v.myStatus = 'considering'
-  } catch (e) { alert(e.message) }
-  finally { adding.value = null }
+async function setCategory(cat) {
+  activeCategory.value = cat
+  await store.fetchVendors(cat)
 }
 
-function catIcon(cat) {
-  const map = { 'קייטרינג':'🍽️', 'צילום':'📷', 'להקה':'🎵', 'פרחים':'🌸', 'אולם':'🏛️', 'הכל':'🔍' }
-  return map[cat] || '📋'
+function onSearch() {
+  // filtering is computed, no API call needed
+}
+
+function clearSearch() {
+  search.value = ''
+}
+
+function clearAll() {
+  search.value = ''
+  activeCategory.value = ''
+  store.fetchVendors('')
+}
+
+async function addVendor(vendor) {
+  actionLoading.value = vendor.id
+  try {
+    await store.addToMyList(vendor.id, 'considering')
+  } finally {
+    actionLoading.value = null
+  }
+}
+
+async function removeVendor(vendor) {
+  // We need the userVendor id — fetch single vendor to get it
+  actionLoading.value = vendor.id
+  try {
+    const res = await import('@/composables/useApi').then(m => m.default.get(`/vendors/${vendor.id}`))
+    const myVendor = res.data.myVendor
+    if (myVendor) {
+      await store.removeFromMyList(myVendor.id, vendor.id)
+    }
+  } finally {
+    actionLoading.value = null
+  }
 }
 
 onMounted(load)
 </script>
 
 <style scoped>
-.vendors-view { max-width: 1100px; margin: 0 auto; padding: var(--space-6); }
+.vendors-list { max-width: var(--content-max); margin: 0 auto; padding: var(--space-6); }
 
-.page-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: var(--space-5); gap: var(--space-4); flex-wrap: wrap; }
-.page-title { font-size: var(--font-size-2xl); font-weight: 800; color: var(--color-navy); margin: 0 0 4px; }
-.page-subtitle { color: var(--color-text-muted); font-size: var(--font-size-sm); margin: 0; }
+/* Page Header */
+.page-header { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); margin-bottom: var(--space-6); flex-wrap: wrap; }
+.page-header-text {}
+.page-title { font-size: var(--font-size-2xl); font-weight: 800; color: var(--color-navy); }
+.page-subtitle { font-size: var(--font-size-sm); color: var(--color-text-muted); margin-top: var(--space-1); }
+.page-actions { display: flex; gap: var(--space-2); }
 
-.cat-tabs { display: flex; gap: var(--space-2); flex-wrap: wrap; margin-bottom: var(--space-6); border-bottom: 2px solid var(--color-border); padding-bottom: 0; }
-.cat-tab { background: none; border: none; border-bottom: 2px solid transparent; margin-bottom: -2px; padding: var(--space-3) var(--space-4); font-family: var(--font); font-size: var(--font-size-sm); font-weight: 600; color: var(--color-text-muted); cursor: pointer; transition: all var(--transition-fast); display: flex; align-items: center; gap: var(--space-1); border-radius: var(--radius-sm) var(--radius-sm) 0 0; }
-.cat-tab:hover { color: var(--color-navy); }
-.cat-tab.active { color: var(--color-primary); border-bottom-color: var(--color-primary); }
+/* Category Scroll */
+.category-scroll {
+  display: flex;
+  gap: var(--space-2);
+  overflow-x: auto;
+  padding-bottom: var(--space-2);
+  margin-bottom: var(--space-4);
+  scrollbar-width: none;
+}
+.category-scroll::-webkit-scrollbar { display: none; }
+.cat-pill {
+  flex-shrink: 0;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-full);
+  border: 1.5px solid var(--color-border);
+  background: #fff;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  font-family: var(--font);
+  cursor: pointer;
+  transition: var(--transition);
+  white-space: nowrap;
+}
+.cat-pill:hover { border-color: var(--color-primary); color: var(--color-primary); }
+.cat-pill.active { background: var(--color-primary); border-color: var(--color-primary); color: #fff; font-weight: 600; }
 
-.center-state { text-align: center; padding: var(--space-12) var(--space-4); color: var(--color-text-muted); }
-.spinner { width: 40px; height: 40px; border: 3px solid var(--color-border); border-top-color: var(--color-primary); border-radius: 50%; animation: spin .8s linear infinite; margin: 0 auto var(--space-4); }
-@keyframes spin { to { transform: rotate(360deg); } }
+/* Search */
+.search-bar { margin-bottom: var(--space-6); }
+.search-body { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-3) var(--space-4); }
+.search-icon { font-size: var(--font-size-lg); opacity: 0.5; }
+.search-input { flex: 1; border: none; outline: none; font-size: var(--font-size-base); font-family: var(--font); background: transparent; color: var(--color-text); }
+.clear-btn { background: none; border: none; cursor: pointer; color: var(--color-text-muted); font-size: var(--font-size-sm); padding: var(--space-1); border-radius: var(--radius-sm); transition: var(--transition-fast); }
+.clear-btn:hover { background: var(--color-bg); color: var(--color-text); }
 
-.vendors-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: var(--space-5); }
-.vendor-card { background: var(--color-bg-card); border-radius: var(--radius-xl); box-shadow: var(--shadow-sm); padding: var(--space-5); position: relative; transition: box-shadow var(--transition); border: 2px solid transparent; }
-.vendor-card:hover { box-shadow: var(--shadow); }
-.vendor-card.featured { border-color: var(--color-primary); }
-.featured-badge { position: absolute; top: -1px; right: var(--space-4); background: var(--color-primary); color: #fff; font-size: var(--font-size-xs); font-weight: 700; padding: 2px 10px; border-radius: 0 0 var(--radius-sm) var(--radius-sm); }
+/* Vendors Grid */
+.vendors-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--space-5);
+}
 
-.vendor-header { display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-4); margin-top: var(--space-2); }
-.vendor-icon { font-size: 2rem; background: var(--color-primary-bg); border-radius: var(--radius-lg); width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.vendor-name { font-size: var(--font-size-base); font-weight: 800; color: var(--color-navy); margin: 0 0 2px; }
-.vendor-cat { font-size: var(--font-size-xs); color: var(--color-text-muted); }
+/* Vendor Card */
+.vendor-card {
+  background: #fff;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  cursor: pointer;
+  transition: var(--transition);
+  position: relative;
+  border: 1.5px solid var(--color-border);
+}
+.vendor-card:hover {
+  box-shadow: var(--shadow);
+  transform: translateY(-3px);
+  border-color: var(--color-primary-light);
+}
 
-.vendor-body { margin-bottom: var(--space-4); }
-.vendor-desc { font-size: var(--font-size-sm); color: var(--color-text-muted); line-height: 1.5; margin-bottom: var(--space-3); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-.vendor-details { display: flex; flex-direction: column; gap: var(--space-1); }
-.detail-row { font-size: var(--font-size-xs); color: var(--color-navy); display: flex; align-items: center; gap: var(--space-1); }
-.detail-icon { width: 16px; text-align: center; }
+.featured-badge {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+  background: rgba(255,255,255,0.95);
+  color: var(--color-warning);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-full);
+  z-index: 1;
+  box-shadow: var(--shadow-xs);
+}
 
-.vendor-footer { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; border-top: 1px solid var(--color-border); padding-top: var(--space-3); }
-.added-badge { font-size: var(--font-size-xs); color: var(--color-success); font-weight: 700; }
+.vc-header {
+  height: 90px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.vc-cat-icon { font-size: 2.5rem; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15)); }
 
-.btn { display: inline-flex; align-items: center; gap: var(--space-1); padding: var(--space-2) var(--space-4); border-radius: var(--radius-lg); font-family: var(--font); font-size: var(--font-size-sm); font-weight: 600; cursor: pointer; border: none; text-decoration: none; transition: all var(--transition); white-space: nowrap; }
-.btn-sm { padding: var(--space-1) var(--space-3); font-size: var(--font-size-xs); }
-.btn-primary { background: var(--color-primary); color: #fff; }
-.btn-primary:hover { filter: brightness(1.08); }
-.btn-primary:disabled { opacity: .6; cursor: not-allowed; }
-.btn-outline { background: transparent; border: 1.5px solid var(--color-primary); color: var(--color-primary); }
-.btn-outline:hover { background: var(--color-primary-bg); }
-.btn-ghost { background: var(--color-bg-subtle); color: var(--color-navy); }
-.btn-ghost:hover { background: var(--color-border); }
+.vc-body { padding: var(--space-4); }
 
-@media (max-width: 680px) {
-  .vendors-view { padding: var(--space-4); }
-  .page-header { flex-direction: column; }
+.vc-top { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-2); margin-bottom: var(--space-2); }
+.vc-name { font-size: var(--font-size-lg); font-weight: 700; color: var(--color-navy); line-height: 1.3; flex: 1; }
+.vc-rating { display: flex; align-items: center; gap: 2px; font-size: var(--font-size-sm); font-weight: 700; color: var(--color-navy); white-space: nowrap; flex-shrink: 0; }
+.star { color: var(--color-warning); }
+
+.vc-meta { display: flex; flex-wrap: wrap; gap: var(--space-1); margin-bottom: var(--space-2); }
+.vc-tag { font-size: var(--font-size-xs); background: var(--color-bg-subtle); color: var(--color-text-muted); padding: 2px var(--space-2); border-radius: var(--radius-full); }
+.price-tag { background: var(--color-primary-light); color: var(--color-primary); font-weight: 600; }
+
+.vc-desc { font-size: var(--font-size-sm); color: var(--color-text-muted); line-height: 1.5; margin-bottom: var(--space-3); }
+
+.vc-footer { display: flex; gap: var(--space-2); justify-content: flex-end; }
+
+/* Buttons */
+.btn-xs { padding: 4px var(--space-3); font-size: var(--font-size-xs); }
+.btn-success { background: var(--color-success); border-color: var(--color-success); color: #fff; }
+.btn-success:hover { background: #16a34a; border-color: #16a34a; }
+.saved-btn { opacity: 0.85; }
+
+/* Skeleton */
+.skeleton-card { cursor: default; pointer-events: none; }
+.skeleton-card:hover { transform: none; box-shadow: var(--shadow-sm); }
+
+/* Empty State */
+.empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: var(--space-16) var(--space-8); text-align: center; }
+.empty-state-icon { font-size: 3rem; margin-bottom: var(--space-4); }
+.empty-state-title { font-size: var(--font-size-xl); font-weight: 700; color: var(--color-navy); margin-bottom: var(--space-2); }
+.empty-state-text { font-size: var(--font-size-sm); color: var(--color-text-muted); margin-bottom: var(--space-4); }
+
+@media (max-width: 640px) {
+  .vendors-list { padding: var(--space-4); }
   .vendors-grid { grid-template-columns: 1fr; }
+  .page-header { flex-direction: column; align-items: flex-start; }
 }
 </style>
