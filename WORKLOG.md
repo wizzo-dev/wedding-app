@@ -1,3 +1,49 @@
+## 2026-04-02T23:57Z | RSVP Public + Gift Public + NotFound | final-batch
+
+**Summary:** Implemented the last 3 missing pages for yalla-wedding (final batch).
+
+### Pages Built
+
+#### 1. RSVP Public — `/rsvp/:token`
+- **Frontend:** `RsvpView.vue` — full RSVP page for wedding guests
+  - Loads couple info from `/api/rsvp/:token` (or with guestToken)
+  - Loading skeleton animation
+  - Couple names big header + event details + map link
+  - Styled invitation card visual with ring emoji
+  - New guest form: שם, טלפון, מספר מגיעים stepper (1-10)
+  - guestToken mode: greeting + 3 RSVP buttons only (pre-filled)
+  - 3 big pill buttons: ✅ מגיעים / 🤔 מתלבטים / ❌ לא מגיע
+  - Confetti animation on submit (CSS keyframes, colored circles)
+  - 404 friendly error state
+  - Dynamic OG meta tags + document.title
+- **Backend:** `rsvp.js` — full implementation
+  - GET /api/rsvp/:token (public)
+  - GET /api/rsvp/:token/:guestToken (public, pre-fill)
+  - POST /api/rsvp/:token/respond (rate-limited: 10/hour)
+
+#### 2. Gift Public — `/gift/:token`
+- **Frontend:** `GiftView.vue` — public gift sending page
+  - Couple names + hearts header
+  - שם שולח + ברכה textarea + סכום preset buttons (₪200/300/500/אחר)
+  - Big pink "שלח מתנה" CTA
+  - WhatsApp credit payment link
+  - Heart animation on submit + תודה message
+  - 404 error state
+- **Backend:** Added gift endpoints to `rsvp.js`
+  - GET /api/gift/:token (public)
+  - POST /api/gift/:token/submit (rate-limited: 5/hour)
+- **Router:** Added `/gift/:token` and `/gift/:token/:guestToken` routes
+
+#### 3. NotFound — 404
+- **Frontend:** `NotFoundView.vue` — full 404 page
+  - Animated floating hearts/rings background
+  - Big "404" with 💍 emoji
+  - "אופס! העמוד לא נמצא" title
+  - "נראה שהדף הזה ברח לחתונה אחרת 😄" subtitle
+  - Two buttons: חזרה לדף הבית (navy) + צור קשר (outline)
+
+---
+
 ## 2026-04-02T22:15Z | WaHistory + SeatingMap + HallSettings | main
 
 **Summary:** Implemented 3 full production-quality pages for yalla-wedding.
