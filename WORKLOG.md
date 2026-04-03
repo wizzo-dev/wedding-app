@@ -477,3 +477,50 @@ New models added to `backend/prisma/schema.prisma`:
 - Used `git checkout feat/page/X` before each commit to ensure correct branch
 - All 4 branches pushed to origin (force-push for gift-public to overwrite old branch)
 - pm2 restarted after backend changes
+
+---
+
+## Round 10 — freddy-fix (2026-04-03)
+
+### Fixes Applied
+
+#### 🔴 CRITICAL — `feat/page/notifications`: No Migration File
+- Created `backend/prisma/migrations/20260403030000_add_notifications/migration.sql` with proper DDL for the `notifications` table
+- Marked migration as applied via `prisma migrate resolve --applied` (table already existed from `db push`)
+- Commit: `b4a05fc`
+
+#### ⚠️ WARN — `feat/page/notifications`: `v-else"` Template Syntax Error
+- Fixed extraneous `"` in `NotificationsView.vue` line ~18: `<span v-else">` → `<span v-else>`
+- Same commit: `b4a05fc`
+
+#### 🔴 HIGH — `feat/page/vendor-suggestions`: Broken "Add to My Vendors" Feature
+- Added new route `POST /api/vendors/suggestions/add` in `vendorSuggestions.js`
+  - Accepts `{category, name, notes}` — creates a freeform `Vendor` row then a `UserVendor` link
+  - No existing DB vendor FK required; returns 400 with Hebrew error if name/category missing
+- Updated `addToMyVendors()` in `VendorSuggestionsView.vue` to call the new route
+- Removed silent catch block that swallowed errors and showed fake success toasts
+- Added `toastType` ref (success/error) with red error toast styling
+- Commit: `83c0699`
+
+#### 🟡 HIGH — `feat/page/profile`: No Backend Validation on PATCH /api/users/profile
+- `name1`/`name2`: max 100 chars validation, returns 400 `INVALID_NAME`
+- `profileImageUrl`: max 500 chars + URL format check (http/https protocol only), returns 400 `INVALID_URL`
+- `weddingDate`: catches invalid date strings, returns 400 `INVALID_DATE` instead of Prisma 500
+- Commit: `5b0f4d0`
+
+#### ⚠️ WARN — `feat/page/payment-stubs`: `console.log` Logging User IDs
+- Replaced `console.log([SUBSCRIPTION STUB] User ${userId}...)` with `// TODO: payment integration`
+- Commit: `78013b5`
+
+### Build Results
+| Branch | Build | Time |
+|--------|-------|------|
+| feat/page/notifications | ✅ 0 errors | 883ms |
+| feat/page/vendor-suggestions | ✅ 0 errors | 737ms |
+| feat/page/profile | ✅ 0 errors | 771ms |
+| feat/page/payment-stubs | ✅ 0 errors | 904ms |
+
+### Notes
+- All branches pushed to origin — no merges to main
+- pm2 restarted after each backend change (vendor-suggestions, profile, payment-stubs)
+- Prisma `migrate dev` could not run interactively in non-TTY env; migration created manually and marked as applied via `prisma migrate resolve`
