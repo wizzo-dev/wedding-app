@@ -29,14 +29,15 @@ const routes = [
       { path: 'budget',                 name: 'Budget',         component: () => import('@/views/app/budget/BudgetView.vue') },
       { path: 'budget/category/:id',    name: 'BudgetCategory', component: () => import('@/views/app/budget/CategoryView.vue') },
 
-      // Guests
+      // Guests (static routes before dynamic)
       { path: 'guests',                 name: 'Guests',         component: () => import('@/views/app/GuestsListView.vue') },
-      { path: 'guests/:id',             name: 'GuestCard',      component: () => import('@/views/app/guests/GuestView.vue') },
       { path: 'guests/import',          name: 'GuestImport',    component: () => import('@/views/app/guests/ImportView.vue') },
       { path: 'guests/stats',           name: 'GuestStats',     component: () => import('@/views/app/guests/StatsView.vue') },
+      { path: 'guests/:id',             name: 'GuestCard',      component: () => import('@/views/app/guests/GuestView.vue') },
 
       // WhatsApp
       { path: 'whatsapp',               redirect: '/app/whatsapp/connect' },
+      { path: 'whatsapp/overview',      name: 'WaOverview',     component: () => import('@/views/app/whatsapp/WhatsappView.vue') },
       { path: 'whatsapp/connect',       name: 'WaConnect',      component: () => import('@/views/app/whatsapp/WhatsAppConnectView.vue') },
       { path: 'whatsapp/templates',     name: 'WaTemplates',    component: () => import('@/views/app/whatsapp/TemplatesView.vue') },
       { path: 'whatsapp/send',          name: 'WaSend',         component: () => import('@/views/app/whatsapp/SendView.vue') },
@@ -44,6 +45,7 @@ const routes = [
 
       // Seating
       { path: 'seating',                name: 'Seating',        component: () => import('@/views/app/seating/SeatingView.vue') },
+      { path: 'seating/map',            name: 'SeatingMap',     component: () => import('@/views/app/SeatingMapView.vue') },
       { path: 'seating/settings',       name: 'HallSettings',   component: () => import('@/views/app/HallSettingsView.vue') },
 
       // Cards

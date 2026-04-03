@@ -287,7 +287,7 @@ onMounted(loadBudget)
 
 .categories-list { display: flex; flex-direction: column; gap: var(--space-3); }
 .category-card { display: block; text-decoration: none; color: inherit; transition: transform var(--transition-fast), box-shadow var(--transition-fast); }
-.category-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+.category-card:hover { transform: translateY(-2px); border-color: var(--color-primary); }
 
 .cat-header { display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-3); }
 .cat-icon-wrap { width: 44px; height: 44px; border-radius: var(--radius); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
