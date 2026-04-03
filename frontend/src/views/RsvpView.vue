@@ -121,16 +121,17 @@ import { useRoute } from 'vue-router'
 const route = useRoute()
 
 // State
-const couple      = ref({})
-const invitation  = ref(null)
-const loading     = ref(false)
-const loadError   = ref(false)
-const zoomOpen    = ref(false)
-const submitted   = ref(false)
-const sending     = ref(false)
-const error       = ref('')
-const lastStatus  = ref('')
-const formRef     = ref(null)
+const couple          = ref({})
+const invitation      = ref(null)
+const prefilledGuest  = ref(null)
+const loading         = ref(false)
+const loadError       = ref(false)
+const zoomOpen        = ref(false)
+const submitted       = ref(false)
+const sending         = ref(false)
+const error           = ref('')
+const lastStatus      = ref('')
+const formRef         = ref(null)
 
 const form = reactive({
   name:       '',
