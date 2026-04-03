@@ -210,8 +210,11 @@ export default async function whatsappRoutes(app) {
       return { ok: true, scheduled: guests.length }
     }
 
-    // Send now
+    // Send now — verify WhatsApp is connected first
     const state = getClientState(userId)
+    if (!state?.client || state.status !== 'connected') {
+      return reply.code(400).send({ error: 'WA_NOT_CONNECTED', message: 'WhatsApp לא מחובר. אנא סרוק QR מחדש בהגדרות WhatsApp.' })
+    }
     const results = { sent: 0, failed: 0 }
 
     for (const guest of guests) {
@@ -225,14 +228,18 @@ export default async function whatsappRoutes(app) {
         .replace(/{{rsvp_link}}/g, `https://aware-carries-protecting-bay.trycloudflare.com/rsvp/${user.rsvpToken}`)
 
       try {
-        if (state?.client && state.status === 'connected') {
-          const chatId = guest.phone.replace(/\D/g, '') + '@c.us'
-          await state.client.sendMessage(chatId, body)
+        if (!state?.client || state.status !== 'connected') {
+          // WhatsApp not connected — save as failed
+          await prisma.waMessage.create({ data: { userId, templateId: template.id, recipientPhone: guest.phone, recipientName: guest.name, body, status: 'failed' } })
+          results.failed++
+          continue
         }
+        const chatId = guest.phone.replace(/\D/g, '') + '@c.us'
+        await state.client.sendMessage(chatId, body)
         await prisma.waMessage.create({ data: { userId, templateId: template.id, recipientPhone: guest.phone, recipientName: guest.name, body, status: 'sent', sentAt: new Date() } })
         results.sent++
       } catch(e) {
-        await prisma.waMessage.create({ data: { userId, templateId: template.id, recipientPhone: guest.phone, recipientName: guest.name, body, status: 'failed' } })
+        await prisma.waMessage.create({ data: { userId, templateId: template.id, recipientPhone: guest.phone, recipientName: guest.name, body, status: 'failed', error: e.message } })
         results.failed++
       }
     }
@@ -246,5 +253,18 @@ export default async function whatsappRoutes(app) {
     const where = { userId: req.user.userId }
     if (status) where.status = status
     return prisma.waMessage.findMany({ where, orderBy: { createdAt: 'desc' }, take: parseInt(limit) })
+  })
+
+  // Auto-reconnect users with existing WA sessions on startup
+  app.addHook('onReady', async () => {
+    try {
+      const activeSessions = await prisma.waSession.findMany({ where: { status: 'connected' } })
+      for (const session of activeSessions) {
+        console.log(`[WA] Auto-reconnecting user ${session.userId}...`)
+        createClient(session.userId).catch(e => console.error(`[WA] Auto-reconnect failed for user ${session.userId}:`, e.message))
+      }
+    } catch (e) {
+      console.error('[WA] Auto-reconnect startup error:', e.message)
+    }
   })
 }

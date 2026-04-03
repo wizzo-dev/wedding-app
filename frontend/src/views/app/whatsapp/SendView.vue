@@ -217,7 +217,11 @@ async function sendMessages() {
     sendResult.value = { ok: true, message: `✅ נשלח ל-${selectedGuests.value.length} אורחים בהצלחה!` }
     selectedGuests.value = []
   } catch (e) {
-    sendResult.value = { ok: false, message: '❌ שגיאה בשליחה: ' + (e.response?.data?.error || e.message) }
+    const errCode = e.response?.data?.error
+    const errMsg = errCode === 'WA_NOT_CONNECTED'
+      ? '❌ WhatsApp לא מחובר — אנא עבור לדף חיבור WhatsApp וסרוק QR מחדש'
+      : '❌ שגיאה בשליחה: ' + (e.response?.data?.message || e.response?.data?.error || e.message)
+    sendResult.value = { ok: false, message: errMsg }
   }
   sending.value = false
 }
