@@ -20,6 +20,7 @@ model User {
   name1           String
   name2           String
   weddingDate     DateTime? @map("wedding_date")
+  weddingTime     String?   @map("wedding_time")
   venue           String?
   venueAddress    String?  @map("venue_address")
   profileImageUrl String?  @map("profile_image_url")
