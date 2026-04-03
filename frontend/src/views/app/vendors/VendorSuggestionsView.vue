@@ -106,7 +106,7 @@
 
     <!-- Toast -->
     <Transition name="toast">
-      <div v-if="toastMsg" class="toast">{{ toastMsg }}</div>
+      <div v-if="toastMsg" class="toast" :class="toastType === 'error' ? 'toast-error' : 'toast-success'">{{ toastMsg }}</div>
     </Transition>
 
   </div>
@@ -126,6 +126,7 @@ const activeCategory = ref('all')
 const searchQuery = ref('')
 const addedIds = ref(new Set())
 const toastMsg = ref('')
+const toastType = ref('success')
 
 function formatPrice(n) {
   return n.toLocaleString('he-IL')
@@ -156,25 +157,22 @@ function resetFilters() {
 
 async function addToMyVendors(vendor) {
   try {
-    // Try to add via API - find or create in vendors table, then link to user
-    // The existing vendor system uses /api/vendors/user endpoint
-    await api.post('/vendors/user', {
+    await api.post('/vendors/suggestions/add', {
       category: vendor.category,
       name: vendor.name,
       notes: vendor.description,
-      priceAgreed: null
     })
     addedIds.value = new Set([...addedIds.value, vendor.id])
-    showToast(`${vendor.name} נוסף לספקים שלכם! 🎉`)
-  } catch {
-    // If API fails (e.g., vendor creation needs existing vendor ID), just show success
-    addedIds.value = new Set([...addedIds.value, vendor.id])
-    showToast(`${vendor.name} נוסף לרשימת ספקים שלכם!`)
+    showToast(`${vendor.name} נוסף לספקים שלכם! 🎉`, 'success')
+  } catch (err) {
+    const msg = err?.response?.data?.error || 'שגיאה בהוספת הספק. אנא נסו שנית.'
+    showToast(msg, 'error')
   }
 }
 
-function showToast(msg) {
+function showToast(msg, type = 'success') {
   toastMsg.value = msg
+  toastType.value = type
   setTimeout(() => { toastMsg.value = '' }, 3500)
 }
 
@@ -453,6 +451,8 @@ onMounted(loadSuggestions)
   z-index: 9999;
   white-space: nowrap;
 }
+.toast.toast-success { background: var(--color-navy); }
+.toast.toast-error { background: #c0392b; }
 .toast-enter-active, .toast-leave-active { transition: all 0.3s ease; }
 .toast-enter-from, .toast-leave-to { opacity: 0; transform: translateX(-50%) translateY(16px); }
 

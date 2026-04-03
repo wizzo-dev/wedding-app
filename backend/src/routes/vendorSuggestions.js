@@ -1,3 +1,5 @@
+import { prisma } from '../models/db.js'
+
 // Static vendor suggestions — no DB model needed
 
 const VENDOR_SUGGESTIONS = [
@@ -220,5 +222,40 @@ export default async function vendorSuggestionsRoutes(app) {
     const categories = [...new Set(VENDOR_SUGGESTIONS.map(v => v.category))]
 
     return { suggestions: results, categories, total: results.length }
+  })
+
+  // POST /api/vendors/suggestions/add — add freeform vendor suggestion to user's vendor list
+  // Accepts {category, name, notes} without requiring an existing DB vendor FK
+  app.post('/suggestions/add', { preHandler: [app.authenticate] }, async (req, reply) => {
+    const userId = req.user.userId
+    const { category, name, notes } = req.body || {}
+
+    if (!name || typeof name !== 'string' || !name.trim()) {
+      return reply.code(400).send({ error: 'שם הספק חסר' })
+    }
+    if (!category || typeof category !== 'string' || !category.trim()) {
+      return reply.code(400).send({ error: 'קטגוריה חסרה' })
+    }
+
+    // Create a freeform vendor entry in the vendors table
+    const vendor = await prisma.vendor.create({
+      data: {
+        category: category.trim(),
+        name: name.trim(),
+        description: notes ? notes.trim() : null,
+      }
+    })
+
+    // Link vendor to user
+    const userVendor = await prisma.userVendor.create({
+      data: {
+        userId,
+        vendorId: vendor.id,
+        status: 'considering',
+        notes: notes ? notes.trim() : null,
+      }
+    })
+
+    return reply.code(201).send({ success: true, userVendor, vendor })
   })
 }
