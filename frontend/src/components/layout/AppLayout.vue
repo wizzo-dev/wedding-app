@@ -100,12 +100,13 @@ const mainNav = [
 ]
 
 const planningNav = [
-  { icon: '📅', label: 'ציר זמן',    path: '/app/timeline' },
-  { icon: '🪑', label: 'מפת ישיבה',  path: '/app/seating' },
-  { icon: '✅', label: 'משימות',      path: '/app/tasks' },
-  { icon: '🎁', label: 'מתנות',       path: '/app/gifts' },
-  { icon: '💬', label: 'WhatsApp',    path: '/app/whatsapp/send' },
-  { icon: '🎴', label: 'הזמנות',      path: '/app/invitations' },
+  { icon: '📅', label: 'ציר זמן',         path: '/app/timeline' },
+  { icon: '🪑', label: 'מפת ישיבה',       path: '/app/seating' },
+  { icon: '🃏', label: 'כרטיסי הושבה',   path: '/app/cards' },
+  { icon: '✅', label: 'משימות',           path: '/app/tasks' },
+  { icon: '🎁', label: 'מתנות',            path: '/app/gifts' },
+  { icon: '💬', label: 'WhatsApp',         path: '/app/whatsapp/send' },
+  { icon: '🎴', label: 'הזמנות',           path: '/app/invitations' },
 ]
 
 const PAGE_TITLES = {
@@ -116,6 +117,7 @@ const PAGE_TITLES = {
   '/app/rsvp-links':    'לינקי RSVP',
   '/app/timeline':      'ציר זמן',
   '/app/seating':       'מפת ישיבה',
+  '/app/cards':         'כרטיסי הושבה',
   '/app/tasks':         'משימות',
   '/app/gifts':         'מתנות',
   '/app/whatsapp/send': 'WhatsApp',
@@ -186,7 +188,7 @@ const formattedWeddingDate = computed(() => {
 }
 .logo-icon { font-size: 22px; }
 .logo-text {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: 'Heebo', sans-serif;
   font-size: 26px;
   font-weight: 700;
   color: #FF407D;
@@ -320,7 +322,7 @@ const formattedWeddingDate = computed(() => {
   z-index: 50;
 }
 .page-title {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: 'Heebo', sans-serif;
   font-size: 28px;
   font-weight: 700;
   color: #1B3C73;

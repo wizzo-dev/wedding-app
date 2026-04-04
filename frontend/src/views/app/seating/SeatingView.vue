@@ -82,7 +82,7 @@
         class="canvas-area"
         ref="canvasContainer"
         style="position:relative"
-        @dragover.prevent="onCanvasDragOver"
+        @dragover.prevent
         @drop.prevent="onCanvasDrop"
       >
         <div v-if="!tables.length" class="empty-canvas">
@@ -162,8 +162,9 @@
             class="table-drop-overlay"
             :class="{ 'drop-hover': dragOverTable?.id === table.id }"
             :style="tableDropStyle(table, idx)"
+            @dragenter.prevent="dragOverTable = table"
             @dragover.prevent="dragOverTable = table"
-            @dragleave="dragOverTable = null"
+            @dragleave.self="handleOverlayLeave($event, table)"
             @drop.prevent="onOverlayDrop(table)"
             @click="onTableClick(table)"
           ></div>
@@ -352,17 +353,17 @@ const generateError = ref(null)
 
 // Stage config — sized dynamically to fit all tables
 const stageConfig = computed(() => ({
-  width: Math.max(800, 4 * 180 + 100),
-  height: Math.max(500, Math.ceil(tables.value.length / 4) * 180 + 100)
+  width: Math.max(900, 4 * 200 + 100),
+  height: Math.max(500, Math.ceil(tables.value.length / 4) * 200 + 100)
 }))
 
 // Grid-based position fallback (no overlap)
 function tableGridPos(idx) {
   const cols = 4
-  const colWidth = 180
-  const rowHeight = 180
-  const startX = 90
-  const startY = 90
+  const colWidth = 200
+  const rowHeight = 200
+  const startX = 100
+  const startY = 100
   return {
     x: startX + (idx % cols) * colWidth,
     y: startY + Math.floor(idx / cols) * rowHeight
@@ -449,12 +450,29 @@ async function loadData() {
 }
 
 // ── Guest drag handling ──────────────────────────────────────────────────────
+let _dragLeaveTimer = null
+
 function onDragStart(guest) {
   dragGuest.value = guest
   clickAssignGuest.value = null
 }
 function onDragEnd() {
-  setTimeout(() => { dragGuest.value = null; dropZoneActive.value = false }, 200)
+  clearTimeout(_dragLeaveTimer)
+  setTimeout(() => {
+    dragGuest.value = null
+    dropZoneActive.value = false
+    dragOverTable.value = null
+  }, 200)
+}
+
+// Prevents flickering when cursor briefly leaves an overlay between dragover events
+function handleOverlayLeave(evt, table) {
+  clearTimeout(_dragLeaveTimer)
+  _dragLeaveTimer = setTimeout(() => {
+    if (dragOverTable.value?.id === table.id) {
+      dragOverTable.value = null
+    }
+  }, 80)
 }
 
 // Click-to-select a guest (no-drag mode)
