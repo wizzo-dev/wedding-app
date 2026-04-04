@@ -8,23 +8,23 @@ export default async function userRoutes(app) {
   app.get('/profile', { preHandler: [app.authenticate] }, async (req) => {
     return prisma.user.findUnique({
       where: { id: req.user.userId },
-      select: { id: true, email: true, name1: true, name2: true, weddingDate: true, venue: true, venueAddress: true, profileImageUrl: true, plan: true, rsvpToken: true }
+      select: { id: true, email: true, name1: true, name2: true, weddingDate: true, weddingTime: true, venue: true, venueAddress: true, profileImageUrl: true, plan: true, rsvpToken: true }
     })
   })
 
   // PUT /api/users/profile
   app.put('/profile', { preHandler: [app.authenticate] }, async (req) => {
-    const { name1, name2, weddingDate, venue, venueAddress } = req.body
+    const { name1, name2, weddingDate, weddingTime, venue, venueAddress } = req.body
     return prisma.user.update({
       where: { id: req.user.userId },
-      data: { name1, name2, weddingDate: weddingDate ? new Date(weddingDate) : undefined, venue, venueAddress },
-      select: { id: true, name1: true, name2: true, weddingDate: true, venue: true, venueAddress: true }
+      data: { name1, name2, weddingDate: weddingDate ? new Date(weddingDate) : undefined, weddingTime: weddingTime || null, venue, venueAddress },
+      select: { id: true, name1: true, name2: true, weddingDate: true, weddingTime: true, venue: true, venueAddress: true }
     })
   })
 
   // PATCH /api/users/profile — update profile including profileImageUrl
   app.patch('/profile', { preHandler: [app.authenticate] }, async (req, reply) => {
-    const { name1, name2, weddingDate, venue, venueAddress, profileImageUrl } = req.body || {}
+    const { name1, name2, weddingDate, weddingTime, venue, venueAddress, profileImageUrl } = req.body || {}
 
     // Validate name1 / name2 — max 100 chars
     if (name1 !== undefined && name1 !== null) {
@@ -74,11 +74,47 @@ export default async function userRoutes(app) {
     if (venue !== undefined) data.venue = venue
     if (venueAddress !== undefined) data.venueAddress = venueAddress
     if (profileImageUrl !== undefined) data.profileImageUrl = profileImageUrl || null
+    if (weddingTime !== undefined) data.weddingTime = weddingTime || null
 
     return prisma.user.update({
       where: { id: req.user.userId },
       data,
-      select: { id: true, name1: true, name2: true, weddingDate: true, venue: true, venueAddress: true, profileImageUrl: true, plan: true }
+      select: { id: true, name1: true, name2: true, weddingDate: true, weddingTime: true, venue: true, venueAddress: true, profileImageUrl: true, plan: true }
+    })
+  })
+
+  // GET /api/users/rsvp-design
+  app.get('/rsvp-design', { preHandler: [app.authenticate] }, async (req) => {
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.userId },
+      select: { rsvpGreeting: true, rsvpBgColor: true, rsvpBgImage: true, rsvpAccentColor: true }
+    })
+    return user
+  })
+
+  // PUT /api/users/rsvp-design
+  app.put('/rsvp-design', { preHandler: [app.authenticate] }, async (req, reply) => {
+    const { rsvpGreeting, rsvpBgColor, rsvpBgImage, rsvpAccentColor } = req.body || {}
+
+    // Validate hex colors if provided
+    const hexRe = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/
+    if (rsvpBgColor && !hexRe.test(rsvpBgColor)) {
+      return reply.code(400).send({ error: 'INVALID_COLOR', message: 'צבע לא תקין' })
+    }
+    if (rsvpAccentColor && !hexRe.test(rsvpAccentColor)) {
+      return reply.code(400).send({ error: 'INVALID_COLOR', message: 'צבע לא תקין' })
+    }
+
+    const data = {}
+    if (rsvpGreeting !== undefined) data.rsvpGreeting = rsvpGreeting || null
+    if (rsvpBgColor !== undefined) data.rsvpBgColor = rsvpBgColor || null
+    if (rsvpBgImage !== undefined) data.rsvpBgImage = rsvpBgImage || null
+    if (rsvpAccentColor !== undefined) data.rsvpAccentColor = rsvpAccentColor || null
+
+    return prisma.user.update({
+      where: { id: req.user.userId },
+      data,
+      select: { rsvpGreeting: true, rsvpBgColor: true, rsvpBgImage: true, rsvpAccentColor: true }
     })
   })
 

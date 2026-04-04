@@ -93,15 +93,19 @@ export default async function rsvpRoutes(app) {
 
     return {
       couple: {
-        name1:        user.name1,
-        name2:        user.name2,
-        weddingDate:  user.weddingDate,
-        weddingTime:  user.weddingTime,
-        venue:        user.venue,
-        venueAddress: user.venueAddress,
-        couplePhoto:  user.profileImageUrl,
-        coupleToken:  user.rsvpToken,        // needed for submit from group/general link
-        invitationId: latestInv?.id || null
+        name1:           user.name1,
+        name2:           user.name2,
+        weddingDate:     user.weddingDate,
+        weddingTime:     user.weddingTime,
+        venue:           user.venue,
+        venueAddress:    user.venueAddress,
+        couplePhoto:     user.profileImageUrl,
+        coupleToken:     user.rsvpToken,        // needed for submit from group/general link
+        invitationId:    latestInv?.id || null,
+        rsvpGreeting:    user.rsvpGreeting || null,
+        rsvpBgColor:     user.rsvpBgColor || null,
+        rsvpBgImage:     user.rsvpBgImage || null,
+        rsvpAccentColor: user.rsvpAccentColor || null
       },
       prefilledGuest,
       groupContext,   // group name for group links, null otherwise

@@ -106,7 +106,7 @@ const planningNav = [
   { icon: '✅', label: 'משימות',           path: '/app/tasks' },
   { icon: '🎁', label: 'מתנות',            path: '/app/gifts' },
   { icon: '💬', label: 'WhatsApp',         path: '/app/whatsapp/connect' },
-  { icon: '🎴', label: 'הזמנות',           path: '/app/invitations' },
+  { icon: '🎨', label: 'עיצוב RSVP',      path: '/app/rsvp-design' },
 ]
 
 const PAGE_TITLES = {
@@ -125,6 +125,7 @@ const PAGE_TITLES = {
   '/app/whatsapp/templates': 'WhatsApp — תבניות',
   '/app/whatsapp/history':   'WhatsApp — היסטוריה',
   '/app/whatsapp':           'WhatsApp',
+  '/app/rsvp-design':   'עיצוב עמוד RSVP',
   '/app/invitations':   'הזמנות',
   '/app/settings':      'הגדרות',
 }

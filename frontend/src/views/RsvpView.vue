@@ -1,5 +1,5 @@
 <template>
-  <div class="rsvp-page" dir="rtl">
+  <div class="rsvp-page" dir="rtl" :style="rsvpPageStyle">
 
     <!-- Invitation image card -->
     <div class="inv-card">
@@ -38,6 +38,11 @@
         <span v-if="couple.weddingTime"> | {{ couple.weddingTime }}</span>
         <span v-if="couple.venue"> | {{ couple.venue }}</span>
       </p>
+    </div>
+
+    <!-- Custom greeting message -->
+    <div v-if="couple.rsvpGreeting && !loadError" class="rsvp-greeting">
+      <p>{{ couple.rsvpGreeting }}</p>
     </div>
 
     <!-- Scroll-down arrow -->
@@ -156,6 +161,23 @@ const formattedDate = computed(() => {
   return new Date(couple.value.weddingDate).toLocaleDateString('he-IL', {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
   })
+})
+
+const rsvpPageStyle = computed(() => {
+  const styles = {}
+  const accent = couple.value?.rsvpAccentColor || '#E91E8C'
+  styles['--rsvp-accent'] = accent
+
+  if (couple.value?.rsvpBgImage) {
+    styles['background-image'] = `url(${couple.value.rsvpBgImage})`
+    styles['background-size'] = 'cover'
+    styles['background-position'] = 'center'
+    styles['background-attachment'] = 'fixed'
+  } else if (couple.value?.rsvpBgColor) {
+    styles['background'] = couple.value.rsvpBgColor
+  }
+
+  return styles
 })
 
 const successMessage = computed(() => {
@@ -385,6 +407,23 @@ onMounted(loadEvent)
   line-height: 1.6;
 }
 
+/* ── Greeting message ────────────────────────────── */
+.rsvp-greeting {
+  text-align: center;
+  margin: 0 0 16px;
+  padding: 14px 20px;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 12px;
+  backdrop-filter: blur(4px);
+}
+.rsvp-greeting p {
+  font-size: 15px;
+  line-height: 1.6;
+  color: #1A1F36;
+  font-weight: 500;
+  white-space: pre-line;
+}
+
 /* ── Scroll arrow ─────────────────────────────────── */
 .scroll-arrow {
   display: flex;
@@ -394,12 +433,12 @@ onMounted(loadEvent)
   width: 42px;
   height: 42px;
   border-radius: 50%;
-  background: #3B82F6;
+  background: var(--rsvp-accent, #E91E8C);
   color: #fff;
   border: none;
   font-size: 24px;
   cursor: pointer;
-  box-shadow: 0 2px 10px rgba(59, 130, 246, 0.45);
+  box-shadow: 0 2px 10px rgba(233, 30, 140, 0.35);
   animation: bounce 1.6s ease-in-out infinite;
   line-height: 1;
   padding-top: 2px;  /* optical adjustment for ⌄ glyph */
@@ -441,7 +480,7 @@ onMounted(loadEvent)
 }
 .form-input:focus {
   outline: none;
-  border-color: #E91E8C;
+  border-color: var(--rsvp-accent, #E91E8C);
   background: #fff;
 }
 .form-input::placeholder { color: #B0B4BE; }

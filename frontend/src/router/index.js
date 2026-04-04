@@ -82,6 +82,7 @@ const routes = [
 
       // RSVP Links
       { path: 'rsvp-links', name: 'RsvpLinks', component: () => import('@/views/app/RsvpLinksView.vue') },
+      { path: 'rsvp-design', name: 'RsvpDesign', component: () => import('@/views/app/RsvpDesignView.vue') },
 
       // Settings
       { path: 'settings',               name: 'Settings',       component: () => import('@/views/app/settings/SettingsView.vue') },
