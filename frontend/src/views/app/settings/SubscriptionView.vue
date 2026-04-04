@@ -100,7 +100,7 @@
             <div class="plan-icon">👑</div>
             <div class="plan-name plan-name-premium">פרמיום</div>
             <div class="plan-price">
-              <span class="price-amount">₪199</span>
+              <span class="price-amount">₪50</span>
               <span class="price-period">חד-פעמי</span>
             </div>
             <p class="plan-tagline">הכל כלול — ללא הגבלות</p>
@@ -199,7 +199,7 @@
               </a>
             </div>
             <p class="upgrade-note">
-              התשלום החד-פעמי הוא ₪199 בלבד, עם גישה לצמיתות לכל הפיצ'רים.
+              התשלום החד-פעמי הוא ₪50 בלבד, עם גישה לצמיתות לכל הפיצ'רים.
             </p>
           </div>
         </div>
@@ -228,7 +228,7 @@ const faqs = [
   },
   {
     q: 'האם יש עלות חודשית?',
-    a: 'לא! הפרמיום הוא תשלום חד-פעמי של ₪199 בלבד, וגישה לכל החיים — גם לעדכונים עתידיים.'
+    a: 'לא! הפרמיום הוא תשלום חד-פעמי של ₪50 בלבד, וגישה לכל החיים — גם לעדכונים עתידיים.'
   },
   {
     q: 'האם יש ביטול עסקה?',
