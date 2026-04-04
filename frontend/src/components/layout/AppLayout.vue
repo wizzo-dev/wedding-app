@@ -105,7 +105,7 @@ const planningNav = [
   { icon: '🃏', label: 'כרטיסי הושבה',   path: '/app/cards' },
   { icon: '✅', label: 'משימות',           path: '/app/tasks' },
   { icon: '🎁', label: 'מתנות',            path: '/app/gifts' },
-  { icon: '💬', label: 'WhatsApp',         path: '/app/whatsapp/send' },
+  { icon: '💬', label: 'WhatsApp',         path: '/app/whatsapp/connect' },
   { icon: '🎴', label: 'הזמנות',           path: '/app/invitations' },
 ]
 
@@ -120,8 +120,11 @@ const PAGE_TITLES = {
   '/app/cards':         'כרטיסי הושבה',
   '/app/tasks':         'משימות',
   '/app/gifts':         'מתנות',
-  '/app/whatsapp/send': 'WhatsApp',
-  '/app/whatsapp':      'WhatsApp',
+  '/app/whatsapp/connect':   'WhatsApp — חיבור',
+  '/app/whatsapp/send':      'WhatsApp — שליחה',
+  '/app/whatsapp/templates': 'WhatsApp — תבניות',
+  '/app/whatsapp/history':   'WhatsApp — היסטוריה',
+  '/app/whatsapp':           'WhatsApp',
   '/app/invitations':   'הזמנות',
   '/app/settings':      'הגדרות',
 }
