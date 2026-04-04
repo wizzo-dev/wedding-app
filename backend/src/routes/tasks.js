@@ -2,7 +2,7 @@ import { prisma } from '../models/db.js'
 
 export default async function tasksRoutes(app) {
   // GET /api/tasks — list all tasks for current user
-  app.get('/tasks', { preHandler: [app.authenticate] }, async (req, reply) => {
+  app.get('/', { preHandler: [app.authenticate] }, async (req, reply) => {
     const tasks = await prisma.task.findMany({
       where: { userId: req.user.userId },
       orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }]
@@ -11,7 +11,7 @@ export default async function tasksRoutes(app) {
   })
 
   // POST /api/tasks — create task
-  app.post('/tasks', { preHandler: [app.authenticate] }, async (req, reply) => {
+  app.post('/', { preHandler: [app.authenticate] }, async (req, reply) => {
     const { title, description, dueDate, priority, status, category } = req.body
     if (!title?.trim()) return reply.status(400).send({ error: 'כותרת המשימה היא שדה חובה' })
 
@@ -30,7 +30,7 @@ export default async function tasksRoutes(app) {
   })
 
   // PUT /api/tasks/:id — update task
-  app.put('/tasks/:id', { preHandler: [app.authenticate] }, async (req, reply) => {
+  app.put('/:id', { preHandler: [app.authenticate] }, async (req, reply) => {
     const id = parseInt(req.params.id)
     const task = await prisma.task.findFirst({ where: { id, userId: req.user.userId } })
     if (!task) return reply.status(404).send({ error: 'משימה לא נמצאה' })
@@ -51,7 +51,7 @@ export default async function tasksRoutes(app) {
   })
 
   // DELETE /api/tasks/:id — delete task
-  app.delete('/tasks/:id', { preHandler: [app.authenticate] }, async (req, reply) => {
+  app.delete('/:id', { preHandler: [app.authenticate] }, async (req, reply) => {
     const id = parseInt(req.params.id)
     const task = await prisma.task.findFirst({ where: { id, userId: req.user.userId } })
     if (!task) return reply.status(404).send({ error: 'משימה לא נמצאה' })
@@ -61,7 +61,7 @@ export default async function tasksRoutes(app) {
   })
 
   // PATCH /api/tasks/:id/toggle — toggle status between todo/done
-  app.patch('/tasks/:id/toggle', { preHandler: [app.authenticate] }, async (req, reply) => {
+  app.patch('/:id/toggle', { preHandler: [app.authenticate] }, async (req, reply) => {
     const id = parseInt(req.params.id)
     const task = await prisma.task.findFirst({ where: { id, userId: req.user.userId } })
     if (!task) return reply.status(404).send({ error: 'משימה לא נמצאה' })

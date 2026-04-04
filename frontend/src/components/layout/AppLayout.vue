@@ -66,7 +66,7 @@
           </p>
         </div>
         <div class="page-header-right">
-          <router-link to="/app/guests/new" class="btn-new-task">+ הוסף אורח</router-link>
+          <!-- Removed: was linking to non-existent /app/guests/new route -->
         </div>
       </header>
 
@@ -393,7 +393,7 @@ const formattedWeddingDate = computed(() => {
     display: flex;
     flex-direction: row;
     width: 100%;
-    height: 65px;
+    height: calc(65px + env(safe-area-inset-bottom, 0px));
     bottom: 0;
     top: auto;
     right: 0;
@@ -402,6 +402,7 @@ const formattedWeddingDate = computed(() => {
     border-left: none;
     z-index: 200;
     padding: 0;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
   .sidebar-logo,
   .couple-badge,
@@ -441,7 +442,7 @@ const formattedWeddingDate = computed(() => {
 
   .main-area {
     margin-right: 0;
-    margin-bottom: 65px;
+    margin-bottom: calc(65px + env(safe-area-inset-bottom, 0px));
   }
 
   .page-header {

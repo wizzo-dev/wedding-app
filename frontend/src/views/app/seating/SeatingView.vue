@@ -4,7 +4,7 @@
     <header class="page-header">
       <div class="header-content">
         <h1 class="page-title"><span class="title-icon">🪑</span> סידורי הושבה</h1>
-        <p class="page-subtitle">גרור אורחים לשולחנות</p>
+        <p class="page-subtitle">גרור שולחן להזזה, גרור אורח לשולחן או לחץ על אורח ואז על שולחן לשיבוץ</p>
       </div>
       <div class="header-actions">
         <button class="btn btn-outline btn-sm" @click="exportXlsx">📥 ייצא XLSX</button>
@@ -151,6 +151,20 @@
                   align: 'center',
                   listening: false
                 }" />
+                <!-- Guest names preview -->
+                <v-text v-if="table.guests?.length" :config="{
+                  x: tableX(table, idx) - TABLE_R,
+                  y: tableY(table, idx) + 16,
+                  width: TABLE_R * 2,
+                  text: tableGuestNames(table),
+                  fontSize: 9,
+                  fontFamily: 'Heebo, sans-serif',
+                  fill: '#9ca3af',
+                  align: 'center',
+                  listening: false,
+                  ellipsis: true,
+                  wrap: 'none'
+                }" />
               </template>
             </v-layer>
           </v-stage>
@@ -275,7 +289,7 @@
             <select v-model="generateForm.namingStyle" class="form-input">
               <option value="numbers">מספרים (שולחן 1, 2, 3...)</option>
               <option value="hebrew">אותיות עבריות (שולחן א, ב, ג...)</option>
-              <option value="custom">תחילית מותאמת</option>
+              <option value="custom">תחילית מותאמת (לדוגמה: "VIP" → VIP 1, VIP 2...)</option>
             </select>
           </label>
           <label v-if="generateForm.namingStyle === 'custom'">תחילית
@@ -385,6 +399,12 @@ function tableY(table, idx) {
 // Count total number of people (not just guest records) at a table
 function tableGuestCount(table) {
   return table.guests?.reduce((sum, g) => sum + (g.numPeople || 1), 0) || 0
+}
+
+function tableGuestNames(table) {
+  const names = (table.guests || []).map(g => g.name)
+  if (names.length <= 3) return names.join(', ')
+  return names.slice(0, 2).join(', ') + ` +${names.length - 2}`
 }
 
 function tableFill(table) {
@@ -1104,7 +1124,7 @@ onMounted(loadData)
 
 /* Responsive */
 @media (max-width: 900px) {
-  .seating-view { height: auto; overflow: auto; }
+  .seating-view { height: auto; overflow: auto; padding-bottom: calc(80px + env(safe-area-inset-bottom, 16px)); }
   .seating-layout { grid-template-columns: 1fr; height: auto; }
   .guests-panel { max-height: 200px; border-left: none; border-bottom: 1px solid var(--color-border); }
   .canvas-area { min-height: 400px; }

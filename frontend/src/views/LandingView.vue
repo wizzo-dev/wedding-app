@@ -38,8 +38,8 @@
           <div class="hero-text animate-fade-up">
             <div class="hero-badge">✨ ניהול חתונה חכם לזוגות ישראלים</div>
             <h1 class="hero-h1">
-              הצד הכי יפה בחתונה?<br>
-              <span class="gradient-text">שאתם נהנים ממנה.</span>
+              מתכננים חתונה?<br>
+              <span class="gradient-text">יאללה לעבודה!</span>
             </h1>
             <p class="hero-sub">
               יאללה חתונה מרכזת את כל הניהול במקום אחד — אורחים, תקציב, ספקים,

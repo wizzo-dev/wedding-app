@@ -58,14 +58,11 @@
           <div v-for="exp in expenses" :key="exp.id" class="expense-card card card-body">
             <div class="exp-main">
               <div class="exp-info">
-                <div class="exp-vendor">{{ exp.vendorName || exp.vendor || '—' }}</div>
-                <div class="exp-desc">{{ exp.description || '—' }}</div>
+                <div class="exp-vendor">{{ exp.vendorName || '—' }}</div>
+                <div class="exp-desc">{{ exp.note || '—' }}</div>
               </div>
               <div class="exp-right">
                 <div class="exp-amount">{{ formatCurrency(exp.amount) }}</div>
-                <div class="exp-badge" :class="exp.isPaid ? 'paid' : 'unpaid'">
-                  {{ exp.isPaid ? 'שולם ✓' : 'לא שולם' }}
-                </div>
               </div>
             </div>
             <button class="delete-btn" @click="deleteExpense(exp.id)" title="מחק">🗑️</button>
@@ -95,13 +92,7 @@
               <label class="form-label">סכום (₪) *</label>
               <input v-model="newExp.amount" type="number" class="form-input" placeholder="0" min="0" />
             </div>
-            <div class="form-group form-toggle">
-              <label class="form-label">שולם?</label>
-              <label class="toggle-switch">
-                <input type="checkbox" v-model="newExp.isPaid" />
-                <span class="toggle-slider"></span>
-              </label>
-            </div>
+
             <div v-if="addError" class="form-error-msg">{{ addError }}</div>
           </div>
           <div class="modal-footer">
@@ -132,7 +123,7 @@ const expenses = ref([])
 const showAddModal = ref(false)
 const adding = ref(false)
 const addError = ref(null)
-const newExp = ref({ vendorName: '', description: '', amount: '', isPaid: false })
+const newExp = ref({ vendorName: '', description: '', amount: '' })
 
 const totalSpent = computed(() => expenses.value.reduce((s, e) => s + (e.amount || 0), 0))
 const remaining = computed(() => (category.value?.allocatedAmount || 0) - totalSpent.value)
@@ -173,11 +164,10 @@ async function addExpense() {
     await api.post(`/budget/categories/${id}/expenses`, {
       vendorName: newExp.value.vendorName,
       description: newExp.value.description,
-      amount: parseFloat(newExp.value.amount),
-      isPaid: newExp.value.isPaid
+      amount: parseFloat(newExp.value.amount)
     })
     showAddModal.value = false
-    newExp.value = { vendorName: '', description: '', amount: '', isPaid: false }
+    newExp.value = { vendorName: '', description: '', amount: '' }
     await loadData()
   } catch (e) {
     addError.value = e.response?.data?.message || 'שגיאה בשמירה'
