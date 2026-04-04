@@ -73,7 +73,7 @@ model BudgetCategory {
   id               Int     @id @default(autoincrement())
   userId           Int     @map("user_id")
   name             String
-  allocatedPercent Float   @map("allocated_percent")
+  allocatedPercent Float   @default(0) @map("allocated_percent")
   allocatedAmount  Float   @map("allocated_amount")
   icon             String?
   color            String?

@@ -40,9 +40,10 @@ export default async function budgetRoutes(app) {
 
   // POST /api/budget/categories
   app.post('/categories', { preHandler: [app.authenticate] }, async (req) => {
-    const { name, allocatedAmount, icon, color } = req.body
+    const { name, allocatedAmount, allocatedPercent, icon, color } = req.body
     return prisma.budgetCategory.create({
       data: { userId: req.user.userId, name, allocatedAmount: parseFloat(allocatedAmount) || 0,
+        allocatedPercent: parseFloat(allocatedPercent) || 0,
         icon: icon || '💰', color: color || '#E91E8C' }
     })
   })
@@ -53,10 +54,15 @@ export default async function budgetRoutes(app) {
       where: { id: parseInt(req.params.id), userId: req.user.userId }
     })
     if (!cat) return reply.code(404).send({ error: 'NOT_FOUND' })
-    const { name, allocatedAmount, icon, color } = req.body
+    const { name, allocatedAmount, allocatedPercent, icon, color } = req.body
     return prisma.budgetCategory.update({
       where: { id: cat.id },
-      data: { name, allocatedAmount: parseFloat(allocatedAmount) || 0, icon, color }
+      data: {
+        name,
+        allocatedAmount: parseFloat(allocatedAmount) || 0,
+        ...(allocatedPercent !== undefined && { allocatedPercent: parseFloat(allocatedPercent) || 0 }),
+        icon, color
+      }
     })
   })
 
