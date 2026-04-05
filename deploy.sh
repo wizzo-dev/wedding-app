@@ -13,8 +13,15 @@ cd frontend
 npm run build
 cd ..
 
-echo "⚡ Restarting API server..."
+echo "📦 Installing backend dependencies..."
 cd backend
+npm install --production=false
+
+echo "🗄️  Running database migrations..."
+npx prisma migrate deploy
+npx prisma generate
+
+echo "⚡ Restarting API server..."
 ~/.npm-global/bin/pm2 restart yalla-api
 
 echo "✅ Deployment complete!"
