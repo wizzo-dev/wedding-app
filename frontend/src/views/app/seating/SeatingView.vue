@@ -104,7 +104,6 @@
         </div>
 
         <template v-else>
-        <div class="zoom-wrapper" :style="zoomWrapperStyle">
           <v-stage
             :config="stageConfig"
             ref="stageRef"
@@ -231,7 +230,6 @@
             @drop.prevent="onOverlayDrop(table)"
             @click="onTableClick(table)"
           ></div>
-        </div>
         </template>
       </div>
 
@@ -476,12 +474,11 @@ function zoomOut() {
 function fitToScreen() {
   const container = canvasContainer.value
   if (!container) return
-  const cfg = stageConfig.value
-  // Account for padding inside container
+  const base = baseStageSize.value
   const availW = container.clientWidth - 20
   const availH = container.clientHeight - 20
-  if (cfg.width <= 0 || cfg.height <= 0) return
-  const scale = Math.min(availW / cfg.width, availH / cfg.height, 1)
+  if (base.width <= 0 || base.height <= 0) return
+  const scale = Math.min(availW / base.width, availH / base.height, 1)
   zoom.value = Math.max(MIN_ZOOM, Math.round(scale * 100) / 100)
 }
 
@@ -502,8 +499,8 @@ const generating = ref(false)
 const formError = ref(null)
 const generateError = ref(null)
 
-// Stage config — sized dynamically to fit all tables + venue elements
-const stageConfig = computed(() => {
+// Stage config — sized dynamically to fit all tables + venue elements, scaled by zoom
+const baseStageSize = computed(() => {
   const allItems = [...tables.value, ...venueElements.value]
   const maxX = allItems.reduce((mx, item) => Math.max(mx, (item.x || 0) + 200), 0)
   const maxY = allItems.reduce((my, item) => Math.max(my, (item.y || 0) + 200), 0)
@@ -513,17 +510,13 @@ const stageConfig = computed(() => {
   }
 })
 
-// Scaled wrapper: sized to match scaled content so the container scrolls correctly
-const zoomWrapperStyle = computed(() => {
-  const cfg = stageConfig.value
+const stageConfig = computed(() => {
+  const base = baseStageSize.value
   return {
-    width: cfg.width + 'px',
-    height: cfg.height + 'px',
-    transform: `scale(${zoom.value})`,
-    transformOrigin: 'top right',
-    marginBottom: (cfg.height * (zoom.value - 1)) + 'px',
-    marginLeft: (cfg.width * (zoom.value - 1)) + 'px',
-    position: 'relative'
+    width: base.width * zoom.value,
+    height: base.height * zoom.value,
+    scaleX: zoom.value,
+    scaleY: zoom.value
   }
 })
 
@@ -838,16 +831,17 @@ function openAddElement() {
 
 // ── HTML Overlay Drop Zone helpers ───────────────────────────────────────────
 function tableDropStyle(table, idx) {
+  const z = zoom.value
   const x = tableX(table, idx)
   const y = tableY(table, idx)
   const { w, h, cr } = tableDims(table)
   return {
     position: 'absolute',
-    left: (x - w / 2) + 'px',
-    top: (y - h / 2) + 'px',
-    width: w + 'px',
-    height: h + 'px',
-    borderRadius: cr + 'px',
+    left: ((x - w / 2) * z) + 'px',
+    top: ((y - h / 2) * z) + 'px',
+    width: (w * z) + 'px',
+    height: (h * z) + 'px',
+    borderRadius: (cr * z) + 'px',
     cursor: 'pointer',
     zIndex: 10,
     background: 'transparent'
@@ -1220,10 +1214,6 @@ onMounted(() => {
   align-items: flex-start;
   justify-content: flex-start;
   position: relative;
-}
-
-.zoom-wrapper {
-  will-change: transform;
 }
 
 .zoom-controls {
