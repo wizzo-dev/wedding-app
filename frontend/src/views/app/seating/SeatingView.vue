@@ -244,6 +244,15 @@
       </div>
     </transition>
 
+    <!-- Undo drag bar -->
+    <transition name="slide-up">
+      <div v-if="lastDraggedTable && lastDragPosition" class="assign-bar undo-bar">
+        <span>↩️ שולחן <strong>{{ lastDraggedTable.name }}</strong> הוזז</span>
+        <button @click="undoTableDrag" class="btn btn-sm btn-outline">בטל הזזה</button>
+        <button @click="lastDraggedTable = null; lastDragPosition = null" class="btn btn-sm btn-outline">סגור</button>
+      </div>
+    </transition>
+
     <!-- Add/Edit Table Modal -->
     <div v-if="showAddTable || editingTable" class="modal-overlay" @click.self="closeTableModal">
       <div class="modal">
@@ -289,11 +298,19 @@
             <select v-model="generateForm.namingStyle" class="form-input">
               <option value="numbers">מספרים (שולחן 1, 2, 3...)</option>
               <option value="hebrew">אותיות עבריות (שולחן א, ב, ג...)</option>
-              <option value="custom">תחילית מותאמת (לדוגמה: "VIP" → VIP 1, VIP 2...)</option>
+              <option value="custom">תחילית מותאמת</option>
             </select>
           </label>
-          <label v-if="generateForm.namingStyle === 'custom'">תחילית
-            <input v-model="generateForm.prefix" class="form-input" placeholder="לדוגמה: מספר" />
+          <label v-if="generateForm.namingStyle === 'custom'">בחר תחילית לשולחנות
+            <select v-model="generateForm.prefix" class="form-input">
+              <option value="שולחן">שולחן (שולחן 1, שולחן 2...)</option>
+              <option value="VIP">VIP (VIP 1, VIP 2...)</option>
+              <option value="מספר">מספר (מספר 1, מספר 2...)</option>
+              <option value="שולחן VIP">שולחן VIP (שולחן VIP 1...)</option>
+              <option value="שולחן משפחה">שולחן משפחה (שולחן משפחה 1...)</option>
+              <option value="שולחן חברים">שולחן חברים (שולחן חברים 1...)</option>
+              <option value="שולחן עבודה">שולחן עבודה (שולחן עבודה 1...)</option>
+            </select>
           </label>
           <div class="modal-actions">
             <button type="submit" class="btn btn-primary" :disabled="generating">
@@ -556,20 +573,74 @@ function onStageClick(e) {
 }
 
 // ── Table Konva drag ─────────────────────────────────────────────────────────
+const lastDragPosition = ref(null)
+const lastDraggedTable = ref(null)
+
 function onTableDragStart(table) {
-  // Prevent click-assign when dragging table
+  const idx = tables.value.indexOf(table)
+  lastDragPosition.value = { x: tableX(table, idx), y: tableY(table, idx) }
+  lastDraggedTable.value = table
+}
+
+function isColliding(tableId, x, y) {
+  const minDist = TABLE_R * 2 + 10 // minimum distance between table centers
+  for (let i = 0; i < tables.value.length; i++) {
+    const t = tables.value[i]
+    if (t.id === tableId) continue
+    const tx = tableX(t, i)
+    const ty = tableY(t, i)
+    const dx = x - tx
+    const dy = y - ty
+    if (Math.sqrt(dx * dx + dy * dy) < minDist) return true
+  }
+  return false
 }
 
 async function onTableDragEnd(table, evt) {
   const node = evt.target
-  const newX = node.x()
-  const newY = node.y()
+  let newX = node.x()
+  let newY = node.y()
+
+  // Check collision — if colliding, snap back to previous position
+  if (isColliding(table.id, newX, newY)) {
+    const idx = tables.value.indexOf(table)
+    const prevX = tableX(table, idx)
+    const prevY = tableY(table, idx)
+    node.x(prevX)
+    node.y(prevY)
+    stageRef.value?.getNode()?.batchDraw?.()
+    return
+  }
+
   tablePositions.value[table.id] = { x: newX, y: newY }
   // Persist position
   apiCall(`/tables/${table.id}/position`, {
     method: 'PATCH',
     body: JSON.stringify({ x: newX, y: newY })
   }).catch(() => {})
+}
+
+function undoTableDrag() {
+  if (!lastDraggedTable.value || !lastDragPosition.value) return
+  const table = lastDraggedTable.value
+  const pos = lastDragPosition.value
+  tablePositions.value[table.id] = { x: pos.x, y: pos.y }
+  apiCall(`/tables/${table.id}/position`, {
+    method: 'PATCH',
+    body: JSON.stringify({ x: pos.x, y: pos.y })
+  }).catch(() => {})
+  // Update Konva node
+  const stage = stageRef.value?.getNode()
+  if (stage) {
+    const node = stage.findOne('#' + String(table.id))
+    if (node) {
+      node.x(pos.x)
+      node.y(pos.y)
+    }
+    stage.batchDraw()
+  }
+  lastDraggedTable.value = null
+  lastDragPosition.value = null
 }
 
 // ── Assignment ───────────────────────────────────────────────────────────────
@@ -906,6 +977,8 @@ onMounted(loadData)
 .table-drop-overlay {
   pointer-events: all;
   transition: background 0.15s;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
 .table-drop-overlay.drop-hover {
   background: rgba(233, 30, 140, 0.15) !important;

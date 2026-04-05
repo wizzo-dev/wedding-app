@@ -128,6 +128,29 @@
             </section>
 
             <section class="form-section">
+              <h3 class="section-title">תמונת רקע</h3>
+              <div class="form-group">
+                <label>העלה תמונת רקע או צלם</label>
+                <div class="bg-upload-row">
+                  <label class="upload-btn btn btn-outline btn-sm">
+                    📷 צלם / העלה מגלריה
+                    <input
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      @change="onBgImageUpload"
+                      style="display:none"
+                    />
+                  </label>
+                  <button v-if="customBgUrl" class="btn btn-outline btn-sm" @click="removeBgImage">🗑️ הסר תמונה</button>
+                </div>
+                <div v-if="customBgUrl" class="bg-preview-thumb">
+                  <img :src="customBgUrl" alt="תצוגה מקדימה" />
+                </div>
+              </div>
+            </section>
+
+            <section class="form-section">
               <h3 class="section-title">עיצוב</h3>
               <div class="form-group">
                 <label>פונט</label>
@@ -137,14 +160,11 @@
                 <label>גודל בסיס: {{ baseFontSize }}px</label>
                 <input v-model.number="baseFontSize" type="range" min="12" max="48" step="1" class="range-input" @input="scheduleRedraw" />
               </div>
-              <div class="form-row">
-                <div class="form-group">
-                  <label>צבע ראשי</label>
-                  <input v-model="primaryColor" type="color" class="color-input" @input="scheduleRedraw" />
-                </div>
-                <div class="form-group">
-                  <label>צבע משני</label>
-                  <input v-model="secondaryColor" type="color" class="color-input" @input="scheduleRedraw" />
+              <div class="form-group">
+                <label>צבע ראשי</label>
+                <div class="color-picker-wrap">
+                  <div class="color-swatch-display" :style="{ background: primaryColor }" @click="$refs.colorPrimary.click()"></div>
+                  <input ref="colorPrimary" v-model="primaryColor" type="color" class="color-input-hidden" @input="scheduleRedraw" />
                 </div>
               </div>
             </section>
@@ -192,6 +212,17 @@
             </div>
           </div>
           <p class="canvas-hint">👆 זה הצפה חיה של ההזמנה שלך</p>
+          <div class="canvas-bottom-actions">
+            <button class="btn btn-primary btn-lg" @click="saveInvitation" :disabled="saving">
+              {{ saving ? '⏳ שומר...' : '💾 שמור הזמנה' }}
+            </button>
+            <button v-if="invitationId" class="btn btn-outline" @click="downloadPdf" :disabled="downloading">
+              {{ downloading ? '⏳' : '📥 הורד' }}
+            </button>
+            <button v-if="invitationId" class="btn btn-outline" @click="copyShareLink">
+              🔗 שתף
+            </button>
+          </div>
         </div>
       </div>
     </template>
@@ -278,6 +309,33 @@ const selectedFont = ref('Heebo')
 const baseFontSize = ref(20)
 const primaryColor = ref('#E91E8C')
 const secondaryColor = ref('#333333')
+const customBgUrl = ref(null)
+
+async function onBgImageUpload(event) {
+  const file = event.target.files[0]
+  if (!file) return
+  const reader = new FileReader()
+  reader.onload = async (e) => {
+    customBgUrl.value = e.target.result
+    bgImage.value = await loadBgImage(e.target.result)
+    scheduleRedraw()
+  }
+  reader.readAsDataURL(file)
+}
+
+function removeBgImage() {
+  customBgUrl.value = null
+  // Restore template bg
+  if (template.value?.imageUrl) {
+    loadBgImage(template.value.imageUrl).then(img => {
+      bgImage.value = img
+      scheduleRedraw()
+    })
+  } else {
+    bgImage.value = null
+    scheduleRedraw()
+  }
+}
 
 // Per-field font size overrides (null = use template default)
 const fieldSizes = ref({
@@ -321,12 +379,12 @@ const computedTextNodes = computed(() => {
       : Math.round(zone.fontSize * (baseFontSize.value / 20))
     const maxW = Math.round(zone.maxWidth * CANVAS_W)
 
-    // Use primary/secondary color based on zone
+    // Use primary color for highlighted elements, original for rest
     let color = zone.color
     if (zone.field === 'andSign' || zone.field === 'blessing') {
       color = primaryColor.value
     } else if (zone.field === 'groomName' || zone.field === 'brideName') {
-      color = secondaryColor.value
+      color = primaryColor.value
     }
 
     // Lower opacity for placeholder (default, unedited) fields
@@ -695,6 +753,27 @@ textarea.form-input { resize: vertical; min-height: 60px; }
 }
 .form-row .form-group { flex: 1; }
 
+.color-picker-wrap {
+  position: relative;
+}
+.color-swatch-display {
+  width: 100%;
+  height: 40px;
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.color-swatch-display:hover {
+  border-color: var(--color-primary);
+}
+.color-input-hidden {
+  position: absolute;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  pointer-events: none;
+}
 .color-input {
   width: 100%;
   height: 40px;
@@ -703,6 +782,29 @@ textarea.form-input { resize: vertical; min-height: 60px; }
   cursor: pointer;
   padding: 2px;
   background: var(--color-bg);
+}
+
+/* Background upload */
+.bg-upload-row {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  margin-top: var(--space-2);
+}
+.upload-btn {
+  cursor: pointer;
+}
+.bg-preview-thumb {
+  margin-top: var(--space-2);
+  border-radius: var(--radius);
+  overflow: hidden;
+  max-height: 120px;
+}
+.bg-preview-thumb img {
+  width: 100%;
+  max-height: 120px;
+  object-fit: cover;
+  border-radius: var(--radius);
 }
 
 /* Per-field size override layout */
@@ -783,6 +885,22 @@ textarea.form-input { resize: vertical; min-height: 60px; }
   font-size: var(--font-size-sm);
   color: var(--color-text-muted);
   text-align: center;
+}
+
+.canvas-bottom-actions {
+  display: flex;
+  gap: var(--space-3);
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: var(--space-5);
+  padding: var(--space-4);
+}
+
+.btn-lg {
+  padding: 14px var(--space-8);
+  font-size: var(--font-size-base);
+  border-radius: var(--radius-full);
+  font-weight: 700;
 }
 
 /* ── Font grid touch targets ── */

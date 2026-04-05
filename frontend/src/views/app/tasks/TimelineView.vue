@@ -38,8 +38,17 @@
       <button class="btn btn-primary" @click="openAddModal">+ הוסף אירוע ראשון</button>
     </div>
 
+    <!-- Wedding Date Banner -->
+    <div v-if="weddingDateFormatted && !loading && !error" class="wedding-date-banner">
+      <div class="wedding-date-dot">💍</div>
+      <div class="wedding-date-info">
+        <div class="wedding-date-title">יום החתונה</div>
+        <div class="wedding-date-text">{{ weddingDateFormatted }} · {{ weddingTimeFormatted }}</div>
+      </div>
+    </div>
+
     <!-- Timeline -->
-    <div v-else class="timeline-container">
+    <div v-if="!loading && !error && events.length > 0" class="timeline-container">
       <div class="timeline-line"></div>
       <div
         v-for="(event, idx) in events"
@@ -146,6 +155,9 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import api from '@/composables/useApi'
+import { useAuthStore } from '@/stores/auth'
+
+const auth = useAuthStore()
 
 const loading = ref(true)
 const saving = ref(false)
@@ -246,7 +258,24 @@ function formatTime(t) {
   return t
 }
 
-onMounted(load)
+// Wedding date banner
+const weddingDateFormatted = ref(null)
+const weddingTimeFormatted = ref(null)
+
+function initWeddingDate() {
+  if (auth.user?.weddingDate) {
+    const d = new Date(auth.user.weddingDate)
+    weddingDateFormatted.value = d.toLocaleDateString('he-IL', {
+      weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+    })
+    weddingTimeFormatted.value = auth.user.weddingTime || '19:00'
+  }
+}
+
+onMounted(() => {
+  load()
+  initWeddingDate()
+})
 </script>
 
 <style scoped>
@@ -273,6 +302,33 @@ onMounted(load)
   color: var(--color-text-muted);
   font-size: var(--font-size-sm);
   margin-top: 4px;
+}
+
+/* Wedding Date Banner */
+.wedding-date-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  background: linear-gradient(135deg, #FFF0F5, #FFE4F0);
+  border: 2px solid var(--color-primary);
+  border-radius: var(--radius-xl);
+  padding: var(--space-4) var(--space-5);
+  margin-bottom: var(--space-6);
+  box-shadow: var(--shadow-pink);
+}
+.wedding-date-dot {
+  font-size: 2rem;
+  flex-shrink: 0;
+}
+.wedding-date-title {
+  font-size: var(--font-size-base);
+  font-weight: 800;
+  color: var(--color-primary);
+}
+.wedding-date-text {
+  font-size: var(--font-size-sm);
+  color: var(--color-navy);
+  font-weight: 600;
 }
 
 /* Timeline layout */

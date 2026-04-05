@@ -55,6 +55,44 @@
       </div>
     </aside>
 
+    <!-- ── MOBILE BOTTOM NAV ── -->
+    <nav class="mobile-bottom-nav">
+      <router-link :to="mobileFixedLeft.path" class="mob-nav-item">
+        <span class="mob-nav-icon">{{ mobileFixedLeft.icon }}</span>
+        <span class="mob-nav-label">{{ mobileFixedLeft.label }}</span>
+      </router-link>
+
+      <button class="mob-nav-center" @click="showMobileMenu = !showMobileMenu" :class="{ open: showMobileMenu }">
+        <span class="center-icon">{{ showMobileMenu ? '✕' : '💍' }}</span>
+      </button>
+
+      <router-link :to="mobileFixedRight.path" class="mob-nav-item">
+        <span class="mob-nav-icon">{{ mobileFixedRight.icon }}</span>
+        <span class="mob-nav-label">{{ mobileFixedRight.label }}</span>
+      </router-link>
+    </nav>
+
+    <!-- Mobile Bottom Sheet -->
+    <Transition name="sheet">
+      <div v-if="showMobileMenu" class="mobile-sheet-overlay" @click.self="showMobileMenu = false">
+        <div class="mobile-sheet">
+          <div class="sheet-handle"></div>
+          <div class="sheet-grid">
+            <router-link
+              v-for="item in mobileMoreItems"
+              :key="item.path"
+              :to="item.path"
+              class="sheet-item"
+              @click="showMobileMenu = false"
+            >
+              <span class="sheet-item-icon">{{ item.icon }}</span>
+              <span class="sheet-item-label">{{ item.label }}</span>
+            </router-link>
+          </div>
+        </div>
+      </div>
+    </Transition>
+
     <!-- ── MAIN ── -->
     <main class="main-area">
       <!-- Page header -->
@@ -108,6 +146,22 @@ const planningNav = [
   { icon: '💬', label: 'WhatsApp',         path: '/app/whatsapp/connect' },
   { icon: '🎨', label: 'עיצוב RSVP',      path: '/app/rsvp-design' },
 ]
+
+// Mobile: 2 fixed tabs + center button + 2 more in bottom sheet
+const mobileFixedLeft = { icon: '🏠', label: 'בית', path: '/app/dashboard' }
+const mobileFixedRight = { icon: '👥', label: 'אורחים', path: '/app/guests' }
+const mobileMoreItems = [
+  { icon: '💰', label: 'תקציב', path: '/app/budget' },
+  { icon: '🪑', label: 'מפת ישיבה', path: '/app/seating' },
+  { icon: '✅', label: 'משימות', path: '/app/tasks' },
+  { icon: '🎁', label: 'מתנות', path: '/app/gifts' },
+  { icon: '📅', label: 'ציר זמן', path: '/app/timeline' },
+  { icon: '🃏', label: 'כרטיסי הושבה', path: '/app/cards' },
+  { icon: '🏢', label: 'ספקים', path: '/app/vendors' },
+  { icon: '💬', label: 'WhatsApp', path: '/app/whatsapp/connect' },
+  { icon: '⚙️', label: 'הגדרות', path: '/app/settings' },
+]
+const showMobileMenu = ref(false)
 
 const PAGE_TITLES = {
   '/app/dashboard':     'סקירה כללית',
@@ -388,57 +442,127 @@ const formattedWeddingDate = computed(() => {
 /* ─────────────────────────────────────────────
    MOBILE — bottom nav bar
 ───────────────────────────────────────────── */
+/* ── Mobile bottom nav (new) ── */
+.mobile-bottom-nav {
+  display: none;
+}
+
+.mobile-sheet-overlay {
+  display: none;
+}
+
 @media (max-width: 768px) {
   .sidebar {
-    display: flex;
-    flex-direction: row;
-    width: 100%;
-    height: calc(65px + env(safe-area-inset-bottom, 0px));
-    bottom: 0;
-    top: auto;
-    right: 0;
-    left: 0;
-    border-top: 1px solid #EAEAEA;
-    border-left: none;
-    z-index: 200;
-    padding: 0;
-    padding-bottom: env(safe-area-inset-bottom, 0px);
-  }
-  .sidebar-logo,
-  .couple-badge,
-  .sidebar-footer {
     display: none;
   }
-  .sidebar-nav {
-    flex-direction: row;
+
+  .mobile-bottom-nav {
     display: flex;
-    width: 100%;
-    padding: 0;
-    overflow-x: auto;
-    overflow-y: hidden;
-    scrollbar-width: none;
-  }
-  .sidebar-nav::-webkit-scrollbar { display: none; }
-  .nav-section {
-    display: flex;
-    flex-direction: row;
-    flex: 1;
-  }
-  .nav-section-label { display: none; }
-  .nav-item {
-    flex: 1;
-    flex-direction: column;
-    justify-content: center;
     align-items: center;
-    padding: 8px 4px;
-    margin: 0;
-    border-radius: 0;
-    font-size: 10px;
-    gap: 3px;
-    min-width: 52px;
+    justify-content: space-around;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: calc(65px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    background: #FFFFFF;
+    border-top: 1px solid #EAEAEA;
+    z-index: 200;
   }
-  .nav-icon { font-size: 20px; min-width: unset; }
-  .nav-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 52px; }
+
+  .mob-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    text-decoration: none;
+    color: #6B7280;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 8px 16px;
+    transition: color 0.15s;
+  }
+  .mob-nav-item.router-link-active {
+    color: #FF407D;
+  }
+  .mob-nav-icon { font-size: 22px; }
+  .mob-nav-label { font-size: 10px; }
+
+  .mob-nav-center {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #FF407D, #FF6AC1);
+    border: 3px solid #FFFFFF;
+    box-shadow: 0 4px 16px rgba(255,64,125,0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    margin-top: -20px;
+    transition: transform 0.2s, box-shadow 0.2s;
+    z-index: 1;
+  }
+  .mob-nav-center:active { transform: scale(0.95); }
+  .mob-nav-center.open { background: #1B3C73; box-shadow: 0 4px 16px rgba(27,60,115,0.4); }
+  .center-icon { font-size: 24px; line-height: 1; }
+
+  /* Bottom Sheet */
+  .mobile-sheet-overlay {
+    display: flex;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 190;
+    align-items: flex-end;
+  }
+
+  .mobile-sheet {
+    width: 100%;
+    background: #FFFFFF;
+    border-radius: 24px 24px 0 0;
+    padding: var(--space-4) var(--space-5) calc(80px + env(safe-area-inset-bottom, 0px));
+    max-height: 60vh;
+    overflow-y: auto;
+  }
+
+  .sheet-handle {
+    width: 40px;
+    height: 4px;
+    background: #DDD;
+    border-radius: 2px;
+    margin: 0 auto var(--space-4);
+  }
+
+  .sheet-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-3);
+  }
+
+  .sheet-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: var(--space-4) var(--space-2);
+    border-radius: 16px;
+    background: #F8F9FB;
+    text-decoration: none;
+    color: #1B3C73;
+    transition: background 0.15s;
+  }
+  .sheet-item:active { background: #FFF0F5; }
+  .sheet-item-icon { font-size: 24px; }
+  .sheet-item-label { font-size: 12px; font-weight: 600; }
+
+  /* Sheet transition */
+  .sheet-enter-active, .sheet-leave-active { transition: all 0.3s ease; }
+  .sheet-enter-from .mobile-sheet, .sheet-leave-to .mobile-sheet { transform: translateY(100%); }
+  .sheet-enter-from, .sheet-leave-to { background: rgba(0,0,0,0); }
 
   .main-area {
     margin-right: 0;

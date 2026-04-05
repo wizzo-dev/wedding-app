@@ -356,14 +356,14 @@ onMounted(loadTasks)
 .empty-text  { color: var(--color-text-muted); margin-bottom: var(--space-6); }
 
 /* Modal */
-.modal-overlay { position: fixed; inset: 0; background: rgba(27,60,115,0.45); z-index: 200; display: flex; align-items: center; justify-content: center; padding: var(--space-4); }
-.modal-box     { width: 100%; max-width: 500px; }
-.modal-header  { display: flex; align-items: center; justify-content: space-between; padding: var(--space-5) var(--space-6); border-bottom: 1px solid var(--color-border); }
+.modal-overlay { position: fixed; inset: 0; background: rgba(27,60,115,0.45); z-index: 200; display: flex; align-items: flex-start; justify-content: center; padding: var(--space-4); overflow-y: auto; -webkit-overflow-scrolling: touch; padding-top: env(safe-area-inset-top, 16px); }
+.modal-box     { width: 100%; max-width: 500px; margin: auto 0; max-height: calc(100vh - 32px); display: flex; flex-direction: column; overflow: hidden; }
+.modal-body    { padding: var(--space-5) var(--space-6); display: flex; flex-direction: column; gap: var(--space-4); overflow-y: auto; flex: 1; min-height: 0; }
+.modal-header  { display: flex; align-items: center; justify-content: space-between; padding: var(--space-5) var(--space-6); border-bottom: 1px solid var(--color-border); flex-shrink: 0; }
 .modal-title   { font-size: var(--font-size-lg); font-weight: 800; color: var(--color-navy); }
 .modal-close   { width: 32px; height: 32px; border-radius: 50%; font-size: 20px; display: flex; align-items: center; justify-content: center; color: var(--color-text-muted); cursor: pointer; transition: background var(--transition-fast); border: none; background: none; }
 .modal-close:hover { background: var(--color-border); }
-.modal-body    { padding: var(--space-5) var(--space-6); display: flex; flex-direction: column; gap: var(--space-4); }
-.modal-footer  { padding: var(--space-4) var(--space-6); border-top: 1px solid var(--color-border); display: flex; justify-content: flex-end; gap: var(--space-3); }
+.modal-footer  { padding: var(--space-4) var(--space-6); border-top: 1px solid var(--color-border); display: flex; justify-content: flex-end; gap: var(--space-3); flex-shrink: 0; }
 
 .form-row     { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); }
 .form-group   { display: flex; flex-direction: column; gap: 6px; }

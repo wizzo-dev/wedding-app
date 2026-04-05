@@ -13,8 +13,13 @@
           <a href="#pricing" class="lnav-link">מחירים</a>
         </div>
         <div class="lnav-actions">
-          <RouterLink to="/login" class="btn btn-ghost btn-sm">כניסה</RouterLink>
-          <RouterLink to="/register" class="btn btn-primary btn-sm">התחל בחינם</RouterLink>
+          <template v-if="auth.isLoggedIn">
+            <RouterLink to="/app/dashboard" class="btn btn-primary btn-sm">לאזור האישי 🏠</RouterLink>
+          </template>
+          <template v-else>
+            <RouterLink to="/login" class="btn btn-ghost btn-sm">כניסה</RouterLink>
+            <RouterLink to="/register" class="btn btn-primary btn-sm">התחל בחינם</RouterLink>
+          </template>
         </div>
         <button class="mobile-menu-btn" @click="mobileMenu = !mobileMenu" aria-label="תפריט">
           <span class="hamburger" :class="{ open: mobileMenu }"></span>
@@ -25,8 +30,13 @@
           <a href="#features" class="mobile-link" @click="mobileMenu = false">תכונות</a>
           <a href="#how-it-works" class="mobile-link" @click="mobileMenu = false">איך זה עובד</a>
           <a href="#pricing" class="mobile-link" @click="mobileMenu = false">מחירים</a>
-          <RouterLink to="/login" class="mobile-link" @click="mobileMenu = false">כניסה</RouterLink>
-          <RouterLink to="/register" class="btn btn-primary" @click="mobileMenu = false" style="margin-top:8px">התחל בחינם</RouterLink>
+          <template v-if="auth.isLoggedIn">
+            <RouterLink to="/app/dashboard" class="btn btn-primary" @click="mobileMenu = false" style="margin-top:8px">לאזור האישי 🏠</RouterLink>
+          </template>
+          <template v-else>
+            <RouterLink to="/login" class="mobile-link" @click="mobileMenu = false">כניסה</RouterLink>
+            <RouterLink to="/register" class="btn btn-primary" @click="mobileMenu = false" style="margin-top:8px">התחל בחינם</RouterLink>
+          </template>
         </div>
       </Transition>
     </nav>
@@ -1430,7 +1440,7 @@ const reviews = [
     gap: var(--space-10);
   }
 
-  .hero-visual { order: -1; }
+  .hero-visual { display: none; }
 
   .hero-h1 { font-size: var(--font-size-3xl); }
 
