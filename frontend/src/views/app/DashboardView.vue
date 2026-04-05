@@ -181,13 +181,15 @@ const upcomingEvents = ref([])
 const recentRsvps    = ref([])
 
 onMounted(async () => {
+  // Refresh auth user so couple names / wedding date reflect Settings changes
+  auth.fetchMe?.().catch(() => {})
+
   try {
-    const [gs, bs, allTasksRes, pendingTasksRes, eventsRes, guestsRes] = await Promise.all([
+    const [gs, bs, allTasksRes, eventsRes, guestsRes] = await Promise.all([
       api.get('/guests/stats').catch(() => ({ data: {} })),
       api.get('/budget/summary').catch(() => ({ data: {} })),
       api.get('/tasks').catch(() => ({ data: [] })),
-      api.get('/tasks?limit=3&status=pending').catch(() => ({ data: [] })),
-      api.get('/timeline?limit=4&upcoming=true').catch(() => ({ data: [] })),
+      api.get('/timeline').catch(() => ({ data: [] })),
       api.get('/guests?limit=5&sort=updatedAt').catch(() => ({ data: { items: [] } })),
     ])
 
@@ -203,25 +205,26 @@ onMounted(async () => {
       spent: bs.data.totalSpent  || bs.data.spent || 0,
     }
 
-    const allTasks = Array.isArray(allTasksRes.data)
-      ? allTasksRes.data
-      : allTasksRes.data?.items || []
+    const unwrap = (d) =>
+      Array.isArray(d) ? d : (d?.items || d?.tasks || d?.events || [])
+
+    const allTasks = unwrap(allTasksRes.data)
     taskStats.value = {
       total: allTasks.length,
       done:  allTasks.filter(t => t.status === 'done').length,
     }
 
-    priorityTasks.value = (
-      Array.isArray(pendingTasksRes.data)
-        ? pendingTasksRes.data
-        : pendingTasksRes.data?.items || []
-    ).slice(0, 3)
+    // Priority tasks: open tasks (not done), soonest due first
+    priorityTasks.value = allTasks
+      .filter(t => t.status !== 'done')
+      .sort((a, b) => {
+        const ad = a.dueDate ? new Date(a.dueDate).getTime() : Infinity
+        const bd = b.dueDate ? new Date(b.dueDate).getTime() : Infinity
+        return ad - bd
+      })
+      .slice(0, 3)
 
-    upcomingEvents.value = (
-      Array.isArray(eventsRes.data)
-        ? eventsRes.data
-        : eventsRes.data?.items || []
-    ).slice(0, 4)
+    upcomingEvents.value = unwrap(eventsRes.data).slice(0, 4)
 
     const guestItems = guestsRes.data?.items || guestsRes.data || []
     recentRsvps.value = guestItems

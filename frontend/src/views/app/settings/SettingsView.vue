@@ -123,6 +123,8 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import api from '@/composables/useApi'
+import { useAuthStore } from '@/stores/auth'
+const auth = useAuthStore()
 
 const loading = ref(true)
 const saving = ref(false)
@@ -196,6 +198,8 @@ async function save() {
       venueAddress: form.value.venueAddress.trim() || null
     })
     saveSuccess.value = true
+    // Refresh auth store so Dashboard & other views pick up new names/date/venue
+    try { await auth.fetchMe() } catch {}
     setTimeout(() => { saveSuccess.value = false }, 4000)
   } catch (e) {
     saveError.value = e.response?.data?.message || 'שגיאה בשמירה'
