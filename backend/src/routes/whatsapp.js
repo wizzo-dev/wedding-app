@@ -4,12 +4,37 @@ const { Client, LocalAuth, MessageMedia } = pkg
 import { createRequire } from 'module'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import fs from 'fs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const SESSIONS_DIR = path.join(__dirname, '../../../sessions')
 
+// Resolve a working Chrome/Chromium executable path once at startup.
+// Honors PUPPETEER_EXECUTABLE_PATH, then falls back to common locations.
+function resolveChromePath() {
+  const candidates = [
+    process.env.PUPPETEER_EXECUTABLE_PATH,
+    '/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
+    '/opt/pw-browsers/chromium/chrome-linux/chrome',
+    '/usr/bin/chromium',
+    '/usr/bin/chromium-browser',
+    '/usr/bin/google-chrome',
+    '/usr/bin/google-chrome-stable',
+  ].filter(Boolean)
+  for (const p of candidates) {
+    try { if (fs.existsSync(p)) return p } catch {}
+  }
+  return null
+}
+const CHROME_PATH = resolveChromePath()
+if (!CHROME_PATH) {
+  console.warn('[WA] No Chrome/Chromium executable found. Set PUPPETEER_EXECUTABLE_PATH.')
+} else {
+  console.log(`[WA] Using Chrome at: ${CHROME_PATH}`)
+}
+
 // Per-user WhatsApp clients
-const clients = new Map()  // userId → { client, qr, status }
+const clients = new Map()  // userId → { client, qr, status, error }
 
 function getClientState(userId) {
   return clients.get(userId) || { client: null, qr: null, status: 'disconnected' }
@@ -19,13 +44,17 @@ async function createClient(userId) {
   const state = getClientState(userId)
   if (state.client) return state.client
 
+  if (!CHROME_PATH) {
+    throw new Error('Chrome/Chromium executable not found. Set PUPPETEER_EXECUTABLE_PATH in the backend environment.')
+  }
+
   const client = new Client({
     authStrategy: new LocalAuth({
       clientId: `user_${userId}`,
       dataPath: SESSIONS_DIR
     }),
     puppeteer: {
-      executablePath: '/home/pico/.cache/puppeteer/chrome/linux-127.0.6533.88/chrome-linux64/chrome',
+      executablePath: CHROME_PATH,
       headless: true,
       args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu']
     }
@@ -98,7 +127,10 @@ export default async function whatsappRoutes(app) {
     }
 
     // Start client async (don't await full init — just start it)
-    createClient(userId).catch(e => console.error('[WA] init error:', e))
+    createClient(userId).catch(e => {
+      console.error('[WA] init error:', e)
+      clients.set(userId, { client: null, qr: null, status: 'error', error: e?.message || 'init failed' })
+    })
 
     // Wait up to 15s for QR to appear
     let waited = 0
@@ -106,10 +138,18 @@ export default async function whatsappRoutes(app) {
       await new Promise(r => setTimeout(r, 500))
       waited += 500
       const s = getClientState(userId)
-      if (s.qr || s.status === 'connected') break
+      if (s.qr || s.status === 'connected' || s.status === 'error') break
     }
 
     const s = getClientState(userId)
+    if (s.status === 'error') {
+      clients.delete(userId)
+      return reply.code(500).send({
+        error: 'WA_INIT_FAILED',
+        status: 'error',
+        message: s.error || 'שגיאה בהפעלת WhatsApp'
+      })
+    }
     return { status: s.status, qr: s.qr, connected: s.status === 'connected' }
   })
 
