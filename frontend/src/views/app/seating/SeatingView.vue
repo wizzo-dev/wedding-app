@@ -95,7 +95,16 @@
           </div>
         </div>
 
+        <!-- Zoom controls -->
+        <div v-if="tables.length" class="zoom-controls">
+          <button class="zoom-btn" @click="zoomOut" title="הקטן (−)">−</button>
+          <span class="zoom-level">{{ Math.round(zoom * 100) }}%</span>
+          <button class="zoom-btn" @click="zoomIn" title="הגדל (+)">+</button>
+          <button class="zoom-btn zoom-fit" @click="fitToScreen" title="התאם למסך">⛶</button>
+        </div>
+
         <template v-else>
+        <div class="zoom-wrapper" :style="zoomWrapperStyle">
           <v-stage
             :config="stageConfig"
             ref="stageRef"
@@ -222,6 +231,7 @@
             @drop.prevent="onOverlayDrop(table)"
             @click="onTableClick(table)"
           ></div>
+        </div>
         </template>
       </div>
 
@@ -452,6 +462,29 @@ const dropZoneActive = ref(false)
 const stageRef = ref(null)
 const canvasContainer = ref(null)
 
+// Zoom
+const zoom = ref(1)
+const MIN_ZOOM = 0.25
+const MAX_ZOOM = 2
+
+function zoomIn() {
+  zoom.value = Math.min(MAX_ZOOM, Math.round((zoom.value + 0.1) * 100) / 100)
+}
+function zoomOut() {
+  zoom.value = Math.max(MIN_ZOOM, Math.round((zoom.value - 0.1) * 100) / 100)
+}
+function fitToScreen() {
+  const container = canvasContainer.value
+  if (!container) return
+  const cfg = stageConfig.value
+  // Account for padding inside container
+  const availW = container.clientWidth - 20
+  const availH = container.clientHeight - 20
+  if (cfg.width <= 0 || cfg.height <= 0) return
+  const scale = Math.min(availW / cfg.width, availH / cfg.height, 1)
+  zoom.value = Math.max(MIN_ZOOM, Math.round(scale * 100) / 100)
+}
+
 // Table positions (local override while dragging)
 const tablePositions = ref({}) // { tableId: {x, y} }
 
@@ -477,6 +510,20 @@ const stageConfig = computed(() => {
   return {
     width: Math.max(1400, maxX + 100),
     height: Math.max(700, maxY + 100, Math.ceil(tables.value.length / 5) * 200 + 200)
+  }
+})
+
+// Scaled wrapper: sized to match scaled content so the container scrolls correctly
+const zoomWrapperStyle = computed(() => {
+  const cfg = stageConfig.value
+  return {
+    width: cfg.width + 'px',
+    height: cfg.height + 'px',
+    transform: `scale(${zoom.value})`,
+    transformOrigin: 'top right',
+    marginBottom: (cfg.height * (zoom.value - 1)) + 'px',
+    marginLeft: (cfg.width * (zoom.value - 1)) + 'px',
+    position: 'relative'
   }
 })
 
@@ -1173,6 +1220,51 @@ onMounted(() => {
   align-items: flex-start;
   justify-content: flex-start;
   position: relative;
+}
+
+.zoom-wrapper {
+  will-change: transform;
+}
+
+.zoom-controls {
+  position: absolute;
+  top: var(--space-3);
+  left: var(--space-3);
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: #fff;
+  padding: 4px;
+  border-radius: var(--radius-full);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  border: 1px solid var(--color-border);
+}
+.zoom-btn {
+  width: 30px;
+  height: 30px;
+  border: none;
+  background: transparent;
+  border-radius: 50%;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--color-navy);
+  font-family: var(--font);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+.zoom-btn:hover { background: var(--color-bg-subtle, #F5F6FA); }
+.zoom-btn.zoom-fit { font-size: 14px; }
+.zoom-level {
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  color: var(--color-navy);
+  min-width: 38px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
 }
 
 /* HTML drop-zone overlays for guest DnD */
