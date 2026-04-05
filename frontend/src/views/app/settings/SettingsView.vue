@@ -63,13 +63,19 @@
           <div class="section-header">
             <div class="section-icon">📅</div>
             <div>
-              <h2 class="section-title">תאריך החתונה</h2>
+              <h2 class="section-title">תאריך ושעת החתונה</h2>
               <p class="section-sub">{{ daysUntil }}</p>
             </div>
           </div>
-          <div class="form-group">
-            <label class="form-label">תאריך האירוע</label>
-            <input v-model="form.weddingDate" type="date" class="form-input" dir="ltr" style="text-align:left" />
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">תאריך האירוע</label>
+              <input v-model="form.weddingDate" type="date" class="form-input" dir="ltr" style="text-align:left" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">שעת האירוע</label>
+              <input v-model="form.weddingTime" type="time" class="form-input" dir="ltr" style="text-align:left" placeholder="19:00" />
+            </div>
           </div>
         </div>
       </section>
@@ -117,6 +123,8 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import api from '@/composables/useApi'
+import { useAuthStore } from '@/stores/auth'
+const auth = useAuthStore()
 
 const loading = ref(true)
 const saving = ref(false)
@@ -129,6 +137,7 @@ const form = ref({
   name1: '',
   name2: '',
   weddingDate: '',
+  weddingTime: '',
   venue: '',
   venueAddress: ''
 })
@@ -156,6 +165,7 @@ async function loadProfile() {
       name1: u.name1 || '',
       name2: u.name2 || '',
       weddingDate: u.weddingDate ? u.weddingDate.slice(0, 10) : '',
+      weddingTime: u.weddingTime || '',
       venue: u.venue || '',
       venueAddress: u.venueAddress || ''
     }
@@ -183,10 +193,13 @@ async function save() {
       name1: form.value.name1.trim(),
       name2: form.value.name2.trim(),
       weddingDate: form.value.weddingDate || null,
+      weddingTime: form.value.weddingTime || null,
       venue: form.value.venue.trim() || null,
       venueAddress: form.value.venueAddress.trim() || null
     })
     saveSuccess.value = true
+    // Refresh auth store so Dashboard & other views pick up new names/date/venue
+    try { await auth.fetchMe() } catch {}
     setTimeout(() => { saveSuccess.value = false }, 4000)
   } catch (e) {
     saveError.value = e.response?.data?.message || 'שגיאה בשמירה'

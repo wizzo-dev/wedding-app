@@ -141,6 +141,13 @@
         </div>
       </div>
 
+      <!-- Logout -->
+      <div class="logout-section">
+        <button class="btn btn-logout" @click="handleLogout">
+          🚪 התנתקות מהמערכת
+        </button>
+      </div>
+
       <!-- Wedding countdown -->
       <div class="countdown-card card" v-if="form.weddingDate && daysUntilWedding >= 0">
         <div class="card-body countdown-body">
@@ -158,8 +165,11 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import api from '@/composables/useApi'
+
+const router = useRouter()
 
 const auth = useAuthStore()
 const loading = ref(true)
@@ -274,6 +284,11 @@ async function saveProfile() {
   } finally {
     saving.value = false
   }
+}
+
+function handleLogout() {
+  auth.logout()
+  router.push('/login')
 }
 
 onMounted(loadProfile)
@@ -484,6 +499,29 @@ onMounted(loadProfile)
 .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
 .btn-ghost { background: transparent; color: var(--color-text-muted); border: 1.5px solid var(--color-border); }
 .btn-ghost:hover { background: var(--color-bg-subtle); }
+
+/* Logout */
+.logout-section {
+  display: flex;
+  justify-content: center;
+  margin-bottom: var(--space-5);
+}
+.btn-logout {
+  background: transparent;
+  color: var(--color-error, #EF4444);
+  border: 1.5px solid var(--color-error, #EF4444);
+  padding: 11px var(--space-6);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  cursor: pointer;
+  font-family: var(--font);
+  transition: all var(--transition);
+}
+.btn-logout:hover {
+  background: var(--color-error, #EF4444);
+  color: #fff;
+}
 
 @media (max-width: 600px) {
   .profile-view { padding: var(--space-4); }

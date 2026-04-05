@@ -31,6 +31,10 @@ model User {
   selectedCardTemplateId  Int?       @map("selected_card_template_id")
   bankInfo                String?    @map("bank_info")
   bitPhone                String?    @map("bit_phone")
+  rsvpGreeting            String?    @map("rsvp_greeting")
+  rsvpBgColor             String?    @map("rsvp_bg_color")
+  rsvpBgImage             String?    @map("rsvp_bg_image")
+  rsvpAccentColor         String?    @map("rsvp_accent_color")
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
 
@@ -73,7 +77,7 @@ model BudgetCategory {
   id               Int     @id @default(autoincrement())
   userId           Int     @map("user_id")
   name             String
-  allocatedPercent Float   @map("allocated_percent")
+  allocatedPercent Float   @default(0) @map("allocated_percent")
   allocatedAmount  Float   @map("allocated_amount")
   icon             String?
   color            String?
@@ -328,6 +332,7 @@ model Subscription {
 model TimelineEvent {
   id          Int      @id @default(autoincrement())
   userId      Int      @map("user_id")
+  date        String?  @map("event_date")
   time        String
   title       String
   description String?

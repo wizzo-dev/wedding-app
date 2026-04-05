@@ -288,7 +288,7 @@ onMounted(loadGifts)
 </script>
 
 <style scoped>
-.gifts-view { padding: var(--space-6); max-width: 1000px; margin: 0 auto; }
+.gifts-view { padding: var(--space-6); max-width: 1000px; margin: 0 auto; overflow-x: hidden; }
 
 .page-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: var(--space-6); flex-wrap: wrap; gap: var(--space-3); }
 .page-title { font-size: var(--font-size-2xl); font-weight: 800; color: var(--color-navy); }
@@ -315,7 +315,11 @@ onMounted(loadGifts)
 
 .empty-state { text-align: center; padding: var(--space-10); display: flex; flex-direction: column; align-items: center; gap: var(--space-3); color: var(--color-text-muted); }
 
-.gifts-table-wrap { overflow-x: auto; }
+.gifts-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100%; }
+@media (max-width: 600px) {
+  .gifts-table-wrap { overflow-x: scroll; -webkit-overflow-scrolling: touch; }
+  .gifts-table { min-width: 500px; }
+}
 .gifts-table { width: 100%; border-collapse: collapse; }
 .gifts-table th { padding: var(--space-3) var(--space-4); text-align: right; font-size: var(--font-size-sm); color: var(--color-text-muted); border-bottom: 2px solid var(--color-border); background: var(--color-bg-subtle); }
 .gifts-table td { padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--color-border); vertical-align: middle; }

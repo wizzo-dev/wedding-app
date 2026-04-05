@@ -40,9 +40,10 @@ export default async function budgetRoutes(app) {
 
   // POST /api/budget/categories
   app.post('/categories', { preHandler: [app.authenticate] }, async (req) => {
-    const { name, allocatedAmount, icon, color } = req.body
+    const { name, allocatedAmount, allocatedPercent, icon, color } = req.body
     return prisma.budgetCategory.create({
       data: { userId: req.user.userId, name, allocatedAmount: parseFloat(allocatedAmount) || 0,
+        allocatedPercent: parseFloat(allocatedPercent) || 0,
         icon: icon || '💰', color: color || '#E91E8C' }
     })
   })
@@ -53,10 +54,15 @@ export default async function budgetRoutes(app) {
       where: { id: parseInt(req.params.id), userId: req.user.userId }
     })
     if (!cat) return reply.code(404).send({ error: 'NOT_FOUND' })
-    const { name, allocatedAmount, icon, color } = req.body
+    const { name, allocatedAmount, allocatedPercent, icon, color } = req.body
     return prisma.budgetCategory.update({
       where: { id: cat.id },
-      data: { name, allocatedAmount: parseFloat(allocatedAmount) || 0, icon, color }
+      data: {
+        name,
+        allocatedAmount: parseFloat(allocatedAmount) || 0,
+        ...(allocatedPercent !== undefined && { allocatedPercent: parseFloat(allocatedPercent) || 0 }),
+        icon, color
+      }
     })
   })
 
@@ -90,8 +96,13 @@ export default async function budgetRoutes(app) {
     if (!cat) return reply.code(404).send({ error: 'NOT_FOUND' })
     const { description, amount, vendor, vendorName, paidAt, isPaid } = req.body
     return prisma.budgetExpense.create({
-      data: { categoryId: cat.id, description, amount: parseFloat(amount) || 0,
-        vendorName: vendorName || vendor || '', paidAt: paidAt ? new Date(paidAt) : null, isPaid: isPaid || false }
+      data: {
+        userId: req.user.userId,
+        categoryId: cat.id,
+        vendorName: vendorName || vendor || '',
+        amount: parseFloat(amount) || 0,
+        note: description || null
+      }
     })
   })
 
@@ -103,12 +114,14 @@ export default async function budgetRoutes(app) {
     })
     if (!exp || exp.category.userId !== req.user.userId)
       return reply.code(404).send({ error: 'NOT_FOUND' })
-    const { description, amount, vendor, vendorName, paidAt, isPaid } = req.body
+    const { description, amount, vendor, vendorName } = req.body
     return prisma.budgetExpense.update({
       where: { id: exp.id },
-      data: { description, amount: parseFloat(amount) || 0,
+      data: {
         vendorName: vendorName || vendor || '',
-        paidAt: paidAt ? new Date(paidAt) : null, isPaid }
+        amount: parseFloat(amount) || 0,
+        note: description || null
+      }
     })
   })
 

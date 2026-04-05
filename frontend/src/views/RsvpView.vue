@@ -1,5 +1,10 @@
 <template>
-  <div class="rsvp-page" dir="rtl">
+  <div class="rsvp-page" dir="rtl" :style="rsvpPageStyle">
+
+    <!-- Edit RSVP design link (visible only for logged-in owner) -->
+    <router-link v-if="isOwner" to="/app/rsvp-design" class="rsvp-edit-fab" title="עריכת עיצוב RSVP">
+      ✏️ ערוך עיצוב
+    </router-link>
 
     <!-- Invitation image card -->
     <div class="inv-card">
@@ -38,6 +43,11 @@
         <span v-if="couple.weddingTime"> | {{ couple.weddingTime }}</span>
         <span v-if="couple.venue"> | {{ couple.venue }}</span>
       </p>
+    </div>
+
+    <!-- Custom greeting message -->
+    <div v-if="couple.rsvpGreeting && !loadError" class="rsvp-greeting">
+      <p>{{ couple.rsvpGreeting }}</p>
     </div>
 
     <!-- Scroll-down arrow -->
@@ -117,8 +127,14 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 
 const route = useRoute()
+const auth = useAuthStore()
+const isOwner = computed(() => {
+  if (!auth.isLoggedIn || !auth.user?.rsvpToken) return false
+  return route.params.code === auth.user.rsvpToken
+})
 
 // State
 const couple          = ref({})
@@ -156,6 +172,23 @@ const formattedDate = computed(() => {
   return new Date(couple.value.weddingDate).toLocaleDateString('he-IL', {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
   })
+})
+
+const rsvpPageStyle = computed(() => {
+  const styles = {}
+  const accent = couple.value?.rsvpAccentColor || '#E91E8C'
+  styles['--rsvp-accent'] = accent
+
+  if (couple.value?.rsvpBgImage) {
+    styles['background-image'] = `url(${couple.value.rsvpBgImage})`
+    styles['background-size'] = 'cover'
+    styles['background-position'] = 'center'
+    styles['background-attachment'] = 'fixed'
+  } else if (couple.value?.rsvpBgColor) {
+    styles['background'] = couple.value.rsvpBgColor
+  }
+
+  return styles
 })
 
 const successMessage = computed(() => {
@@ -385,6 +418,23 @@ onMounted(loadEvent)
   line-height: 1.6;
 }
 
+/* ── Greeting message ────────────────────────────── */
+.rsvp-greeting {
+  text-align: center;
+  margin: 0 0 16px;
+  padding: 14px 20px;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 12px;
+  backdrop-filter: blur(4px);
+}
+.rsvp-greeting p {
+  font-size: 15px;
+  line-height: 1.6;
+  color: #1A1F36;
+  font-weight: 500;
+  white-space: pre-line;
+}
+
 /* ── Scroll arrow ─────────────────────────────────── */
 .scroll-arrow {
   display: flex;
@@ -394,12 +444,12 @@ onMounted(loadEvent)
   width: 42px;
   height: 42px;
   border-radius: 50%;
-  background: #3B82F6;
+  background: var(--rsvp-accent, #E91E8C);
   color: #fff;
   border: none;
   font-size: 24px;
   cursor: pointer;
-  box-shadow: 0 2px 10px rgba(59, 130, 246, 0.45);
+  box-shadow: 0 2px 10px rgba(233, 30, 140, 0.35);
   animation: bounce 1.6s ease-in-out infinite;
   line-height: 1;
   padding-top: 2px;  /* optical adjustment for ⌄ glyph */
@@ -441,7 +491,7 @@ onMounted(loadEvent)
 }
 .form-input:focus {
   outline: none;
-  border-color: #E91E8C;
+  border-color: var(--rsvp-accent, #E91E8C);
   background: #fff;
 }
 .form-input::placeholder { color: #B0B4BE; }
@@ -505,7 +555,7 @@ onMounted(loadEvent)
 .rsvp-btn:disabled { opacity: 0.55; cursor: not-allowed; }
 
 /* order: RTL — right = first visually */
-.btn-no    { background: #E91E8C; order: 1; }   /* declined — pink/red */
+.btn-no    { background: #DC2626 !important; order: 1; }   /* declined — fixed red, non-editable */
 .btn-yes   { background: #22C55E; order: 2; }   /* confirmed — green  */
 .btn-maybe { background: #1A1F36; order: 3; }   /* maybe — dark navy  */
 
@@ -563,4 +613,23 @@ onMounted(loadEvent)
   .rsvp-btn { font-size: 12px; padding: 11px 4px; }
   .event-title h1 { font-size: 19px; }
 }
+
+/* Edit FAB for owner */
+.rsvp-edit-fab {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  z-index: 1000;
+  background: #FF407D;
+  color: #fff;
+  padding: 10px 18px;
+  border-radius: 24px;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: 'Heebo', sans-serif;
+  text-decoration: none;
+  box-shadow: 0 4px 16px rgba(255,64,125,0.4);
+  transition: transform 0.15s, opacity 0.15s;
+}
+.rsvp-edit-fab:hover { transform: scale(1.05); opacity: 0.95; }
 </style>

@@ -34,6 +34,7 @@ import rsvpRoutes from './routes/rsvp.js'
 import notificationRoutes from './routes/notifications.js'
 import vendorSuggestionsRoutes from './routes/vendorSuggestions.js'
 import invitationRoutes from './routes/invitations.js'
+import tasksRoutes from './routes/tasks.js'
 
 const app = Fastify({ logger: process.env.NODE_ENV === 'development' })
 
@@ -119,6 +120,7 @@ app.register(notificationRoutes,    { prefix: '/api/notifications' })
 app.register(subscriptionRoutes,    { prefix: '/api/subscription' })
 app.register(rsvpRoutes,           { prefix: '/api/rsvp' })
 app.register(invitationRoutes,     { prefix: '/api/invitations' })
+app.register(tasksRoutes,          { prefix: '/api/tasks' })
 
 // ── RSVP OG Tags — serve index.html with injected Open Graph meta tags ───────
 const frontendDist = join(__dirname, '../../frontend/dist')
@@ -163,10 +165,17 @@ app.get('/rsvp/:code', async (req, reply) => {
   }
 })
 
+// ── Uploaded files ────────────────────────────────────────────────────────────
+app.register(staticFiles, {
+  root: join(__dirname, '..', 'uploads'),
+  prefix: '/uploads/'
+})
+
 // ── Static Frontend ───────────────────────────────────────────────────────────
 app.register(staticFiles, {
   root: frontendDist,
-  prefix: '/'
+  prefix: '/',
+  decorateReply: false
 })
 
 // ── Health Check ──────────────────────────────────────────────────────────────

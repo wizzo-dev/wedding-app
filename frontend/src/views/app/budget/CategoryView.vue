@@ -24,7 +24,25 @@
         <div class="cat-info">
           <h1 class="cat-name">{{ category?.name }}</h1>
           <div class="cat-amounts">
-            <span class="amount-badge allocated">מוקצה: {{ formatCurrency(category?.allocatedAmount) }}</span>
+            <span class="amount-badge allocated editable" @click="startEditBudget">
+              מוקצה:
+              <template v-if="editingBudget">
+                <input
+                  v-model.number="editBudgetValue"
+                  type="number"
+                  min="0"
+                  class="inline-budget-input"
+                  @keyup.enter="saveBudget"
+                  @blur="saveBudget"
+                  @click.stop
+                  ref="budgetInput"
+                />
+                ₪
+              </template>
+              <template v-else>
+                {{ formatCurrency(category?.allocatedAmount) }} ✏️
+              </template>
+            </span>
             <span class="amount-badge spent">הוצא: {{ formatCurrency(totalSpent) }}</span>
             <span class="amount-badge remain" :class="{ negative: remaining < 0 }">נותר: {{ formatCurrency(remaining) }}</span>
           </div>
@@ -58,14 +76,11 @@
           <div v-for="exp in expenses" :key="exp.id" class="expense-card card card-body">
             <div class="exp-main">
               <div class="exp-info">
-                <div class="exp-vendor">{{ exp.vendorName || exp.vendor || '—' }}</div>
-                <div class="exp-desc">{{ exp.description || '—' }}</div>
+                <div class="exp-vendor">{{ exp.vendorName || '—' }}</div>
+                <div class="exp-desc">{{ exp.note || '—' }}</div>
               </div>
               <div class="exp-right">
                 <div class="exp-amount">{{ formatCurrency(exp.amount) }}</div>
-                <div class="exp-badge" :class="exp.isPaid ? 'paid' : 'unpaid'">
-                  {{ exp.isPaid ? 'שולם ✓' : 'לא שולם' }}
-                </div>
               </div>
             </div>
             <button class="delete-btn" @click="deleteExpense(exp.id)" title="מחק">🗑️</button>
@@ -95,13 +110,7 @@
               <label class="form-label">סכום (₪) *</label>
               <input v-model="newExp.amount" type="number" class="form-input" placeholder="0" min="0" />
             </div>
-            <div class="form-group form-toggle">
-              <label class="form-label">שולם?</label>
-              <label class="toggle-switch">
-                <input type="checkbox" v-model="newExp.isPaid" />
-                <span class="toggle-slider"></span>
-              </label>
-            </div>
+
             <div v-if="addError" class="form-error-msg">{{ addError }}</div>
           </div>
           <div class="modal-footer">
@@ -118,7 +127,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import api from '@/composables/useApi'
 
@@ -132,7 +141,32 @@ const expenses = ref([])
 const showAddModal = ref(false)
 const adding = ref(false)
 const addError = ref(null)
-const newExp = ref({ vendorName: '', description: '', amount: '', isPaid: false })
+const newExp = ref({ vendorName: '', description: '', amount: '' })
+const editingBudget = ref(false)
+const editBudgetValue = ref(0)
+const budgetInput = ref(null)
+
+function startEditBudget() {
+  if (editingBudget.value) return
+  editBudgetValue.value = category.value?.allocatedAmount || 0
+  editingBudget.value = true
+  nextTick(() => budgetInput.value?.focus())
+}
+
+async function saveBudget() {
+  if (!editingBudget.value) return
+  editingBudget.value = false
+  const newAmount = parseFloat(editBudgetValue.value) || 0
+  if (newAmount === category.value?.allocatedAmount) return
+  try {
+    await api.put(`/budget/categories/${id}`, {
+      allocatedAmount: newAmount
+    })
+    category.value.allocatedAmount = newAmount
+  } catch (e) {
+    alert('שגיאה בעדכון התקציב')
+  }
+}
 
 const totalSpent = computed(() => expenses.value.reduce((s, e) => s + (e.amount || 0), 0))
 const remaining = computed(() => (category.value?.allocatedAmount || 0) - totalSpent.value)
@@ -173,11 +207,10 @@ async function addExpense() {
     await api.post(`/budget/categories/${id}/expenses`, {
       vendorName: newExp.value.vendorName,
       description: newExp.value.description,
-      amount: parseFloat(newExp.value.amount),
-      isPaid: newExp.value.isPaid
+      amount: parseFloat(newExp.value.amount)
     })
     showAddModal.value = false
-    newExp.value = { vendorName: '', description: '', amount: '', isPaid: false }
+    newExp.value = { vendorName: '', description: '', amount: '' }
     await loadData()
   } catch (e) {
     addError.value = e.response?.data?.message || 'שגיאה בשמירה'
@@ -217,6 +250,20 @@ onMounted(loadData)
 .cat-amounts { display: flex; gap: var(--space-2); flex-wrap: wrap; }
 .amount-badge { padding: 4px 10px; border-radius: var(--radius-full); font-size: var(--font-size-sm); font-weight: 600; }
 .amount-badge.allocated { background: var(--color-bg); color: var(--color-navy); }
+.amount-badge.editable { cursor: pointer; transition: background 0.15s; }
+.amount-badge.editable:hover { background: var(--color-primary-light); }
+.inline-budget-input {
+  width: 80px;
+  padding: 2px 6px;
+  border: 1.5px solid var(--color-primary);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  text-align: center;
+  outline: none;
+  background: white;
+  font-family: inherit;
+}
 .amount-badge.spent { background: var(--color-primary-light); color: var(--color-primary); }
 .amount-badge.remain { background: var(--color-success-bg); color: var(--color-success); }
 .amount-badge.remain.negative { background: var(--color-error-bg); color: var(--color-error); }
@@ -241,7 +288,7 @@ onMounted(loadData)
 .exp-badge { padding: 3px 8px; border-radius: var(--radius-full); font-size: var(--font-size-xs); font-weight: 600; }
 .exp-badge.paid { background: var(--color-success-bg); color: var(--color-success); }
 .exp-badge.unpaid { background: var(--color-warning-bg); color: var(--color-warning); }
-.delete-btn { position: absolute; top: var(--space-3); left: var(--space-3); background: none; border: none; cursor: pointer; font-size: 1rem; opacity: 0.4; transition: opacity var(--transition-fast); }
+.delete-btn { position: absolute; bottom: var(--space-3); left: var(--space-3); background: none; border: none; cursor: pointer; font-size: 1rem; opacity: 0.4; transition: opacity var(--transition-fast); }
 .delete-btn:hover { opacity: 1; }
 
 /* Modal */

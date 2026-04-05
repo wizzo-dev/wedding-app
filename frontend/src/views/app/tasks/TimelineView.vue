@@ -38,8 +38,17 @@
       <button class="btn btn-primary" @click="openAddModal">+ הוסף אירוע ראשון</button>
     </div>
 
+    <!-- Wedding Date Banner -->
+    <div v-if="weddingDateFormatted && !loading && !error" class="wedding-date-banner">
+      <div class="wedding-date-dot">💍</div>
+      <div class="wedding-date-info">
+        <div class="wedding-date-title">יום החתונה</div>
+        <div class="wedding-date-text">{{ weddingDateFormatted }} · {{ weddingTimeFormatted }}</div>
+      </div>
+    </div>
+
     <!-- Timeline -->
-    <div v-else class="timeline-container">
+    <div v-if="!loading && !error && events.length > 0" class="timeline-container">
       <div class="timeline-line"></div>
       <div
         v-for="(event, idx) in events"
@@ -48,6 +57,7 @@
         :style="{ animationDelay: `${idx * 60}ms` }"
       >
         <div class="event-time-col">
+          <div class="event-date" v-if="event.date">{{ formatDate(event.date) }}</div>
           <div class="event-time">{{ formatTime(event.time) }}</div>
         </div>
         <div class="event-dot"></div>
@@ -77,6 +87,16 @@
             <button class="modal-close" @click="closeModal">✕</button>
           </div>
           <div class="modal-body">
+            <div class="form-group">
+              <label class="form-label">תאריך</label>
+              <input
+                v-model="form.date"
+                type="date"
+                class="form-input"
+                dir="ltr"
+              />
+              <span class="form-hint">אם לא נבחר, ייחשב כיום החתונה</span>
+            </div>
             <div class="form-group">
               <label class="form-label">שעה *</label>
               <input
@@ -146,6 +166,9 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import api from '@/composables/useApi'
+import { useAuthStore } from '@/stores/auth'
+
+const auth = useAuthStore()
 
 const loading = ref(true)
 const saving = ref(false)
@@ -155,7 +178,7 @@ const showModal = ref(false)
 const editEvent = ref(null)
 const deleteTarget = ref(null)
 
-const emptyForm = () => ({ time: '', title: '', description: '' })
+const emptyForm = () => ({ date: '', time: '', title: '', description: '' })
 const form = ref(emptyForm())
 const errors = ref({})
 
@@ -182,7 +205,7 @@ function openAddModal() {
 
 function openEditModal(evt) {
   editEvent.value = evt
-  form.value = { time: evt.time, title: evt.title, description: evt.description || '' }
+  form.value = { date: evt.date || '', time: evt.time, title: evt.title, description: evt.description || '' }
   errors.value = {}
   showModal.value = true
 }
@@ -242,11 +265,34 @@ async function deleteEvent() {
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function formatTime(t) {
   if (!t) return ''
-  // t is HH:MM
   return t
 }
 
-onMounted(load)
+function formatDate(d) {
+  if (!d) return ''
+  try {
+    return new Date(d + 'T00:00:00').toLocaleDateString('he-IL', { day: 'numeric', month: 'short' })
+  } catch { return d }
+}
+
+// Wedding date banner
+const weddingDateFormatted = ref(null)
+const weddingTimeFormatted = ref(null)
+
+function initWeddingDate() {
+  if (auth.user?.weddingDate) {
+    const d = new Date(auth.user.weddingDate)
+    weddingDateFormatted.value = d.toLocaleDateString('he-IL', {
+      weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+    })
+    weddingTimeFormatted.value = auth.user.weddingTime || '19:00'
+  }
+}
+
+onMounted(() => {
+  load()
+  initWeddingDate()
+})
 </script>
 
 <style scoped>
@@ -273,6 +319,33 @@ onMounted(load)
   color: var(--color-text-muted);
   font-size: var(--font-size-sm);
   margin-top: 4px;
+}
+
+/* Wedding Date Banner */
+.wedding-date-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  background: linear-gradient(135deg, #FFF0F5, #FFE4F0);
+  border: 2px solid var(--color-primary);
+  border-radius: var(--radius-xl);
+  padding: var(--space-4) var(--space-5);
+  margin-bottom: var(--space-6);
+  box-shadow: var(--shadow-pink);
+}
+.wedding-date-dot {
+  font-size: 2rem;
+  flex-shrink: 0;
+}
+.wedding-date-title {
+  font-size: var(--font-size-base);
+  font-weight: 800;
+  color: var(--color-primary);
+}
+.wedding-date-text {
+  font-size: var(--font-size-sm);
+  color: var(--color-navy);
+  font-weight: 600;
 }
 
 /* Timeline layout */
@@ -303,6 +376,13 @@ onMounted(load)
 .event-time-col {
   text-align: left;
   padding-top: 14px;
+}
+
+.event-date {
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--color-navy);
+  margin-bottom: 2px;
 }
 
 .event-time {
@@ -520,6 +600,7 @@ onMounted(load)
 .form-input:focus { border-color: var(--color-primary); background: #fff; }
 .form-textarea { resize: vertical; min-height: 70px; }
 .form-error { font-size: var(--font-size-xs); color: var(--color-error); }
+.form-hint { font-size: var(--font-size-xs); color: var(--color-text-muted); margin-top: 2px; }
 
 .muted-text { color: var(--color-text-muted); font-size: var(--font-size-sm); margin-top: var(--space-2); }
 

@@ -4,12 +4,20 @@
     <header class="page-header">
       <div class="header-content">
         <h1 class="page-title"><span class="title-icon">🪑</span> סידורי הושבה</h1>
-        <p class="page-subtitle">גרור אורחים לשולחנות</p>
+        <p class="page-subtitle">גרור שולחן להזזה, גרור אורח לשולחן או לחץ על אורח ואז על שולחן לשיבוץ</p>
       </div>
       <div class="header-actions">
         <button class="btn btn-outline btn-sm" @click="exportXlsx">📥 ייצא XLSX</button>
         <router-link to="/app/seating/settings" class="btn btn-outline btn-sm">⚙️ הגדרות</router-link>
         <button @click="showGenerateModal = true" class="btn btn-outline btn-sm">✨ צור שולחנות</button>
+        <div class="venue-dropdown" v-click-outside="() => showVenueMenu = false">
+          <button @click="showVenueMenu = !showVenueMenu" class="btn btn-outline btn-sm">🏛️ אלמנט אולם</button>
+          <div v-if="showVenueMenu" class="venue-menu">
+            <button v-for="el in VENUE_ELEMENT_TYPES" :key="el.type" class="venue-menu-item" @click="addVenueElement(el); showVenueMenu = false">
+              <span>{{ el.icon }}</span> {{ el.label }}
+            </button>
+          </div>
+        </div>
         <button @click="openAddTable()" class="btn btn-primary btn-sm">+ שולחן חדש</button>
       </div>
     </header>
@@ -82,7 +90,7 @@
         class="canvas-area"
         ref="canvasContainer"
         style="position:relative"
-        @dragover.prevent="onCanvasDragOver"
+        @dragover.prevent
         @drop.prevent="onCanvasDrop"
       >
         <div v-if="!tables.length" class="empty-canvas">
@@ -103,19 +111,27 @@
           >
             <v-layer>
               <template v-for="(table, idx) in tables" :key="table.id">
-                <!-- Table shadow circle -->
-                <v-circle :config="{
+                <!-- Table shadow -->
+                <v-rect :config="{
                   x: tableX(table, idx),
                   y: tableY(table, idx),
-                  radius: TABLE_R + 4,
+                  width: tableDims(table).w + 8,
+                  height: tableDims(table).h + 8,
+                  offsetX: (tableDims(table).w + 8) / 2,
+                  offsetY: (tableDims(table).h + 8) / 2,
+                  cornerRadius: tableDims(table).cr + 4,
                   fill: 'rgba(0,0,0,0.06)',
                   listening: false
                 }" />
                 <!-- Table body -->
-                <v-circle :config="{
+                <v-rect :config="{
                   x: tableX(table, idx),
                   y: tableY(table, idx),
-                  radius: TABLE_R,
+                  width: tableDims(table).w,
+                  height: tableDims(table).h,
+                  offsetX: tableDims(table).w / 2,
+                  offsetY: tableDims(table).h / 2,
+                  cornerRadius: tableDims(table).cr,
                   fill: tableFill(table),
                   stroke: selectedTable?.id === table.id ? '#E91E8C' : (dragOverTable?.id === table.id ? '#E91E8C' : '#d1d5db'),
                   strokeWidth: selectedTable?.id === table.id ? 3 : (dragOverTable?.id === table.id ? 3 : 1.5),
@@ -151,6 +167,52 @@
                   align: 'center',
                   listening: false
                 }" />
+                <!-- Guest names preview -->
+                <v-text v-if="table.guests?.length" :config="{
+                  x: tableX(table, idx) - TABLE_R,
+                  y: tableY(table, idx) + 16,
+                  width: TABLE_R * 2,
+                  text: tableGuestNames(table),
+                  fontSize: 9,
+                  fontFamily: 'Heebo, sans-serif',
+                  fill: '#9ca3af',
+                  align: 'center',
+                  listening: false,
+                  ellipsis: true,
+                  wrap: 'none'
+                }" />
+              </template>
+
+              <!-- Venue Elements (stage, bar, head table, etc.) -->
+              <template v-for="(el, eIdx) in venueElements" :key="'ve-'+eIdx">
+                <v-rect :config="{
+                  x: el.x,
+                  y: el.y,
+                  width: el.width,
+                  height: el.height,
+                  fill: el.color,
+                  stroke: '#9ca3af',
+                  strokeWidth: 1.5,
+                  cornerRadius: 8,
+                  draggable: true,
+                  opacity: 0.85,
+                  id: 've-'+eIdx
+                }"
+                @dragend="(e) => onVenueElementDragEnd(eIdx, e)"
+                @dblclick="() => removeVenueElement(eIdx)"
+                />
+                <v-text :config="{
+                  x: el.x,
+                  y: el.y + el.height / 2 - 8,
+                  width: el.width,
+                  text: el.icon + ' ' + el.label,
+                  fontSize: 13,
+                  fontFamily: 'Heebo, sans-serif',
+                  fontStyle: 'bold',
+                  fill: '#1A1F36',
+                  align: 'center',
+                  listening: false
+                }" />
               </template>
             </v-layer>
           </v-stage>
@@ -162,8 +224,9 @@
             class="table-drop-overlay"
             :class="{ 'drop-hover': dragOverTable?.id === table.id }"
             :style="tableDropStyle(table, idx)"
+            @dragenter.prevent="dragOverTable = table"
             @dragover.prevent="dragOverTable = table"
-            @dragleave="dragOverTable = null"
+            @dragleave.self="handleOverlayLeave($event, table)"
             @drop.prevent="onOverlayDrop(table)"
             @click="onTableClick(table)"
           ></div>
@@ -229,6 +292,15 @@
       </div>
     </transition>
 
+    <!-- Undo drag bar -->
+    <transition name="slide-up">
+      <div v-if="lastDraggedTable && lastDragPosition" class="assign-bar undo-bar">
+        <span>↩️ שולחן <strong>{{ lastDraggedTable.name }}</strong> הוזז</span>
+        <button @click="undoTableDrag" class="btn btn-sm btn-outline">בטל הזזה</button>
+        <button @click="lastDraggedTable = null; lastDragPosition = null" class="btn btn-sm btn-outline">סגור</button>
+      </div>
+    </transition>
+
     <!-- Add/Edit Table Modal -->
     <div v-if="showAddTable || editingTable" class="modal-overlay" @click.self="closeTableModal">
       <div class="modal">
@@ -243,6 +315,7 @@
           <label>סוג שולחן
             <select v-model="tableForm.type" class="form-input">
               <option value="round">עגול</option>
+              <option value="square">ריבוע</option>
               <option value="rectangle">מלבני</option>
               <option value="head">שולחן ראשי</option>
             </select>
@@ -277,8 +350,16 @@
               <option value="custom">תחילית מותאמת</option>
             </select>
           </label>
-          <label v-if="generateForm.namingStyle === 'custom'">תחילית
-            <input v-model="generateForm.prefix" class="form-input" placeholder="לדוגמה: מספר" />
+          <label v-if="generateForm.namingStyle === 'custom'">בחר תחילית לשולחנות
+            <select v-model="generateForm.prefix" class="form-input">
+              <option value="שולחן">שולחן (שולחן 1, שולחן 2...)</option>
+              <option value="VIP">VIP (VIP 1, VIP 2...)</option>
+              <option value="מספר">מספר (מספר 1, מספר 2...)</option>
+              <option value="שולחן VIP">שולחן VIP (שולחן VIP 1...)</option>
+              <option value="שולחן משפחה">שולחן משפחה (שולחן משפחה 1...)</option>
+              <option value="שולחן חברים">שולחן חברים (שולחן חברים 1...)</option>
+              <option value="שולחן עבודה">שולחן עבודה (שולחן עבודה 1...)</option>
+            </select>
           </label>
           <div class="modal-actions">
             <button type="submit" class="btn btn-primary" :disabled="generating">
@@ -318,8 +399,23 @@ const auth = useAuthStore()
 // Constants
 const TABLE_R = 55
 
+// Venue element types
+const VENUE_ELEMENT_TYPES = [
+  { type: 'stage', icon: '🎤', label: 'במה', width: 300, height: 80, color: '#E8D5F5' },
+  { type: 'bar', icon: '🍸', label: 'בר', width: 180, height: 60, color: '#D5E8F5' },
+  { type: 'head_table', icon: '👑', label: 'שולחן הנשיא', width: 260, height: 70, color: '#FFF0D5' },
+  { type: 'dj', icon: '🎵', label: 'DJ', width: 120, height: 60, color: '#D5F5E8' },
+  { type: 'dance_floor', icon: '💃', label: 'רחבת ריקודים', width: 250, height: 200, color: '#F5E8D5' },
+  { type: 'entrance', icon: '🚪', label: 'כניסה', width: 120, height: 50, color: '#E0E0E0' },
+  { type: 'photo', icon: '📸', label: 'עמדת צילום', width: 100, height: 80, color: '#F5D5E8' },
+  { type: 'gifts_table', icon: '🎁', label: 'שולחן מתנות', width: 160, height: 60, color: '#D5F5D5' },
+]
+
+const showVenueMenu = ref(false)
+
 // State
 const tables = ref([])
+const venueElements = ref([])
 const unassigned = ref([])
 const stats = ref(null)
 const loading = ref(false)
@@ -350,19 +446,24 @@ const generating = ref(false)
 const formError = ref(null)
 const generateError = ref(null)
 
-// Stage config — sized dynamically to fit all tables
-const stageConfig = computed(() => ({
-  width: Math.max(800, 4 * 180 + 100),
-  height: Math.max(500, Math.ceil(tables.value.length / 4) * 180 + 100)
-}))
+// Stage config — sized dynamically to fit all tables + venue elements
+const stageConfig = computed(() => {
+  const allItems = [...tables.value, ...venueElements.value]
+  const maxX = allItems.reduce((mx, item) => Math.max(mx, (item.x || 0) + 200), 0)
+  const maxY = allItems.reduce((my, item) => Math.max(my, (item.y || 0) + 200), 0)
+  return {
+    width: Math.max(1400, maxX + 100),
+    height: Math.max(700, maxY + 100, Math.ceil(tables.value.length / 5) * 200 + 200)
+  }
+})
 
 // Grid-based position fallback (no overlap)
 function tableGridPos(idx) {
-  const cols = 4
-  const colWidth = 180
-  const rowHeight = 180
-  const startX = 90
-  const startY = 90
+  const cols = 6
+  const colWidth = 210
+  const rowHeight = 200
+  const startX = 120
+  const startY = 120
   return {
     x: startX + (idx % cols) * colWidth,
     y: startY + Math.floor(idx / cols) * rowHeight
@@ -384,6 +485,20 @@ function tableY(table, idx) {
 // Count total number of people (not just guest records) at a table
 function tableGuestCount(table) {
   return table.guests?.reduce((sum, g) => sum + (g.numPeople || 1), 0) || 0
+}
+
+function tableGuestNames(table) {
+  const names = (table.guests || []).map(g => g.name)
+  if (names.length <= 3) return names.join(', ')
+  return names.slice(0, 2).join(', ') + ` +${names.length - 2}`
+}
+
+function tableDims(table) {
+  const t = table?.type || 'round'
+  if (t === 'rectangle') return { w: TABLE_R * 2.4, h: TABLE_R * 1.2, cr: 10 }
+  if (t === 'square')    return { w: TABLE_R * 1.7, h: TABLE_R * 1.7, cr: 10 }
+  if (t === 'head')      return { w: TABLE_R * 2.8, h: TABLE_R * 1.1, cr: 10 }
+  return { w: TABLE_R * 2, h: TABLE_R * 2, cr: TABLE_R } // round
 }
 
 function tableFill(table) {
@@ -449,12 +564,29 @@ async function loadData() {
 }
 
 // ── Guest drag handling ──────────────────────────────────────────────────────
+let _dragLeaveTimer = null
+
 function onDragStart(guest) {
   dragGuest.value = guest
   clickAssignGuest.value = null
 }
 function onDragEnd() {
-  setTimeout(() => { dragGuest.value = null; dropZoneActive.value = false }, 200)
+  clearTimeout(_dragLeaveTimer)
+  setTimeout(() => {
+    dragGuest.value = null
+    dropZoneActive.value = false
+    dragOverTable.value = null
+  }, 200)
+}
+
+// Prevents flickering when cursor briefly leaves an overlay between dragover events
+function handleOverlayLeave(evt, table) {
+  clearTimeout(_dragLeaveTimer)
+  _dragLeaveTimer = setTimeout(() => {
+    if (dragOverTable.value?.id === table.id) {
+      dragOverTable.value = null
+    }
+  }, 80)
 }
 
 // Click-to-select a guest (no-drag mode)
@@ -470,9 +602,10 @@ function onCanvasDragOver(e) {
   const mx = e.clientX - rect.left
   const my = e.clientY - rect.top
   dragOverTable.value = tables.value.find((t, idx) => {
-    const dx = mx - tableX(t, idx)
-    const dy = my - tableY(t, idx)
-    return Math.sqrt(dx * dx + dy * dy) <= TABLE_R
+    const { w, h } = tableDims(t)
+    const dx = Math.abs(mx - tableX(t, idx))
+    const dy = Math.abs(my - tableY(t, idx))
+    return dx <= w / 2 && dy <= h / 2
   }) || null
 }
 
@@ -518,20 +651,74 @@ function onStageClick(e) {
 }
 
 // ── Table Konva drag ─────────────────────────────────────────────────────────
+const lastDragPosition = ref(null)
+const lastDraggedTable = ref(null)
+
 function onTableDragStart(table) {
-  // Prevent click-assign when dragging table
+  const idx = tables.value.indexOf(table)
+  lastDragPosition.value = { x: tableX(table, idx), y: tableY(table, idx) }
+  lastDraggedTable.value = table
+}
+
+function isColliding(tableId, x, y) {
+  const minDist = TABLE_R * 2 + 10 // minimum distance between table centers
+  for (let i = 0; i < tables.value.length; i++) {
+    const t = tables.value[i]
+    if (t.id === tableId) continue
+    const tx = tableX(t, i)
+    const ty = tableY(t, i)
+    const dx = x - tx
+    const dy = y - ty
+    if (Math.sqrt(dx * dx + dy * dy) < minDist) return true
+  }
+  return false
 }
 
 async function onTableDragEnd(table, evt) {
   const node = evt.target
-  const newX = node.x()
-  const newY = node.y()
+  let newX = node.x()
+  let newY = node.y()
+
+  // Check collision — if colliding, snap back to previous position
+  if (isColliding(table.id, newX, newY)) {
+    const idx = tables.value.indexOf(table)
+    const prevX = tableX(table, idx)
+    const prevY = tableY(table, idx)
+    node.x(prevX)
+    node.y(prevY)
+    stageRef.value?.getNode()?.batchDraw?.()
+    return
+  }
+
   tablePositions.value[table.id] = { x: newX, y: newY }
   // Persist position
   apiCall(`/tables/${table.id}/position`, {
     method: 'PATCH',
     body: JSON.stringify({ x: newX, y: newY })
   }).catch(() => {})
+}
+
+function undoTableDrag() {
+  if (!lastDraggedTable.value || !lastDragPosition.value) return
+  const table = lastDraggedTable.value
+  const pos = lastDragPosition.value
+  tablePositions.value[table.id] = { x: pos.x, y: pos.y }
+  apiCall(`/tables/${table.id}/position`, {
+    method: 'PATCH',
+    body: JSON.stringify({ x: pos.x, y: pos.y })
+  }).catch(() => {})
+  // Update Konva node
+  const stage = stageRef.value?.getNode()
+  if (stage) {
+    const node = stage.findOne('#' + String(table.id))
+    if (node) {
+      node.x(pos.x)
+      node.y(pos.y)
+    }
+    stage.batchDraw()
+  }
+  lastDraggedTable.value = null
+  lastDragPosition.value = null
 }
 
 // ── Assignment ───────────────────────────────────────────────────────────────
@@ -582,19 +769,19 @@ function openAddTable() {
 function tableDropStyle(table, idx) {
   const x = tableX(table, idx)
   const y = tableY(table, idx)
+  const { w, h, cr } = tableDims(table)
   return {
     position: 'absolute',
-    left: (x - TABLE_R) + 'px',
-    top: (y - TABLE_R) + 'px',
-    width: (TABLE_R * 2) + 'px',
-    height: (TABLE_R * 2) + 'px',
-    borderRadius: '50%',
+    left: (x - w / 2) + 'px',
+    top: (y - h / 2) + 'px',
+    width: w + 'px',
+    height: h + 'px',
+    borderRadius: cr + 'px',
     cursor: 'pointer',
     zIndex: 10,
     background: 'transparent'
   }
 }
-
 function onOverlayDrop(table) {
   dragOverTable.value = null
   if (!dragGuest.value) return
@@ -703,7 +890,65 @@ async function exportXlsx() {
   URL.revokeObjectURL(url)
 }
 
-onMounted(loadData)
+// ── Venue Elements ──────────────────────────────────────────────────────────
+function addVenueElement(elType) {
+  venueElements.value.push({
+    type: elType.type,
+    icon: elType.icon,
+    label: elType.label,
+    width: elType.width,
+    height: elType.height,
+    color: elType.color,
+    x: 50 + Math.random() * 200,
+    y: 50 + Math.random() * 100
+  })
+  saveVenueElements()
+}
+
+function onVenueElementDragEnd(idx, evt) {
+  const node = evt.target
+  venueElements.value[idx].x = node.x()
+  venueElements.value[idx].y = node.y()
+  saveVenueElements()
+}
+
+function removeVenueElement(idx) {
+  if (confirm(`להסיר את ${venueElements.value[idx]?.label}?`)) {
+    venueElements.value.splice(idx, 1)
+    saveVenueElements()
+  }
+}
+
+function saveVenueElements() {
+  try {
+    localStorage.setItem(`venue_elements_${auth.user?.id || 0}`, JSON.stringify(venueElements.value))
+  } catch {}
+}
+
+function loadVenueElements() {
+  try {
+    const stored = localStorage.getItem(`venue_elements_${auth.user?.id || 0}`)
+    if (stored) venueElements.value = JSON.parse(stored)
+  } catch {}
+}
+
+// v-click-outside directive
+const vClickOutside = {
+  mounted(el, binding) {
+    el._clickOutsideHandler = (e) => {
+      if (!el.contains(e.target)) binding.value()
+    }
+    document.addEventListener('click', el._clickOutsideHandler)
+  },
+  unmounted(el) {
+    document.removeEventListener('click', el._clickOutsideHandler)
+  }
+}
+
+onMounted(() => {
+  loadData()
+  loadVenueElements()
+})
 </script>
 
 <style scoped>
@@ -733,6 +978,40 @@ onMounted(loadData)
 }
 .page-subtitle { color: var(--color-text-muted); font-size: var(--font-size-sm); margin: 0; }
 .header-actions { display: flex; gap: var(--space-2); flex-wrap: wrap; align-items: center; }
+
+/* Venue dropdown */
+.venue-dropdown { position: relative; }
+.venue-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: auto;
+  z-index: 100;
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg, 12px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  padding: 6px;
+  min-width: 180px;
+  margin-top: 4px;
+}
+.venue-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  background: none;
+  font-family: var(--font);
+  font-size: var(--font-size-sm);
+  color: var(--color-navy);
+  cursor: pointer;
+  border-radius: 8px;
+  transition: background 0.12s;
+  text-align: right;
+}
+.venue-menu-item:hover { background: var(--color-bg-subtle, #F5F6FA); }
 
 /* Stats */
 .stats-bar {
@@ -868,6 +1147,8 @@ onMounted(loadData)
 .table-drop-overlay {
   pointer-events: all;
   transition: background 0.15s;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
 .table-drop-overlay.drop-hover {
   background: rgba(233, 30, 140, 0.15) !important;
@@ -1086,7 +1367,7 @@ onMounted(loadData)
 
 /* Responsive */
 @media (max-width: 900px) {
-  .seating-view { height: auto; overflow: auto; }
+  .seating-view { height: auto; overflow: auto; padding-bottom: calc(80px + env(safe-area-inset-bottom, 16px)); }
   .seating-layout { grid-template-columns: 1fr; height: auto; }
   .guests-panel { max-height: 200px; border-left: none; border-bottom: 1px solid var(--color-border); }
   .canvas-area { min-height: 400px; }

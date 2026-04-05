@@ -154,12 +154,60 @@ export default async function whatsappRoutes(app) {
     return { ok: true }
   })
 
-  // GET /api/whatsapp/templates — returns system templates only
+  // GET /api/whatsapp/templates — system + this user's custom templates
   app.get('/templates', { preHandler: [app.authenticate] }, async (req) => {
     return prisma.waTemplate.findMany({
-      where: { isSystem: true },
+      where: { OR: [{ isSystem: true }, { userId: req.user.userId }] },
       orderBy: [{ category: 'asc' }, { style: 'asc' }]
     })
+  })
+
+  // POST /api/whatsapp/templates — create a user-owned template
+  app.post('/templates', { preHandler: [app.authenticate] }, async (req, reply) => {
+    const { name, style, category, body, content, emoji } = req.body || {}
+    if (!name?.trim()) return reply.code(400).send({ error: 'MISSING_NAME', message: 'חובה להזין שם תבנית' })
+    const txt = (body ?? content ?? '').toString()
+    if (!txt.trim()) return reply.code(400).send({ error: 'MISSING_BODY', message: 'חובה להזין תוכן תבנית' })
+    return prisma.waTemplate.create({
+      data: {
+        userId: req.user.userId,
+        name: name.trim(),
+        style: style || null,
+        category: category || null,
+        body: txt,
+        content: txt,
+        emoji: emoji || null,
+        isSystem: false
+      }
+    })
+  })
+
+  // PUT /api/whatsapp/templates/:id — update a user-owned template
+  app.put('/templates/:id', { preHandler: [app.authenticate] }, async (req, reply) => {
+    const id = parseInt(req.params.id)
+    const tmpl = await prisma.waTemplate.findUnique({ where: { id } })
+    if (!tmpl || tmpl.userId !== req.user.userId) return reply.code(404).send({ error: 'NOT_FOUND' })
+    const { name, style, category, body, content, emoji } = req.body || {}
+    const txt = body ?? content
+    return prisma.waTemplate.update({
+      where: { id },
+      data: {
+        ...(name !== undefined && { name: String(name).trim() }),
+        ...(style !== undefined && { style }),
+        ...(category !== undefined && { category }),
+        ...(emoji !== undefined && { emoji }),
+        ...(txt !== undefined && { body: String(txt), content: String(txt) })
+      }
+    })
+  })
+
+  // DELETE /api/whatsapp/templates/:id
+  app.delete('/templates/:id', { preHandler: [app.authenticate] }, async (req, reply) => {
+    const id = parseInt(req.params.id)
+    const tmpl = await prisma.waTemplate.findUnique({ where: { id } })
+    if (!tmpl || tmpl.userId !== req.user.userId) return reply.code(404).send({ error: 'NOT_FOUND' })
+    await prisma.waTemplate.delete({ where: { id } })
+    return { ok: true }
   })
 
   // POST /api/whatsapp/admin/templates — admin only (requires x-admin-key header)

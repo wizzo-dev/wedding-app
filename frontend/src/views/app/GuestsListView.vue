@@ -606,6 +606,8 @@ onMounted(fetchGuests)
   justify-content: space-between;
   gap: var(--space-4);
   margin-bottom: var(--space-5);
+  position: relative;
+  z-index: 60;
   flex-wrap: wrap;
 }
 .page-title { font-size: var(--font-size-2xl); font-weight: 800; color: var(--color-navy); line-height: 1.2; }
