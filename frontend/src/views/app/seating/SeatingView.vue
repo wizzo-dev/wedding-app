@@ -103,7 +103,7 @@
           <button class="zoom-btn zoom-fit" @click="fitToScreen" title="התאם למסך">⛶</button>
         </div>
 
-        <template v-else>
+        <template v-if="tables.length">
         <div class="zoom-wrapper" :style="zoomWrapperStyle">
           <v-stage
             :config="stageConfig"

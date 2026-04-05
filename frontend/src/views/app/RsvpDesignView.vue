@@ -317,9 +317,28 @@ async function save() {
   }
 }
 
-function openPreview() {
-  const token = auth.user?.rsvpToken
-  if (token) window.open(`/rsvp/${token}`, '_blank')
+async function openPreview() {
+  let token = auth.user?.rsvpToken
+  // Fallback: refetch user if the token isn't loaded yet
+  if (!token) {
+    try {
+      const res = await api.get('/auth/me')
+      token = res.data?.rsvpToken
+      if (auth.user && token) auth.user.rsvpToken = token
+    } catch (e) {
+      console.error('openPreview: failed to fetch user', e)
+    }
+  }
+  if (!token) {
+    alert('לא הצלחנו למצוא את הלינק שלך. נסה לרענן את הדף.')
+    return
+  }
+  const url = `${window.location.origin}/rsvp/${token}`
+  const win = window.open(url, '_blank', 'noopener,noreferrer')
+  if (!win) {
+    // Popup blocked — fall back to same-tab navigation
+    window.location.href = url
+  }
 }
 
 async function uploadFile(file) {
