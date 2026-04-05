@@ -199,7 +199,7 @@
                 </div>
               </div>
               <div class="prev-buttons">
-                <div class="prev-btn prev-btn-no" :style="{ background: form.rsvpAccentColor || '#E91E8C' }">לא מגיע/ה</div>
+                <div class="prev-btn prev-btn-no" :style="{ background: '#DC2626' }">לא מגיע/ה</div>
                 <div class="prev-btn prev-btn-yes">מגיע/ה ✓</div>
               </div>
             </div>

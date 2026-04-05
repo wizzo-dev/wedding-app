@@ -555,7 +555,7 @@ onMounted(loadEvent)
 .rsvp-btn:disabled { opacity: 0.55; cursor: not-allowed; }
 
 /* order: RTL — right = first visually */
-.btn-no    { background: #E91E8C; order: 1; }   /* declined — pink/red */
+.btn-no    { background: #DC2626 !important; order: 1; }   /* declined — fixed red, non-editable */
 .btn-yes   { background: #22C55E; order: 2; }   /* confirmed — green  */
 .btn-maybe { background: #1A1F36; order: 3; }   /* maybe — dark navy  */
 
