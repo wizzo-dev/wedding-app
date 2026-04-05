@@ -130,20 +130,91 @@ async function loadGuests() {
   }
 }
 
+function escapeHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[c]))
+}
+
 async function generateCards() {
+  if (!guests.value.length) return
   generating.value = true
   try {
-    const res = await api.post('/cards/seating/export', {
-      template: selectedTemplate.value,
-      guests: guests.value.map(g => ({ name: g.name, table: g.tableName || `שולחן ${g.tableNumber}` }))
-    }, { responseType: 'blob' })
-    const url = URL.createObjectURL(res.data)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = 'seating-cards.pdf'
-    a.click()
-    URL.revokeObjectURL(url)
-  } catch {
+    const t = currentTemplate.value
+    const bg = t.style.background || '#fff'
+    const border = t.style.border || '1px solid #ccc'
+
+    const cardsHtml = guests.value.map(g => {
+      const tableLabel = g.tableName || `שולחן ${g.tableNumber}`
+      return `
+        <div class="card">
+          <div class="name" style="color:${t.nameColor}">${escapeHtml(g.name)}</div>
+          <div class="divider" style="background:${t.dividerColor}"></div>
+          <div class="table" style="color:${t.tableColor}">${escapeHtml(tableLabel)}</div>
+        </div>`
+    }).join('')
+
+    const html = `<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<title>כרטיסי הושבה</title>
+<style>
+  @page { size: A4; margin: 10mm; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Heebo', Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background: #fff;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8mm;
+  }
+  .card {
+    background: ${bg};
+    border: ${border};
+    border-radius: 10px;
+    padding: 12mm 8mm;
+    height: 60mm;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4mm;
+    page-break-inside: avoid;
+    text-align: center;
+  }
+  .name { font-size: 22pt; font-weight: 800; }
+  .divider { width: 40px; height: 2px; border-radius: 1px; }
+  .table { font-size: 14pt; font-weight: 600; }
+  @media print {
+    body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+</style>
+</head>
+<body>
+  <div class="grid">${cardsHtml}</div>
+  <script>
+    window.addEventListener('load', () => {
+      setTimeout(() => { window.print(); }, 200);
+    });
+  <\/script>
+</body>
+</html>`
+
+    const w = window.open('', '_blank')
+    if (!w) {
+      alert('חלונות קופצים חסומים — אפשר חלונות קופצים כדי להוריד PDF')
+      return
+    }
+    w.document.open()
+    w.document.write(html)
+    w.document.close()
+  } catch (e) {
+    console.error('generateCards error', e)
     alert('שגיאה ביצירת הכרטיסים. נסה שוב.')
   } finally {
     generating.value = false

@@ -338,7 +338,7 @@
                 <option value="round">עגול</option>
                 <option value="square">ריבוע</option>
                 <option value="rectangle">מלבני</option>
-                <option value="head">שולחן ראשי</option>
+                <option value="head">שולחן אבירים</option>
               </select>
             </label>
           </template>
