@@ -1,120 +1,84 @@
 <template>
-  <div class="app-shell" :class="{ 'sidebar-collapsed': collapsed, 'sidebar-mobile-open': mobileOpen }">
-    <!-- ── Sidebar ── -->
+  <div class="app-shell" dir="rtl">
+    <!-- ── SIDEBAR (light) ── -->
     <aside class="sidebar">
-      <div class="sidebar-header">
-        <div class="brand">
-          <span class="brand-logo">💍</span>
-          <Transition name="label">
-            <span v-if="!collapsed" class="brand-name">יאללה חתונה</span>
-          </Transition>
+      <!-- Logo -->
+      <div class="sidebar-logo">
+        <div class="logo-icon">💍</div>
+        <span class="logo-text">יאללה</span>
+      </div>
+
+      <!-- Couple badge -->
+      <div class="couple-badge" v-if="auth.user">
+        <div class="couple-avatar">{{ initials }}</div>
+        <div class="couple-info">
+          <div class="couple-name">{{ auth.user.name1 }} &amp; {{ auth.user.name2 }}</div>
+          <div class="couple-date" v-if="auth.user.weddingDate">{{ formattedWeddingDate }}</div>
         </div>
-        <button
-          class="collapse-btn btn btn-icon btn-ghost"
-          @click="collapsed = !collapsed"
-          v-if="!isMobile"
-          :aria-label="collapsed ? 'הרחב סרגל צד' : 'כווץ סרגל צד'"
-          :aria-expanded="!collapsed"
-        >
-          <span class="icon">{{ collapsed ? '›' : '‹' }}</span>
-        </button>
       </div>
 
-      <!-- User mini card -->
-      <div class="sidebar-user" v-if="auth.user">
-        <div class="user-avatar">{{ initials }}</div>
-        <Transition name="label">
-          <div v-if="!collapsed" class="user-info">
-            <div class="user-names">{{ auth.user.name1 }} &amp; {{ auth.user.name2 }}</div>
-            <div class="user-date" v-if="auth.user.weddingDate">
-              {{ daysUntilWedding }} ימים לחתונה 💕
-            </div>
-          </div>
-        </Transition>
-      </div>
-
-      <!-- Navigation -->
+      <!-- Nav -->
       <nav class="sidebar-nav">
-        <div v-for="group in navGroups" :key="group.label" class="nav-group">
-          <Transition name="label">
-            <div v-if="!collapsed" class="nav-group-label">{{ group.label }}</div>
-          </Transition>
-          <RouterLink
-            v-for="item in group.items"
-            :key="item.to"
-            :to="item.to"
+        <div class="nav-section">
+          <div class="nav-section-label">ניהול</div>
+          <router-link
+            v-for="item in mainNav"
+            :key="item.path"
+            :to="item.path"
             class="nav-item"
-            :title="collapsed ? item.label : ''"
-            @click="mobileOpen = false"
           >
             <span class="nav-icon">{{ item.icon }}</span>
-            <Transition name="label">
-              <span v-if="!collapsed" class="nav-label">{{ item.label }}</span>
-            </Transition>
-            <Transition name="label">
-              <span v-if="!collapsed && item.badge" class="nav-badge" :class="`badge-${item.badgeType || 'pink'}`">
-                {{ item.badge }}
-              </span>
-            </Transition>
-          </RouterLink>
+            <span class="nav-label">{{ item.label }}</span>
+          </router-link>
+        </div>
+        <div class="nav-section">
+          <div class="nav-section-label">כלי תכנון</div>
+          <router-link
+            v-for="item in planningNav"
+            :key="item.path"
+            :to="item.path"
+            class="nav-item"
+          >
+            <span class="nav-icon">{{ item.icon }}</span>
+            <span class="nav-label">{{ item.label }}</span>
+          </router-link>
         </div>
       </nav>
 
-      <!-- Bottom actions -->
+      <!-- Footer -->
       <div class="sidebar-footer">
-        <RouterLink to="/app/settings" class="nav-item" @click="mobileOpen = false">
+        <router-link to="/app/settings" class="nav-item settings-link">
           <span class="nav-icon">⚙️</span>
-          <Transition name="label">
-            <span v-if="!collapsed" class="nav-label">הגדרות</span>
-          </Transition>
-        </RouterLink>
-        <button class="nav-item logout-btn" @click="handleLogout">
-          <span class="nav-icon">🚪</span>
-          <Transition name="label">
-            <span v-if="!collapsed" class="nav-label">יציאה</span>
-          </Transition>
-        </button>
+          <span class="nav-label">הגדרות</span>
+        </router-link>
+        <button @click="auth.logout(); router.push('/login')" class="logout-btn">התנתק</button>
       </div>
     </aside>
 
-    <!-- ── Mobile overlay ── -->
-    <div class="sidebar-overlay" @click="mobileOpen = false" v-if="mobileOpen" />
-
-    <!-- ── Main ── -->
-    <div class="app-body">
-      <!-- Top bar (mobile + breadcrumbs) -->
-      <header class="topbar">
-        <button
-          class="menu-btn btn btn-icon btn-ghost"
-          @click="mobileOpen = !mobileOpen"
-          :aria-label="mobileOpen ? 'סגור תפריט' : 'פתח תפריט'"
-          :aria-expanded="mobileOpen"
-        >
-          <span class="icon">☰</span>
-        </button>
-        <div class="topbar-title">
+    <!-- ── MAIN ── -->
+    <main class="main-area">
+      <!-- Page header -->
+      <header class="page-header">
+        <div class="page-header-left">
           <h1 class="page-title">{{ currentPageTitle }}</h1>
+          <p class="page-subtitle" v-if="daysLeft !== null">
+            ספירה לאחור לחתונה: <strong>{{ daysLeft }} ימים</strong> נותרו
+          </p>
         </div>
-        <div class="topbar-actions">
-          <RouterLink to="/app/notifications" class="notif-btn" :title="'התראות'" aria-label="התראות">
-            <span class="bell-icon">🔔</span>
-            <span v-if="unreadNotifCount > 0" class="notif-badge">{{ unreadNotifCount > 9 ? '9+' : unreadNotifCount }}</span>
-          </RouterLink>
-          <div v-if="auth.user" class="topbar-user">
-            <div class="user-avatar sm">{{ initials }}</div>
-          </div>
+        <div class="page-header-right">
+          <router-link to="/app/guests/new" class="btn-new-task">+ הוסף אורח</router-link>
         </div>
       </header>
 
       <!-- Page content -->
-      <main class="app-main">
+      <div class="page-body">
         <RouterView v-slot="{ Component }">
           <Transition name="page" mode="out-in">
             <component :is="Component" />
           </Transition>
         </RouterView>
-      </main>
-    </div>
+      </div>
+    </main>
   </div>
 </template>
 
@@ -122,517 +86,362 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import api from '@/composables/useApi'
 
-const auth = useAuthStore()
-const route = useRoute()
+const auth   = useAuthStore()
+const route  = useRoute()
 const router = useRouter()
-const collapsed = ref(false)
-const mobileOpen = ref(false)
-const isMobile = ref(false)
-const unreadNotifCount = ref(0)
 
-const navGroups = [
-  {
-    label: 'ניהול',
-    items: [
-      { to: '/app/dashboard',  icon: '🏠', label: 'דאשבורד' },
-      { to: '/app/profile',    icon: '💍', label: 'הפרופיל שלנו' },
-      { to: '/app/guests',     icon: '👥', label: 'אורחים' },
-      { to: '/app/budget',     icon: '💰', label: 'תקציב' },
-      { to: '/app/gifts',      icon: '🎁', label: 'מתנות' },
-    ]
-  },
-  {
-    label: 'יום החתונה',
-    items: [
-      { to: '/app/seating',    icon: '🪑', label: 'סידורי הושבה' },
-      { to: '/app/cards',      icon: '🃏', label: 'כרטיסי הושבה' },
-      { to: '/app/tasks',      icon: '✅', label: 'משימות' },
-      { to: '/app/timeline',   icon: '📅', label: 'ציר זמן' },
-    ]
-  },
-  {
-    label: 'תקשורת',
-    items: [
-      { to: '/app/whatsapp',            icon: '💬', label: 'WhatsApp' },
-      { to: '/app/vendors',             icon: '🏪', label: 'ספקים' },
-      { to: '/app/vendors/suggestions', icon: '✨', label: 'הצעות ספקים' },
-    ]
-  }
+const mainNav = [
+  { icon: '🏠', label: 'סקירה כללית', path: '/app/dashboard' },
+  { icon: '👥', label: 'אורחים',       path: '/app/guests' },
+  { icon: '🏢', label: 'ספקים',        path: '/app/vendors' },
+  { icon: '💰', label: 'תקציב',        path: '/app/budget' },
+  { icon: '📋', label: 'RSVP',         path: '/app/rsvp-links' },
 ]
 
-const routeTitles = {
-  '/app/dashboard':            'דאשבורד',
-  '/app/guests':               'רשימת אורחים',
-  '/app/budget':               'תקציב',
-  '/app/gifts':                'מתנות',
-  '/app/seating':              'סידורי הושבה',
-  '/app/cards':                'כרטיסי הושבה',
-  '/app/tasks':                'משימות',
-  '/app/timeline':             'ציר זמן',
-  '/app/whatsapp':             'WhatsApp',
-  '/app/vendors':              'ספקים',
-  '/app/notifications':        'התראות',
-  '/app/profile':              'הפרופיל שלנו',
-  '/app/vendors/suggestions':  'הצעות ספקים',
-  '/app/subscription/payment': 'תוכניות ומנוי',
-  '/app/settings':             'הגדרות',
-  '/app/settings/account':     'פרטי חשבון',
-  '/app/settings/subscription':'מנוי',
+const planningNav = [
+  { icon: '📅', label: 'ציר זמן',    path: '/app/timeline' },
+  { icon: '🪑', label: 'מפת ישיבה',  path: '/app/seating' },
+  { icon: '✅', label: 'משימות',      path: '/app/tasks' },
+  { icon: '🎁', label: 'מתנות',       path: '/app/gifts' },
+  { icon: '💬', label: 'WhatsApp',    path: '/app/whatsapp/send' },
+  { icon: '🎴', label: 'הזמנות',      path: '/app/invitations' },
+]
+
+const PAGE_TITLES = {
+  '/app/dashboard':     'סקירה כללית',
+  '/app/guests':        'אורחים',
+  '/app/vendors':       'ספקים',
+  '/app/budget':        'תקציב',
+  '/app/rsvp-links':    'לינקי RSVP',
+  '/app/timeline':      'ציר זמן',
+  '/app/seating':       'מפת ישיבה',
+  '/app/tasks':         'משימות',
+  '/app/gifts':         'מתנות',
+  '/app/whatsapp/send': 'WhatsApp',
+  '/app/whatsapp':      'WhatsApp',
+  '/app/invitations':   'הזמנות',
+  '/app/settings':      'הגדרות',
 }
 
-const currentPageTitle = computed(() => {
-  const path = route.path.replace(/\/$/, '')
-  return routeTitles[path] || 'יאללה חתונה'
+const currentPageTitle = computed(() => PAGE_TITLES[route.path] || 'יאללה')
+
+const daysLeft = computed(() => {
+  if (!auth.user?.weddingDate) return null
+  const ms = new Date(auth.user.weddingDate) - new Date()
+  const d  = Math.ceil(ms / (1000 * 60 * 60 * 24))
+  return d > 0 ? d : null
 })
 
 const initials = computed(() => {
-  if (!auth.user) return '?'
-  const n1 = auth.user.name1?.[0] || ''
-  const n2 = auth.user.name2?.[0] || ''
+  const n1 = auth.user?.name1?.[0] || ''
+  const n2 = auth.user?.name2?.[0] || ''
   return (n1 + n2).toUpperCase()
 })
 
-const daysUntilWedding = computed(() => {
-  if (!auth.user?.weddingDate) return null
-  const diff = new Date(auth.user.weddingDate) - new Date()
-  return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)))
+const formattedWeddingDate = computed(() => {
+  if (!auth.user?.weddingDate) return ''
+  return new Date(auth.user.weddingDate).toLocaleDateString('he-IL', {
+    month: 'short',
+    year: 'numeric',
+  })
 })
-
-async function handleLogout() {
-  await auth.logout()
-  router.push('/login')
-}
-
-function checkMobile() {
-  isMobile.value = window.innerWidth < 768
-  if (isMobile.value) collapsed.value = false
-}
-
-async function fetchUnreadCount() {
-  try {
-    const res = await api.get('/notifications')
-    unreadNotifCount.value = res.data.unreadCount || 0
-  } catch {}
-}
-
-onMounted(() => {
-  checkMobile()
-  window.addEventListener('resize', checkMobile)
-  fetchUnreadCount()
-})
-onUnmounted(() => window.removeEventListener('resize', checkMobile))
 </script>
 
 <style scoped>
-/* ── Shell Layout ── */
+/* ─────────────────────────────────────────────
+   SHELL
+───────────────────────────────────────────── */
 .app-shell {
   display: flex;
   min-height: 100vh;
-  background: var(--color-bg);
   direction: rtl;
-  overflow-x: hidden;
-  max-width: 100vw;
+  background: #F0F2F5;
 }
 
-/* ── Sidebar ── */
+/* ─────────────────────────────────────────────
+   SIDEBAR
+───────────────────────────────────────────── */
 .sidebar {
-  width: var(--sidebar-width);
-  background: var(--color-navy);
+  width: 240px;
+  background: #FFFFFF;
+  border-left: 1px solid #EAEAEA;
+  height: 100vh;
+  position: fixed;
+  right: 0;
+  top: 0;
   display: flex;
   flex-direction: column;
-  position: fixed;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 200;
-  transition: width var(--transition), transform var(--transition);
-  overflow: hidden;
+  z-index: 100;
 }
 
-.app-shell.sidebar-collapsed .sidebar {
-  width: 72px;
-}
-
-/* ── Sidebar Header ── */
-.sidebar-header {
-  height: var(--topbar-height);
+/* Logo */
+.sidebar-logo {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 0 var(--space-4);
-  border-bottom: 1px solid rgba(255,255,255,0.08);
+  gap: 10px;
+  padding: 20px 20px 16px;
+  border-bottom: 1px solid #EAEAEA;
   flex-shrink: 0;
 }
+.logo-icon { font-size: 22px; }
+.logo-text {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 26px;
+  font-weight: 700;
+  color: #FF407D;
+}
 
-.brand {
+/* Couple badge */
+.couple-badge {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
-  overflow: hidden;
-}
-
-.brand-logo {
-  font-size: 1.6rem;
+  gap: 10px;
+  padding: 12px 16px;
+  margin: 10px 12px 4px;
+  background: #FFF0F5;
+  border-radius: 16px;
+  border: 1px solid #FFD6E7;
   flex-shrink: 0;
 }
-
-.brand-name {
-  font-size: var(--font-size-lg);
+.couple-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #FF407D;
+  color: white;
+  font-size: 12px;
   font-weight: 800;
-  color: #fff;
-  white-space: nowrap;
-}
-
-.collapse-btn {
-  color: rgba(255,255,255,0.5);
-  flex-shrink: 0;
-}
-
-.collapse-btn:hover {
-  color: #fff;
-  background: rgba(255,255,255,0.1) !important;
-}
-
-.collapse-btn .icon {
-  font-size: 1.2rem;
-  line-height: 1;
-}
-
-/* ── User card ── */
-.sidebar-user {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-4);
-  border-bottom: 1px solid rgba(255,255,255,0.08);
-  flex-shrink: 0;
-  overflow: hidden;
-}
-
-.user-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: var(--radius-full);
-  background: linear-gradient(135deg, var(--color-primary), #ff6b9d);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 800;
-  font-size: var(--font-size-sm);
-  color: #fff;
   flex-shrink: 0;
 }
+.couple-name { font-size: 13px; font-weight: 700; color: #1B3C73; }
+.couple-date { font-size: 11px; color: #888; margin-top: 1px; }
 
-.user-avatar.sm {
-  width: 34px;
-  height: 34px;
-  font-size: var(--font-size-xs);
-}
-
-.user-info {
-  overflow: hidden;
-}
-
-.user-names {
-  font-size: var(--font-size-sm);
-  font-weight: 700;
-  color: #fff;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.user-date {
-  font-size: var(--font-size-xs);
-  color: var(--color-primary);
-  margin-top: 2px;
-  white-space: nowrap;
-}
-
-/* ── Navigation ── */
+/* Nav */
 .sidebar-nav {
   flex: 1;
+  padding: 8px 0;
   overflow-y: auto;
-  overflow-x: hidden;
-  padding: var(--space-4) var(--space-3);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
   scrollbar-width: thin;
-  scrollbar-color: rgba(233,30,140,0.35) transparent;
+  scrollbar-color: #EAEAEA transparent;
 }
-
 .sidebar-nav::-webkit-scrollbar { width: 3px; }
-.sidebar-nav::-webkit-scrollbar-track { background: transparent; }
-.sidebar-nav::-webkit-scrollbar-thumb {
-  background: rgba(233,30,140,0.35);
-  border-radius: var(--radius-full);
-}
-.sidebar-nav::-webkit-scrollbar-thumb:hover {
-  background: rgba(233,30,140,0.6);
-}
+.sidebar-nav::-webkit-scrollbar-thumb { background: #EAEAEA; border-radius: 2px; }
 
-.nav-group {
-  margin-bottom: var(--space-4);
-}
+.nav-section { margin-bottom: 4px; }
 
-.nav-group-label {
-  font-size: var(--font-size-xs);
+.nav-section-label {
+  font-size: 10px;
   font-weight: 700;
-  color: rgba(255,255,255,0.35);
+  color: #FF407D;
+  letter-spacing: 1.2px;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
-  padding: 0 var(--space-3);
-  margin-bottom: var(--space-2);
-  white-space: nowrap;
+  padding: 10px 20px 4px;
 }
 
 .nav-item {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
-  padding: 10px var(--space-3);
-  border-radius: var(--radius);
-  font-size: var(--font-size-sm);
-  font-weight: 600;
-  color: rgba(255,255,255,0.65);
-  transition: all var(--transition-fast);
-  cursor: pointer;
-  white-space: nowrap;
-  overflow: hidden;
-  background: none;
-  border: none;
-  width: 100%;
-  text-align: right;
+  gap: 10px;
+  padding: 9px 12px 9px 16px;
+  margin: 1px 8px;
+  border-radius: 10px;
+  color: #4B5563;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.12s;
 }
-
 .nav-item:hover {
-  background: rgba(255,255,255,0.08);
-  color: #fff;
+  background: #F5F6FA;
+  color: #1B3C73;
 }
-
 .nav-item.router-link-active {
-  background: rgba(233,30,140,0.2);
-  color: #fff;
-  border-left: 3px solid var(--color-primary);
+  background: #FFF0F5;
+  color: #FF407D;
+  font-weight: 700;
 }
-
 .nav-icon {
-  font-size: 1.1rem;
-  flex-shrink: 0;
-  width: 24px;
+  font-size: 16px;
+  min-width: 20px;
   text-align: center;
 }
 
-.nav-label {
-  flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.nav-badge {
-  font-size: var(--font-size-xs);
-  font-weight: 700;
-  padding: 2px 6px;
-  border-radius: var(--radius-full);
-}
-
-.badge-pink {
-  background: var(--color-primary-light);
-  color: var(--color-primary);
-}
-
-/* ── Sidebar footer ── */
+/* Footer */
 .sidebar-footer {
-  padding: var(--space-3);
-  border-top: 1px solid rgba(255,255,255,0.08);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
+  padding: 12px;
+  border-top: 1px solid #EAEAEA;
+  flex-shrink: 0;
 }
+.settings-link { margin-bottom: 4px; }
 
 .logout-btn {
-  color: rgba(255,100,100,0.7) !important;
+  width: 100%;
+  margin-top: 4px;
+  padding: 8px;
+  border: 1px solid #EAEAEA;
+  border-radius: 10px;
+  background: white;
+  color: #6B7280;
+  font-family: Heebo, sans-serif;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.12s;
 }
-
 .logout-btn:hover {
-  color: #ff6b6b !important;
-  background: rgba(255,100,100,0.1) !important;
+  background: #F5F6FA;
+  color: #374151;
 }
 
-/* ── App Body ── */
-.app-body {
+/* ─────────────────────────────────────────────
+   MAIN AREA
+───────────────────────────────────────────── */
+.main-area {
   flex: 1;
-  margin-right: var(--sidebar-width);
+  margin-right: 240px;
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
-  transition: margin-right var(--transition);
 }
 
-.app-shell.sidebar-collapsed .app-body {
-  margin-right: 72px;
-}
-
-/* ── Topbar ── */
-.topbar {
-  height: var(--topbar-height);
-  background: var(--color-bg-card);
-  border-bottom: 1px solid var(--color-border);
+/* Page header */
+.page-header {
   display: flex;
-  align-items: center;
-  padding: 0 var(--space-6);
-  gap: var(--space-4);
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 28px 32px 20px;
+  background: #FFFFFF;
+  border-bottom: 1px solid #EAEAEA;
   position: sticky;
   top: 0;
-  z-index: 100;
-  box-shadow: var(--shadow-xs);
+  z-index: 50;
 }
-
-.menu-btn {
-  display: none;
-  color: var(--color-text);
-}
-
-.menu-btn .icon {
-  font-size: 1.2rem;
-}
-
-.topbar-title {
-  flex: 1;
-}
-
 .page-title {
-  font-size: var(--font-size-xl);
-  font-weight: 800;
-  color: var(--color-navy);
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 28px;
+  font-weight: 700;
+  color: #1B3C73;
+  margin: 0 0 4px;
+  line-height: 1.1;
+}
+.page-subtitle {
+  font-size: 13px;
+  color: #888;
+  margin: 0;
+}
+.page-subtitle strong {
+  color: #FF407D;
+  font-weight: 700;
 }
 
-.topbar-actions {
-  display: flex;
+.btn-new-task {
+  display: inline-flex;
   align-items: center;
-  gap: var(--space-3);
-}
-
-.notif-btn {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  border-radius: var(--radius);
-  transition: background var(--transition-fast);
+  gap: 6px;
+  background: #FF407D;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 24px;
+  font-size: 14px;
+  font-weight: 700;
+  font-family: Heebo, sans-serif;
   text-decoration: none;
+  transition: opacity 0.15s;
+  white-space: nowrap;
+  border: none;
 }
-.notif-btn:hover { background: var(--color-bg-subtle); }
-.bell-icon { font-size: 1.2rem; line-height: 1; }
-.notif-badge {
-  position: absolute;
-  top: -2px;
-  left: -2px;
-  min-width: 18px;
-  height: 18px;
-  background: var(--color-primary);
-  color: #fff;
-  font-size: 10px;
-  font-weight: 800;
-  border-radius: var(--radius-full);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0 4px;
-  box-shadow: 0 0 0 2px var(--color-bg-card);
-  animation: pulse-badge 2s infinite;
-}
-@keyframes pulse-badge {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.1); }
-}
+.btn-new-task:hover { opacity: 0.88; }
 
-.topbar-user {
-  display: flex;
-  align-items: center;
-}
-
-/* ── Main content ── */
-.app-main {
+/* Page body */
+.page-body {
   flex: 1;
-  padding: var(--space-8) var(--space-6);
-  max-width: var(--content-max);
-  margin: 0 auto;
+  padding: 24px 32px;
+  max-width: 1200px;
   width: 100%;
 }
 
-/* ── Overlay (mobile) ── */
-.sidebar-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.5);
-  z-index: 150;
-}
-
-/* ── Label transition ── */
-.label-enter-active,
-.label-leave-active {
-  transition: opacity 180ms ease, transform 180ms ease;
-}
-
-.label-enter-from,
-.label-leave-to {
-  opacity: 0;
-  transform: translateX(6px);
-}
-
-/* ── Page transition ── */
+/* ─────────────────────────────────────────────
+   PAGE TRANSITION
+───────────────────────────────────────────── */
 .page-enter-active,
 .page-leave-active {
-  transition: opacity 200ms ease, transform 200ms ease;
+  transition: opacity 180ms ease, transform 180ms ease;
 }
-
 .page-enter-from {
   opacity: 0;
-  transform: translateY(8px);
+  transform: translateY(6px);
 }
-
 .page-leave-to {
   opacity: 0;
   transform: translateY(-4px);
 }
 
-/* ── Mobile ── */
-@media (max-width: 767px) {
+/* ─────────────────────────────────────────────
+   MOBILE — bottom nav bar
+───────────────────────────────────────────── */
+@media (max-width: 768px) {
   .sidebar {
-    transform: translateX(100%);
-    width: var(--sidebar-width) !important;
-  }
-
-  .sidebar-mobile-open .sidebar {
-    transform: translateX(0);
-  }
-
-  .app-body {
-    margin-right: 0 !important;
-  }
-
-  .menu-btn {
     display: flex;
+    flex-direction: row;
+    width: 100%;
+    height: 65px;
+    bottom: 0;
+    top: auto;
+    right: 0;
+    left: 0;
+    border-top: 1px solid #EAEAEA;
+    border-left: none;
+    z-index: 200;
+    padding: 0;
+  }
+  .sidebar-logo,
+  .couple-badge,
+  .sidebar-footer {
+    display: none;
+  }
+  .sidebar-nav {
+    flex-direction: row;
+    display: flex;
+    width: 100%;
+    padding: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+  }
+  .sidebar-nav::-webkit-scrollbar { display: none; }
+  .nav-section {
+    display: flex;
+    flex-direction: row;
+    flex: 1;
+  }
+  .nav-section-label { display: none; }
+  .nav-item {
+    flex: 1;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 8px 4px;
+    margin: 0;
+    border-radius: 0;
+    font-size: 10px;
+    gap: 3px;
+    min-width: 52px;
+  }
+  .nav-icon { font-size: 20px; min-width: unset; }
+  .nav-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 52px; }
+
+  .main-area {
+    margin-right: 0;
+    margin-bottom: 65px;
   }
 
-  .app-main {
-    padding: var(--space-4);
+  .page-header {
+    padding: 16px 16px 12px;
   }
-
-  /* Ensure topbar + hamburger always above sidebar overlay */
-  .topbar {
-    z-index: 300;
-  }
-
-  .menu-btn {
-    position: relative;
-    z-index: 300;
-  }
+  .page-title { font-size: 22px; }
+  .page-body { padding: 16px; }
 }
 </style>

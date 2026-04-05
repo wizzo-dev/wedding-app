@@ -7,14 +7,6 @@
 </template>
 
 <script setup>
-import { onMounted } from 'vue'
-import { useAuthStore } from '@/stores/auth'
-
-const auth = useAuthStore()
-
-onMounted(async () => {
-  // Initialize auth: attempt silent refresh + fetchMe.
-  // Sets auth.authReady = true when done so the router guard can proceed.
-  await auth.init()
-})
+// auth.init() is called in main.js before mount — authReady is guaranteed by the time
+// any route guard or component runs. No need to call it here again.
 </script>

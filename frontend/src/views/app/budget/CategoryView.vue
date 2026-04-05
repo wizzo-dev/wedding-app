@@ -58,7 +58,7 @@
           <div v-for="exp in expenses" :key="exp.id" class="expense-card card card-body">
             <div class="exp-main">
               <div class="exp-info">
-                <div class="exp-vendor">{{ exp.vendor || '—' }}</div>
+                <div class="exp-vendor">{{ exp.vendorName || exp.vendor || '—' }}</div>
                 <div class="exp-desc">{{ exp.description || '—' }}</div>
               </div>
               <div class="exp-right">
@@ -85,7 +85,7 @@
           <div class="modal-body">
             <div class="form-group">
               <label class="form-label">ספק</label>
-              <input v-model="newExp.vendor" type="text" class="form-input" placeholder="לדוגמה: פוטוגרפיה אבן" />
+              <input v-model="newExp.vendorName" type="text" class="form-input" placeholder="לדוגמה: פוטוגרפיה אבן" />
             </div>
             <div class="form-group">
               <label class="form-label">תיאור</label>
@@ -132,7 +132,7 @@ const expenses = ref([])
 const showAddModal = ref(false)
 const adding = ref(false)
 const addError = ref(null)
-const newExp = ref({ vendor: '', description: '', amount: '', isPaid: false })
+const newExp = ref({ vendorName: '', description: '', amount: '', isPaid: false })
 
 const totalSpent = computed(() => expenses.value.reduce((s, e) => s + (e.amount || 0), 0))
 const remaining = computed(() => (category.value?.allocatedAmount || 0) - totalSpent.value)
@@ -171,13 +171,13 @@ async function addExpense() {
   adding.value = true
   try {
     await api.post(`/budget/categories/${id}/expenses`, {
-      vendor: newExp.value.vendor,
+      vendorName: newExp.value.vendorName,
       description: newExp.value.description,
       amount: parseFloat(newExp.value.amount),
       isPaid: newExp.value.isPaid
     })
     showAddModal.value = false
-    newExp.value = { vendor: '', description: '', amount: '', isPaid: false }
+    newExp.value = { vendorName: '', description: '', amount: '', isPaid: false }
     await loadData()
   } catch (e) {
     addError.value = e.response?.data?.message || 'שגיאה בשמירה'
@@ -267,7 +267,7 @@ onMounted(loadData)
 .toggle-switch input:checked + .toggle-slider { background: var(--color-primary); }
 .toggle-switch input:checked + .toggle-slider::before { transform: translateX(20px); }
 
-.btn { padding: var(--space-3) var(--space-5); border-radius: var(--radius); border: none; font-size: var(--font-size-sm); font-weight: 600; cursor: pointer; transition: all var(--transition-fast); }
+.btn { padding: var(--space-3) var(--space-5); border-radius: var(--radius-xl); border: none; font-size: var(--font-size-sm); font-weight: 600; cursor: pointer; transition: all var(--transition-fast); }
 .btn-primary { background: var(--color-primary); color: white; }
 .btn-primary:hover { background: var(--color-primary-hover); }
 .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }

@@ -124,7 +124,7 @@
 </template>
 <script setup>
 import { ref, computed, reactive, onMounted } from 'vue'
-import axios from 'axios'
+import api from '@/composables/useApi'
 const items = ref([])
 const loading = ref(true)
 const error = ref(null)
@@ -155,7 +155,7 @@ async function loadHistory() {
     if (filters.status)   params.status   = filters.status
     if (filters.dateFrom) params.dateFrom = filters.dateFrom
     if (filters.dateTo)   params.dateTo   = filters.dateTo
-    const { data } = await axios.get('/api/whatsapp/history', { params })
+    const { data } = await api.get('/whatsapp/messages', { params })
     items.value = data.items; totalPages.value = data.totalPages
   } catch (e) { error.value = e.response?.data?.error || e.message || 'שגיאה בטעינת הנתונים' }
   finally { loading.value = false }
@@ -178,7 +178,7 @@ function filteredResults(batch) {
 async function resendFailed(batch) {
   resending[batch.id] = true
   try {
-    const { data } = await axios.post('/api/whatsapp/resend/' + batch.id)
+    const { data } = await api.post('/whatsapp/resend/' + batch.id)
     showToast('נשלחו מחדש ' + data.resent + ' הודעות בהצלחה', 'success')
     await loadHistory()
   } catch (e) { showToast(e.response?.data?.error || 'שגיאה בשליחה מחדש', 'error') }
@@ -204,8 +204,8 @@ onMounted(loadHistory)
 .form-input { height: 40px; padding: 0 12px; border-radius: var(--radius); border: 1.5px solid var(--color-border); background: var(--color-bg-subtle); font-size: var(--font-size-sm); font-family: var(--font); color: var(--color-text); transition: border-color var(--transition-fast); }
 .form-input:focus { outline: none; border-color: var(--color-primary); }
 .history-list { display: flex; flex-direction: column; gap: var(--space-4); }
-.batch-card { border-radius: var(--radius-lg); overflow: hidden; transition: box-shadow var(--transition); }
-.batch-card:hover { box-shadow: var(--shadow-lg); }
+.batch-card { border-radius: var(--radius-lg); overflow: hidden; transition: border-color var(--transition); }
+.batch-card:hover { border-color: var(--color-primary); }
 .batch-header { display: flex; align-items: center; gap: var(--space-4); padding: var(--space-5) var(--space-6); cursor: pointer; user-select: none; flex-wrap: wrap; }
 .batch-main { display: flex; align-items: center; gap: var(--space-4); flex: 1; min-width: 0; }
 .batch-date { display: flex; flex-direction: column; align-items: flex-end; min-width: 90px; }
@@ -256,7 +256,7 @@ onMounted(loadHistory)
 .badge-sent { background: var(--color-success-bg); color: var(--color-success); }
 .badge-failed { background: var(--color-error-bg); color: var(--color-error); }
 .pagination { display: flex; justify-content: center; gap: var(--space-2); margin-top: var(--space-8); }
-.page-btn { width: 36px; height: 36px; border-radius: var(--radius); border: 1.5px solid var(--color-border); background: var(--color-bg-card); font-size: var(--font-size-sm); font-weight: 600; cursor: pointer; transition: all var(--transition-fast); display: flex; align-items: center; justify-content: center; }
+.page-btn { width: 36px; height: 36px; border-radius: var(--radius-xl); border: 1.5px solid var(--color-border); background: var(--color-bg-card); font-size: var(--font-size-sm); font-weight: 600; cursor: pointer; transition: all var(--transition-fast); display: flex; align-items: center; justify-content: center; }
 .page-btn:hover:not(:disabled):not(.dots) { border-color: var(--color-primary); color: var(--color-primary); }
 .page-btn.active { background: var(--color-primary); border-color: var(--color-primary); color: #fff; }
 .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }

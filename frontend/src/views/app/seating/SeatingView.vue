@@ -840,7 +840,7 @@ onMounted(loadData)
   user-select: none;
 }
 .guest-chip:hover { border-color: var(--color-primary); background: var(--color-primary-light); }
-.guest-chip.selected { border-color: var(--color-primary); background: var(--color-primary-light); box-shadow: 0 0 0 2px var(--color-primary-light); }
+.guest-chip.selected { border-color: var(--color-primary); background: var(--color-primary-light); border: 2px solid var(--color-primary); }
 .guest-chip:active { cursor: grabbing; }
 .guest-name { font-weight: 600; color: var(--color-navy); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .guest-meta { font-size: 10px; color: var(--color-text-muted); white-space: nowrap; }

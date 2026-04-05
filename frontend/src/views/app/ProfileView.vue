@@ -394,12 +394,12 @@ onMounted(loadProfile)
   color: var(--color-text);
   background: var(--color-bg);
   outline: none;
-  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  transition: border-color var(--transition-fast);
   text-align: right;
 }
 .form-input:focus {
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px var(--color-primary-light);
+  border: 2px solid var(--color-primary);
 }
 .form-hint { font-size: var(--font-size-xs); color: var(--color-text-muted); margin-top: 2px; }
 .form-error { font-size: var(--font-size-xs); color: var(--color-error); }

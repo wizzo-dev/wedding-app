@@ -1,5 +1,4 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { watch } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 
 const routes = [
@@ -7,6 +6,7 @@ const routes = [
   { path: '/',           name: 'Landing',     component: () => import('@/views/LandingView.vue'), meta: { public: true } },
   { path: '/rsvp/:code?', name: 'Rsvp',        component: () => import('@/views/RsvpView.vue'),    meta: { public: true } },
   { path: '/gift/:userId', name: 'GiftPublic', component: () => import('@/views/GiftPublicView.vue'), meta: { public: true } },
+  { path: '/invitation/:id', name: 'InvitationPublic', component: () => import('@/views/InvitationPublicView.vue'), meta: { public: true } },
 
   // ── Auth ─────────────────────────────────────────────────────────────────────
   { path: '/login',          name: 'Login',         component: () => import('@/views/auth/LoginView.vue'),    meta: { guest: true } },
@@ -29,14 +29,15 @@ const routes = [
       { path: 'budget',                 name: 'Budget',         component: () => import('@/views/app/budget/BudgetView.vue') },
       { path: 'budget/category/:id',    name: 'BudgetCategory', component: () => import('@/views/app/budget/CategoryView.vue') },
 
-      // Guests
+      // Guests (static routes before dynamic)
       { path: 'guests',                 name: 'Guests',         component: () => import('@/views/app/GuestsListView.vue') },
-      { path: 'guests/:id',             name: 'GuestCard',      component: () => import('@/views/app/guests/GuestView.vue') },
       { path: 'guests/import',          name: 'GuestImport',    component: () => import('@/views/app/guests/ImportView.vue') },
       { path: 'guests/stats',           name: 'GuestStats',     component: () => import('@/views/app/guests/StatsView.vue') },
+      { path: 'guests/:id',             name: 'GuestCard',      component: () => import('@/views/app/guests/GuestView.vue') },
 
       // WhatsApp
       { path: 'whatsapp',               redirect: '/app/whatsapp/connect' },
+      { path: 'whatsapp/overview',      name: 'WaOverview',     component: () => import('@/views/app/whatsapp/WhatsappView.vue') },
       { path: 'whatsapp/connect',       name: 'WaConnect',      component: () => import('@/views/app/whatsapp/WhatsAppConnectView.vue') },
       { path: 'whatsapp/templates',     name: 'WaTemplates',    component: () => import('@/views/app/whatsapp/TemplatesView.vue') },
       { path: 'whatsapp/send',          name: 'WaSend',         component: () => import('@/views/app/whatsapp/SendView.vue') },
@@ -44,6 +45,7 @@ const routes = [
 
       // Seating
       { path: 'seating',                name: 'Seating',        component: () => import('@/views/app/seating/SeatingView.vue') },
+      { path: 'seating/map',            name: 'SeatingMap',     component: () => import('@/views/app/SeatingMapView.vue') },
       { path: 'seating/settings',       name: 'HallSettings',   component: () => import('@/views/app/HallSettingsView.vue') },
 
       // Cards
@@ -72,6 +74,15 @@ const routes = [
       // Subscription / Payment
       { path: 'subscription/payment',   name: 'PaymentPlans',   component: () => import('@/views/app/PaymentView.vue') },
 
+      // Invitations
+      { path: 'invitations',            name: 'Invitations',        component: () => import('@/views/app/invitations/InvitationsListView.vue') },
+      { path: 'invitations/new',        name: 'InvitationNew',      component: () => import('@/views/app/invitations/TemplatePickerView.vue') },
+      { path: 'invitations/builder/:templateId', name: 'InvitationBuilder', component: () => import('@/views/app/invitations/InvitationBuilderView.vue') },
+      { path: 'invitations/edit/:id',   name: 'InvitationEdit',     component: () => import('@/views/app/invitations/InvitationBuilderView.vue') },
+
+      // RSVP Links
+      { path: 'rsvp-links', name: 'RsvpLinks', component: () => import('@/views/app/RsvpLinksView.vue') },
+
       // Settings
       { path: 'settings',               name: 'Settings',       component: () => import('@/views/app/settings/SettingsView.vue') },
       { path: 'settings/account',       name: 'Account',        component: () => import('@/views/app/settings/AccountView.vue') },
@@ -89,21 +100,9 @@ const router = createRouter({
   scrollBehavior: () => ({ top: 0 })
 })
 
-router.beforeEach(async (to, from, next) => {
+router.beforeEach((to, from, next) => {
   const auth = useAuthStore()
-
-  // Wait until auth.init() has completed (prevents redirect to /login on hard reload)
-  if (!auth.authReady) {
-    await new Promise(resolve => {
-      const stop = watch(
-        () => auth.authReady,
-        (ready) => {
-          if (ready) { stop(); resolve() }
-        }
-      )
-    })
-  }
-
+  // auth.init() runs in main.js before mount — authReady is always true here
   if (to.meta.requiresAuth && !auth.isLoggedIn) return next('/login')
   if (to.meta.guest && auth.isLoggedIn) return next('/app/dashboard')
   next()

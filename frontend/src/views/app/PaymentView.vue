@@ -306,7 +306,7 @@ onMounted(loadPlans)
   transform: scale(1.02);
 }
 .plan-card.current { border-color: var(--color-success); }
-.plan-card.selected:not(.current) { border-color: var(--color-primary); box-shadow: 0 0 0 3px var(--color-primary-light); }
+.plan-card.selected:not(.current) { border-color: var(--color-primary); border-width: 2px; background: var(--color-primary-light); }
 
 .popular-badge {
   position: absolute;

@@ -1,5 +1,6 @@
 import 'dotenv/config'
 import Fastify from 'fastify'
+import { prisma } from './models/db.js'
 import helmet from '@fastify/helmet'
 import cors from '@fastify/cors'
 import rateLimit from '@fastify/rate-limit'
@@ -32,6 +33,7 @@ import rsvpRoutes from './routes/rsvp.js'
 
 import notificationRoutes from './routes/notifications.js'
 import vendorSuggestionsRoutes from './routes/vendorSuggestions.js'
+import invitationRoutes from './routes/invitations.js'
 
 const app = Fastify({ logger: process.env.NODE_ENV === 'development' })
 
@@ -116,9 +118,52 @@ app.register(statsRoutes,           { prefix: '/api/stats' })
 app.register(notificationRoutes,    { prefix: '/api/notifications' })
 app.register(subscriptionRoutes,    { prefix: '/api/subscription' })
 app.register(rsvpRoutes,           { prefix: '/api/rsvp' })
+app.register(invitationRoutes,     { prefix: '/api/invitations' })
+
+// ── RSVP OG Tags — serve index.html with injected Open Graph meta tags ───────
+const frontendDist = join(__dirname, '../../frontend/dist')
+
+app.get('/rsvp/:code', async (req, reply) => {
+  const { code } = req.params
+  try {
+    // Try guest token first, then user rsvpToken
+    const guest = await prisma.guest.findFirst({ where: { guestToken: code }, include: { user: true } })
+    let user = guest?.user || await prisma.user.findUnique({ where: { rsvpToken: code } })
+    if (!user) {
+      // Not found — fall through to SPA (will show 404 in Vue)
+      const indexPath = join(frontendDist, 'index.html')
+      return reply.type('text/html').send(readFileSync(indexPath))
+    }
+    const names = [user.name1, user.name2].filter(Boolean).join(' ❤️ ')
+    const date  = user.weddingDate ? new Date(user.weddingDate).toLocaleDateString('he-IL', { year: 'numeric', month: 'long', day: 'numeric' }) : ''
+    const venue = user.venue || ''
+    const title = names ? `הזמנה לחתונה — ${names}` : 'הזמנה לחתונה'
+    const desc  = [date && `📅 ${date}`, venue && `📍 ${venue}`, 'לחץ לאישור הגעה'].filter(Boolean).join(' | ')
+    const image = user.profileImageUrl || 'https://aware-carries-protecting-bay.trycloudflare.com/og-default.jpg'
+    const url   = `https://aware-carries-protecting-bay.trycloudflare.com/rsvp/${code}`
+
+    const ogTags = `
+    <meta property="og:title" content="${title}" />
+    <meta property="og:description" content="${desc}" />
+    <meta property="og:image" content="${image}" />
+    <meta property="og:url" content="${url}" />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="he_IL" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="${title}" />
+    <meta name="twitter:description" content="${desc}" />
+    <meta name="twitter:image" content="${image}" />`
+
+    const indexPath = join(frontendDist, 'index.html')
+    const html = readFileSync(indexPath, 'utf8').replace('</head>', `${ogTags}\n  </head>`)
+    reply.type('text/html').send(html)
+  } catch(e) {
+    const indexPath = join(frontendDist, 'index.html')
+    reply.type('text/html').send(readFileSync(indexPath))
+  }
+})
 
 // ── Static Frontend ───────────────────────────────────────────────────────────
-const frontendDist = join(__dirname, '../../frontend/dist')
 app.register(staticFiles, {
   root: frontendDist,
   prefix: '/'

@@ -244,7 +244,7 @@ onMounted(loadProfile)
 .settings-content { display: flex; flex-direction: column; gap: var(--space-5); }
 
 .settings-section {
-  transition: box-shadow var(--transition);
+  transition: border-color var(--transition);
 }
 .settings-section:hover {
   box-shadow: var(--shadow);
@@ -294,14 +294,14 @@ onMounted(loadProfile)
   color: var(--color-text);
   background: var(--color-bg);
   outline: none;
-  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  transition: border-color var(--transition-fast);
   text-align: right;
   direction: rtl;
 }
 .form-input:focus {
   border-color: var(--color-primary);
   background: #fff;
-  box-shadow: 0 0 0 3px var(--color-primary-light);
+  border: 2px solid var(--color-primary);
 }
 .form-error {
   font-size: var(--font-size-xs);

@@ -318,7 +318,7 @@ function toggleFaq(idx) {
 .plan-card {
   position: relative;
   overflow: hidden;
-  transition: box-shadow var(--transition), transform var(--transition);
+  transition: transform var(--transition);
 }
 .plan-card:hover {
   box-shadow: var(--shadow-lg);
@@ -458,7 +458,7 @@ function toggleFaq(idx) {
 .faq-item {
   padding: 0;
   cursor: pointer;
-  transition: box-shadow var(--transition), transform var(--transition);
+  transition: transform var(--transition);
 }
 .faq-item:hover { box-shadow: var(--shadow); transform: translateY(-1px); }
 .faq-question {

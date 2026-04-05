@@ -287,7 +287,7 @@ onMounted(loadBudget)
 
 .categories-list { display: flex; flex-direction: column; gap: var(--space-3); }
 .category-card { display: block; text-decoration: none; color: inherit; transition: transform var(--transition-fast), box-shadow var(--transition-fast); }
-.category-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+.category-card:hover { transform: translateY(-2px); border-color: var(--color-primary); }
 
 .cat-header { display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-3); }
 .cat-icon-wrap { width: 44px; height: 44px; border-radius: var(--radius); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
@@ -319,7 +319,7 @@ onMounted(loadBudget)
 .form-error-msg { color: var(--color-error); font-size: var(--font-size-sm); }
 
 .icon-picker { display: flex; flex-wrap: wrap; gap: var(--space-2); }
-.icon-btn { width: 40px; height: 40px; border-radius: var(--radius); border: 2px solid var(--color-border); background: white; font-size: 1.2rem; cursor: pointer; transition: border-color var(--transition-fast); display: flex; align-items: center; justify-content: center; }
+.icon-btn { width: 40px; height: 40px; border-radius: var(--radius-xl); border: 2px solid var(--color-border); background: white; font-size: 1.2rem; cursor: pointer; transition: border-color var(--transition-fast); display: flex; align-items: center; justify-content: center; }
 .icon-btn.active { border-color: var(--color-primary); background: var(--color-primary-light); }
 .icon-btn:hover { border-color: var(--color-primary); }
 
@@ -327,7 +327,7 @@ onMounted(loadBudget)
 .color-btn { width: 32px; height: 32px; border-radius: 50%; border: 3px solid transparent; cursor: pointer; transition: border-color var(--transition-fast); }
 .color-btn.active { border-color: var(--color-navy); }
 
-.btn { padding: var(--space-3) var(--space-5); border-radius: var(--radius); border: none; font-size: var(--font-size-sm); font-weight: 600; cursor: pointer; transition: all var(--transition-fast); }
+.btn { padding: var(--space-3) var(--space-5); border-radius: var(--radius-xl); border: none; font-size: var(--font-size-sm); font-weight: 600; cursor: pointer; transition: all var(--transition-fast); }
 .btn-primary { background: var(--color-primary); color: white; }
 .btn-primary:hover { background: var(--color-primary-hover); }
 .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }

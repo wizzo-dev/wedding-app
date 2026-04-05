@@ -55,8 +55,8 @@ export default async function authRoutes(app) {
 
     reply.setCookie('refresh_token', refreshToken, {
       httpOnly: true,
-      secure: true,
-      sameSite: 'none',
+      secure: false,
+      sameSite: 'lax',
       maxAge: REFRESH_EXPIRES_MS / 1000,
       path: '/'
     })
@@ -91,8 +91,8 @@ export default async function authRoutes(app) {
 
     reply.setCookie('refresh_token', refreshToken, {
       httpOnly: true,
-      secure: true,
-      sameSite: 'none',
+      secure: false,
+      sameSite: 'lax',
       maxAge: REFRESH_EXPIRES_MS / 1000,
       path: '/'
     })
@@ -110,23 +110,14 @@ export default async function authRoutes(app) {
 
     const stored = await prisma.refreshToken.findUnique({ where: { token } })
     if (!stored || stored.expiresAt < new Date()) {
+      // Clean up expired token if exists
+      if (stored) await prisma.refreshToken.delete({ where: { token } }).catch(() => {})
       return reply.code(401).send({ error: 'INVALID_REFRESH_TOKEN' })
     }
 
-    // rotate: delete old, issue new
-    await prisma.refreshToken.delete({ where: { token } })
+    // No rotation — keep token valid until expiry (avoids lost-cookie race condition)
     const user = await prisma.user.findUnique({ where: { id: stored.userId } })
-
-    const accessToken  = app.jwt.sign({ userId: user.id, plan: user.plan })
-    const refreshToken = await createRefreshToken(user.id)
-
-    reply.setCookie('refresh_token', refreshToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'none',
-      maxAge: REFRESH_EXPIRES_MS / 1000,
-      path: '/'
-    })
+    const accessToken = app.jwt.sign({ userId: user.id, plan: user.plan })
 
     return { accessToken }
   })

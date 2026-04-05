@@ -1,7 +1,12 @@
 import { prisma } from '../models/db.js'
+import { randomBytes } from 'crypto'
 
 const RSVP_STATUSES = ['pending', 'confirmed', 'declined', 'maybe']
 const SIDES = ['חתן', 'כלה', 'משותף']
+
+function generateGuestToken() {
+  return randomBytes(4).toString('hex') // 8-char hex
+}
 
 // In-memory rate limit tracker for bulk import (userId → [timestamps])
 const bulkImportRateMap = new Map()
@@ -76,6 +81,7 @@ export default async function guestRoutes(app) {
         tableId: g.tableId,
         tableName: g.table?.name || null,
         giftAmount: g.giftAmount,
+        guestToken: g.guestToken,
         createdAt: g.createdAt
       })),
       stats
@@ -188,7 +194,8 @@ export default async function guestRoutes(app) {
         groupName: groupName || null,
         rsvpStatus: rsvpStatus && RSVP_STATUSES.includes(rsvpStatus) ? rsvpStatus : 'pending',
         numPeople: Number(numPeople) || 1,
-        notes: notes || null
+        notes: notes || null,
+        guestToken: generateGuestToken()
       }
     })
 

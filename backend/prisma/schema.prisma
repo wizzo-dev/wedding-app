@@ -20,6 +20,7 @@ model User {
   name1           String
   name2           String
   weddingDate     DateTime? @map("wedding_date")
+  weddingTime     String?   @map("wedding_time")
   venue           String?
   venueAddress    String?  @map("venue_address")
   profileImageUrl String?  @map("profile_image_url")
@@ -50,9 +51,12 @@ model User {
   giftWishes        GiftWish[]
   tasks             Task[]
   notifications     Notification[]
+  invitations       UserInvitation[]
+  groupLinks        GroupLink[]
 
   @@map("users")
 }
+
 
 model RefreshToken {
   id        Int      @id @default(autoincrement())
@@ -398,3 +402,44 @@ model Notification {
   @@map("notifications")
 }
 
+model InvitationTemplate {
+  id          Int      @id @default(autoincrement())
+  name        String
+  imageUrl    String   @map("image_url")
+  textZones   String   @map("text_zones")
+  isSystem    Boolean  @default(true) @map("is_system")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  invitations UserInvitation[]
+
+  @@map("invitation_templates")
+}
+
+model UserInvitation {
+  id          Int                @id @default(autoincrement())
+  userId      Int                @map("user_id")
+  templateId  Int                @map("template_id")
+  fields      String
+  customZones String?            @map("custom_zones")
+  font        String             @default("Heebo")
+  createdAt   DateTime           @default(now()) @map("created_at")
+  updatedAt   DateTime           @updatedAt @map("updated_at")
+
+  user     User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  template InvitationTemplate @relation(fields: [templateId], references: [id])
+
+  @@map("user_invitations")
+}
+
+
+model GroupLink {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  groupName String   @map("group_name")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, groupName])
+  @@map("group_links")
+}

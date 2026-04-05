@@ -1,29 +1,37 @@
-@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Heebo:wght@300;400;500;700;800&display=swap');
 
 /* ── Design Tokens ────────────────────────────────────────────────────────── */
 :root {
-  /* Brand Colors - based on designs */
-  --color-primary:        #E91E8C;   /* hot pink / magenta - CTA ראשי */
-  --color-primary-hover:  #C9177A;
-  --color-primary-light:  #FDE8F4;
-  --color-primary-bg:     #FFF5FB;
+  /* Core brand */
+  --color-primary:        #FF407D;   /* Vibrant pink */
+  --color-primary-hover:  #E0306A;
+  --color-primary-light:  #FFF0F5;
+  --color-primary-bg:     #FFF0F5;
 
-  --color-navy:           #1A1F36;   /* navy dark - secondary / text */
-  --color-overlay:        rgba(26,31,54,0.5);  /* modal backdrop navy */
-  --color-overlay-dark:   rgba(0,0,0,0.5);     /* modal backdrop dark */
-  --color-navy-mid:       #2D3454;
-  --color-navy-light:     #8B92B3;
+  --color-navy:           #1B3C73;   /* Deep navy */
+  --color-navy-mid:       #2A5298;
+  --color-navy-light:     #6B84B3;
+  --color-overlay:        rgba(27,60,115,0.5);
+  --color-overlay-dark:   rgba(0,0,0,0.5);
 
-  --color-bg:             #F5F5F7;   /* app background */
+  /* Backgrounds */
+  --color-bg:             #F0F2F5;   /* Light grey */
   --color-bg-card:        #FFFFFF;
-  --color-bg-subtle:      #F9F9FB;
+  --color-bg-sidebar:     #FFFFFF;   /* Light sidebar */
+  --color-bg-subtle:      #FAFAFA;
 
-  --color-text:           #1A1F36;
+  /* Typography */
+  --color-text:           #1B3C73;
   --color-text-muted:     #6B7280;
-  --color-text-light:     #B0B7C3;
+  --color-text-light:     #9CA3AF;
 
-  --color-border:         #E8E8EF;
-  --color-border-focus:   #E91E8C;
+  /* Borders */
+  --color-border:         #EAEAEA;
+  --color-border-strong:  #D1D5DB;
+  --color-border-focus:   #FF407D;
+
+  /* Accents */
+  --color-gold:           #C9A84C;
 
   /* Status */
   --color-success:        #22C55E;
@@ -31,12 +39,14 @@
   --color-warning:        #F59E0B;
   --color-warning-bg:     #FEF3C7;
   --color-error:          #EF4444;
+  --color-danger:         #EF4444;
   --color-error-bg:       #FEE2E2;
   --color-info:           #3B82F6;
   --color-info-bg:        #DBEAFE;
 
   /* Typography */
   --font:                 'Heebo', sans-serif;
+  --font-display:         'Cormorant Garamond', serif;
   --font-size-xs:         0.75rem;    /* 12px */
   --font-size-sm:         0.875rem;   /* 14px */
   --font-size-base:       1rem;       /* 16px */
@@ -63,18 +73,23 @@
   /* Border Radius */
   --radius-sm:   6px;
   --radius:      10px;
-  --radius-lg:   16px;
-  --radius-xl:   20px;
+  --radius-md:   12px;
+  --radius-lg:   18px;
+  --radius-xl:   24px;
   --radius-2xl:  28px;
   --radius-full: 9999px;
 
-  /* Shadows */
-  --shadow-xs:  0 1px 2px rgba(0,0,0,0.05);
-  --shadow-sm:  0 2px 8px rgba(26,31,54,0.06);
-  --shadow:     0 4px 20px rgba(26,31,54,0.10);
-  --shadow-lg:  0 8px 40px rgba(26,31,54,0.14);
-  --shadow-xl:  0 16px 60px rgba(26,31,54,0.18);
-  --shadow-pink: 0 4px 20px rgba(233,30,140,0.25);
+  /* Shadows — replaced with borders per design spec */
+  --shadow-xs:   none;
+  --shadow-sm:   none;
+  --shadow:      none;
+  --shadow-md:   none;
+  --shadow-lg:   none;
+  --shadow-xl:   none;
+  --shadow-pink: none;
+
+  /* Card radius */
+  --radius-card: 24px;
 
   /* Transitions */
   --transition-fast: 150ms ease;
@@ -83,8 +98,8 @@
 
   /* Layout */
   --topbar-height:   64px;
-  --sidebar-width:   260px;
-  --content-max:     1280px;
+  --sidebar-width:   240px;
+  --content-max:     1200px;
 }
 
 /* ── Reset ────────────────────────────────────────────────────────────────── */
@@ -99,7 +114,7 @@ html {
 }
 
 body {
-  font-family: var(--font);
+  font-family: 'Heebo', var(--font), sans-serif;
   font-size: var(--font-size-base);
   color: var(--color-text);
   background: var(--color-bg);
@@ -144,14 +159,12 @@ ul, ol { list-style: none; }
 .btn-primary {
   background: var(--color-primary);
   color: #fff;
-  box-shadow: var(--shadow-pink);
 }
 .btn-primary:hover:not(:disabled) {
   background: var(--color-primary-hover);
-  transform: translateY(-1px);
-  box-shadow: 0 6px 24px rgba(233,30,140,0.35);
+  opacity: 0.9;
 }
-.btn-primary:active { transform: translateY(0); }
+.btn-primary:active { opacity: 1; }
 
 /* Secondary - navy */
 .btn-secondary {
@@ -255,8 +268,9 @@ ul, ol { list-style: none; }
 
 /* ── Stat Card ────────────────────────────────────────────────────────────── */
 .stat-number {
-  font-size: var(--font-size-3xl);
-  font-weight: 800;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 40px;
+  font-weight: 700;
   color: var(--color-navy);
   line-height: 1;
 }
@@ -265,6 +279,16 @@ ul, ol { list-style: none; }
   color: var(--color-text-muted);
   font-weight: 500;
   margin-top: var(--space-1);
+}
+
+/* ── Page Header ──────────────────────────────────────────────────────────── */
+.page-header {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: var(--font-size-4xl);
+  font-weight: 700;
+  color: var(--color-navy);
+  line-height: 1.2;
+  margin-bottom: var(--space-6);
 }
 
 /* ── Divider ──────────────────────────────────────────────────────────────── */
@@ -342,8 +366,8 @@ ul, ol { list-style: none; }
 
 /* ── Design Token Aliases (backward compat + new tokens) ─────────────────── */
 :root {
-  --color-primary-dark:  #c2185b;
-  --color-navy-light:    #2d3452;
+  --color-primary-dark:  #A80E59;
+  --color-navy-light:    #8B92B3;
   --color-bg-white:      #ffffff;
   --color-surface:       #ffffff;
 
@@ -354,9 +378,6 @@ ul, ol { list-style: none; }
   --space-lg:  var(--space-6);
   --space-xl:  var(--space-8);
   --space-2xl: var(--space-12);
-
-  /* Shadow aliases */
-  --shadow-md: var(--shadow);
 }
 
 /* ── Card (enhanced) ──────────────────────────────────────────────────────── */

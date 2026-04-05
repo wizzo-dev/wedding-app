@@ -195,7 +195,7 @@ onMounted(loadMyVendors)
 .price-agreed { font-size: var(--font-size-sm); font-weight: 600; color: var(--color-navy); }
 .saving-hint { font-size: var(--font-size-xs); color: var(--color-text-muted); margin-right: auto; }
 
-.btn { padding: var(--space-3) var(--space-5); border-radius: var(--radius); border: none; font-size: var(--font-size-sm); font-weight: 600; cursor: pointer; transition: all var(--transition-fast); text-decoration: none; display: inline-flex; align-items: center; }
+.btn { padding: var(--space-3) var(--space-5); border-radius: var(--radius-xl); border: none; font-size: var(--font-size-sm); font-weight: 600; cursor: pointer; transition: all var(--transition-fast); text-decoration: none; display: inline-flex; align-items: center; }
 .btn-primary { background: var(--color-primary); color: white; }
 .btn-primary:hover { background: var(--color-primary-hover); }
 .btn-outline { background: transparent; border: 1.5px solid var(--color-border); color: var(--color-text); }

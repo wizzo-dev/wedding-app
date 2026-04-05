@@ -1,671 +1,464 @@
 <template>
   <div class="dashboard fade-in">
-    <!-- ── Loading skeleton ─────────────────────────────────────────── -->
-    <div v-if="loading" class="dashboard-loading">
-      <div class="skeleton sk-greeting"></div>
-      <div class="skeleton-row">
-        <div class="skeleton sk-stat" v-for="i in 4" :key="i"></div>
+
+    <!-- ── Stats Row ── -->
+    <div class="stats-row">
+      <!-- Guests -->
+      <div class="stat-card" @click="$router.push('/app/guests')" role="button" tabindex="0">
+        <div class="stat-header">
+          <span class="stat-label">אורחים</span>
+          <span class="stat-icon">👥</span>
+        </div>
+        <div class="stat-value">{{ guestStats.confirmed }} / {{ guestStats.total }}</div>
+        <div class="stat-progress-bar">
+          <div
+            class="stat-progress-fill"
+            :style="{ width: guestStats.total ? (guestStats.confirmed / guestStats.total * 100) + '%' : '0%' }"
+          ></div>
+        </div>
+        <div class="stat-sub">
+          אישרו הגעה {{ guestStats.total ? Math.round(guestStats.confirmed / guestStats.total * 100) : 0 }}%
+        </div>
       </div>
-      <div class="skeleton sk-card-wide"></div>
+
+      <!-- Budget -->
+      <div class="stat-card" @click="$router.push('/app/budget')" role="button" tabindex="0">
+        <div class="stat-header">
+          <span class="stat-label">תקציב</span>
+          <span class="stat-icon">💰</span>
+        </div>
+        <div class="stat-value">₪{{ budgetStats.spent?.toLocaleString('he-IL') || 0 }}</div>
+        <div class="stat-meta-row">
+          <div class="stat-meta-item">
+            <div class="meta-label">מוקצה</div>
+            <div class="meta-value">₪{{ budgetStats.total?.toLocaleString('he-IL') || 0 }}</div>
+          </div>
+          <div class="stat-meta-item">
+            <div class="meta-label">נותר</div>
+            <div class="meta-value green">
+              ₪{{ ((budgetStats.total || 0) - (budgetStats.spent || 0)).toLocaleString('he-IL') }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tasks -->
+      <div class="stat-card" @click="$router.push('/app/tasks')" role="button" tabindex="0">
+        <div class="stat-header">
+          <span class="stat-label">משימות</span>
+          <span class="stat-icon">✅</span>
+        </div>
+        <div class="stat-value">{{ taskStats.done }} / {{ taskStats.total }}</div>
+        <div class="stat-progress-bar">
+          <div
+            class="stat-progress-fill green-fill"
+            :style="{ width: taskStats.total ? (taskStats.done / taskStats.total * 100) + '%' : '0%' }"
+          ></div>
+        </div>
+        <div class="stat-sub">{{ taskStats.total - taskStats.done }} משימות פתוחות</div>
+      </div>
     </div>
 
-    <!-- ── Error state ───────────────────────────────────────────────── -->
-    <div v-else-if="error" class="empty-state">
-      <div class="empty-state-icon">⚠️</div>
-      <p class="empty-state-title">שגיאה בטעינת הנתונים</p>
-      <p class="empty-state-text">{{ error }}</p>
-      <button class="btn btn-primary" @click="loadDashboard">נסה שוב</button>
+    <!-- ── Middle: Tasks + Events ── -->
+    <div class="dashboard-mid">
+      <!-- Priority Tasks -->
+      <div class="dash-card tasks-card">
+        <div class="dash-card-header">
+          <h3>משימות עדיפות</h3>
+          <router-link to="/app/tasks" class="view-all-link">צפה בכל</router-link>
+        </div>
+        <div class="task-list">
+          <div v-for="task in priorityTasks" :key="task.id" class="task-item">
+            <div class="task-check" :class="{ done: task.status === 'done' }">
+              <span v-if="task.status === 'done'">✓</span>
+            </div>
+            <div class="task-body">
+              <div class="task-title" :class="{ done: task.status === 'done' }">{{ task.title }}</div>
+              <div class="task-meta">
+                {{ task.dueDate ? 'עד ' + formatDate(task.dueDate) : '' }}
+                {{ task.priority === 'high' ? '· עדיפות גבוהה' : '' }}
+              </div>
+            </div>
+            <span class="task-tag">{{ task.category || 'כללי' }}</span>
+          </div>
+          <div v-if="!priorityTasks.length" class="empty-tasks">אין משימות פתוחות 🎉</div>
+        </div>
+      </div>
+
+      <!-- Upcoming Events -->
+      <div class="dash-card events-card">
+        <div class="dash-card-header">
+          <h3>אירועים קרובים</h3>
+        </div>
+        <div class="events-list">
+          <div v-for="event in upcomingEvents" :key="event.id" class="event-item">
+            <div class="event-date-block">
+              <div class="event-month">{{ eventMonth(event.date) }}</div>
+              <div class="event-day">{{ eventDay(event.date) }}</div>
+            </div>
+            <div class="event-body">
+              <div class="event-title">{{ event.title }}</div>
+              <div class="event-meta">
+                {{ event.time || '' }}{{ event.location ? ' · ' + event.location : '' }}
+              </div>
+            </div>
+          </div>
+          <div v-if="!upcomingEvents.length" class="empty-events">אין אירועים קרובים</div>
+        </div>
+        <router-link to="/app/timeline" class="view-calendar-btn">צפה בציר הזמן</router-link>
+      </div>
     </div>
 
-    <!-- ── Main content ──────────────────────────────────────────────── -->
-    <template v-else-if="data">
-      <!-- Greeting header -->
-      <div class="dash-header">
-        <div class="dash-greeting">
-          <h1 class="greeting-text">
-            שלום {{ data.user.name1 }} ו{{ data.user.name2 }}! 💍
-          </h1>
-          <p class="greeting-sub">{{ greetingSub }}</p>
+    <!-- ── Recent Activity ── -->
+    <div class="dash-card activity-card">
+      <div class="dash-card-header">
+        <h3>פעילות אחרונה</h3>
+      </div>
+      <div class="activity-list">
+        <div v-for="item in recentRsvps" :key="item.id" class="activity-item">
+          <div class="activity-icon" :class="item.rsvpStatus">
+            {{ item.rsvpStatus === 'confirmed' ? '✅' : item.rsvpStatus === 'declined' ? '❌' : '🕐' }}
+          </div>
+          <div class="activity-body">
+            <strong>{{ item.name }}</strong>
+            {{
+              item.rsvpStatus === 'confirmed'
+                ? ` אישר/ה הגעה ל-${item.numPeople} אורחים`
+                : item.rsvpStatus === 'declined'
+                  ? ' לא יגיע/תגיע'
+                  : ' הגיב/ה "אולי"'
+            }}
+          </div>
+          <div class="activity-time">{{ timeAgo(item.updatedAt) }}</div>
         </div>
-        <!-- Countdown or no-date CTA -->
-        <div v-if="data.countdown.hasDate" class="countdown-badge" :class="{ urgent: data.countdown.days <= 30 }">
-          <span class="countdown-num">{{ Math.max(0, data.countdown.days) }}</span>
-          <span class="countdown-label">ימים לחתונה</span>
-        </div>
-        <div v-else class="no-date-cta">
-          <p class="no-date-text">טרם קבעת תאריך</p>
-          <router-link to="/app/settings/account" class="btn btn-primary btn-sm">הגדר תאריך חתונה</router-link>
+        <div v-if="!recentRsvps.length" class="empty-activity">
+          אין פעילות עדיין. שלח הזמנות ב-WhatsApp!
         </div>
       </div>
+    </div>
 
-      <!-- ── Wedding date set but passed ──────────────────────────── -->
-      <div v-if="data.countdown.hasDate && data.countdown.days < 0" class="congrats-banner">
-        🎊 מזל טוב! החתונה כבר עברה. נשמח לשמוע איך היה!
-      </div>
-
-      <!-- ── Stats row ────────────────────────────────────────────── -->
-      <div class="stats-row">
-        <div class="stat-card card card-hover" @click="$router.push('/app/guests')">
-          <div class="stat-card-body">
-            <div class="stat-icon stat-icon-success">✅</div>
-            <div>
-              <div class="stat-num">{{ data.guests.confirmed }}</div>
-              <div class="stat-lbl">אורחים מאושרים</div>
-            </div>
-          </div>
-        </div>
-        <div class="stat-card card card-hover" @click="$router.push('/app/guests')">
-          <div class="stat-card-body">
-            <div class="stat-icon stat-icon-warning">⏳</div>
-            <div>
-              <div class="stat-num">{{ data.guests.pending }}</div>
-              <div class="stat-lbl">ממתינים לאישור</div>
-            </div>
-          </div>
-        </div>
-        <div class="stat-card card card-hover" @click="$router.push('/app/guests')">
-          <div class="stat-card-body">
-            <div class="stat-icon stat-icon-error">❌</div>
-            <div>
-              <div class="stat-num">{{ data.guests.declined }}</div>
-              <div class="stat-lbl">לא מגיעים</div>
-            </div>
-          </div>
-        </div>
-        <div class="stat-card stat-card-total card card-hover" @click="$router.push('/app/guests')">
-          <div class="stat-card-body">
-            <div class="stat-icon stat-icon-primary">👥</div>
-            <div>
-              <div class="stat-num stat-num-primary">{{ data.guests.total }}</div>
-              <div class="stat-lbl">סה"כ אורחים</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ── Main grid ─────────────────────────────────────────────── -->
-      <div class="dash-grid">
-        <!-- Budget card -->
-        <div class="card dash-card budget-card">
-          <div class="card-body">
-            <div class="card-hdr">
-              <h2 class="card-title">💰 תקציב</h2>
-              <router-link to="/app/budget" class="card-link">לניהול תקציב ←</router-link>
-            </div>
-
-            <div v-if="data.budget.total === 0" class="budget-empty">
-              <p>עדיין לא הוגדר תקציב</p>
-              <router-link to="/app/budget" class="btn btn-outline btn-sm">הגדר תקציב</router-link>
-            </div>
-            <template v-else>
-              <div class="budget-amounts">
-                <div class="budget-remaining">
-                  <span class="budget-remaining-num">{{ formatCurrency(data.budget.remaining) }}</span>
-                  <span class="budget-remaining-lbl">נשאר</span>
-                </div>
-                <div class="budget-total-lbl">מתוך {{ formatCurrency(data.budget.total) }}</div>
-              </div>
-
-              <div class="budget-progress">
-                <div class="budget-bar">
-                  <div
-                    class="budget-fill"
-                    :class="{ overspent: data.budget.percent > 100 }"
-                    :style="{ width: Math.min(data.budget.percent, 100) + '%' }"
-                  ></div>
-                </div>
-                <span class="budget-pct" :class="{ 'budget-pct-danger': data.budget.percent > 90 }">
-                  {{ data.budget.percent }}%
-                </span>
-              </div>
-              <p class="budget-spent-label">הוצא: {{ formatCurrency(data.budget.spent) }}</p>
-            </template>
-          </div>
-        </div>
-
-        <!-- Quick actions -->
-        <div class="card dash-card quick-actions-card">
-          <div class="card-body">
-            <h2 class="card-title">⚡ פעולות מהירות</h2>
-            <div class="quick-actions-grid">
-              <router-link to="/app/guests" class="quick-action-btn">
-                <span class="qa-icon">👥</span>
-                <span>אורחים</span>
-              </router-link>
-              <router-link to="/app/budget" class="quick-action-btn">
-                <span class="qa-icon">💰</span>
-                <span>תקציב</span>
-              </router-link>
-              <router-link to="/app/seating" class="quick-action-btn">
-                <span class="qa-icon">🪑</span>
-                <span>הושבה</span>
-              </router-link>
-              <router-link to="/app/whatsapp" class="quick-action-btn">
-                <span class="qa-icon">💬</span>
-                <span>וואטסאפ</span>
-              </router-link>
-              <router-link to="/app/vendors" class="quick-action-btn">
-                <span class="qa-icon">🏪</span>
-                <span>ספקים</span>
-              </router-link>
-              <router-link to="/app/gifts" class="quick-action-btn">
-                <span class="qa-icon">🎁</span>
-                <span>מתנות</span>
-              </router-link>
-              <router-link to="/app/tasks" class="quick-action-btn">
-                <span class="qa-icon">✅</span>
-                <span>משימות</span>
-              </router-link>
-              <router-link to="/app/cards" class="quick-action-btn">
-                <span class="qa-icon">✉️</span>
-                <span>הזמנות</span>
-              </router-link>
-            </div>
-          </div>
-        </div>
-
-        <!-- Recent activity -->
-        <div class="card dash-card activity-card">
-          <div class="card-body">
-            <div class="card-hdr">
-              <h2 class="card-title">🕐 פעילות אחרונה</h2>
-              <router-link to="/app/guests" class="card-link">כל האורחים ←</router-link>
-            </div>
-
-            <div v-if="data.activity.length === 0" class="activity-empty">
-              <p class="text-muted text-sm">טרם נוספו אורחים</p>
-              <router-link to="/app/guests" class="btn btn-outline btn-sm" style="margin-top: var(--space-3)">הוסף אורחים</router-link>
-            </div>
-
-            <div v-else class="activity-list">
-              <div
-                v-for="item in data.activity"
-                :key="item.guestId"
-                class="activity-item"
-              >
-                <div class="activity-avatar">
-                  {{ item.guestName.charAt(0) }}
-                </div>
-                <div class="activity-info">
-                  <span class="activity-name">{{ item.guestName }}</span>
-                  <span class="activity-meta">{{ item.numPeople > 1 ? item.numPeople + ' מוזמנים' : 'מוזמן אחד' }}</span>
-                </div>
-                <div class="activity-status">
-                  <span class="badge" :class="rsvpBadgeClass(item.rsvpStatus)">
-                    {{ rsvpLabel(item.rsvpStatus) }}
-                  </span>
-                  <span class="activity-time">{{ formatRelativeTime(item.at) }}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </template>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { useAuthStore } from '@/stores/auth'
+import { ref, onMounted } from 'vue'
 import api from '@/composables/useApi'
 
-const auth = useAuthStore()
-const data = ref(null)
-const loading = ref(true)
-const error = ref('')
+const guestStats     = ref({ total: 0, confirmed: 0, declined: 0, pending: 0 })
+const budgetStats    = ref({ total: 0, spent: 0 })
+const taskStats      = ref({ total: 0, done: 0 })
+const priorityTasks  = ref([])
+const upcomingEvents = ref([])
+const recentRsvps    = ref([])
 
-onMounted(() => {
-  loadDashboard()
-})
-
-async function loadDashboard() {
-  loading.value = true
-  error.value = ''
+onMounted(async () => {
   try {
-    const res = await api.get('/dashboard')
-    data.value = res.data
-    // Sync auth user with latest data if needed
-    if (res.data.user && auth.user) {
-      auth.user = { ...auth.user, ...res.data.user }
-    }
-  } catch (err) {
-    error.value = err?.response?.data?.message || 'שגיאה בטעינת הנתונים'
-  } finally {
-    loading.value = false
-  }
-}
+    const [gs, bs, allTasksRes, pendingTasksRes, eventsRes, guestsRes] = await Promise.all([
+      api.get('/guests/stats').catch(() => ({ data: {} })),
+      api.get('/budget/summary').catch(() => ({ data: {} })),
+      api.get('/tasks').catch(() => ({ data: [] })),
+      api.get('/tasks?limit=3&status=pending').catch(() => ({ data: [] })),
+      api.get('/timeline?limit=4&upcoming=true').catch(() => ({ data: [] })),
+      api.get('/guests?limit=5&sort=updatedAt').catch(() => ({ data: { items: [] } })),
+    ])
 
-const greetingSub = computed(() => {
-  if (!data.value) return ''
-  const { countdown, guests } = data.value
-  if (!countdown.hasDate) return 'מוכנים לתכנן את היום הגדול?'
-  if (countdown.days < 0) return 'מזל טוב על החתונה! 🎊'
-  if (countdown.days === 0) return 'היום הגדול הגיע! 🎊'
-  if (countdown.days <= 7) return `עוד ${countdown.days} ימים — הכל מוכן?`
-  if (countdown.days <= 30) return `עוד חודש! בדקו שהכל מסודר 🔔`
-  if (guests.total === 0) return 'מתחילים? הוסיפו את רשימת האורחים'
-  return `${guests.confirmed} אורחים מאשרים מתוך ${guests.total} סה"כ`
+    guestStats.value = {
+      total:     gs.data.total     || 0,
+      confirmed: gs.data.confirmed || 0,
+      declined:  gs.data.declined  || 0,
+      pending:   gs.data.pending   || 0,
+    }
+
+    budgetStats.value = {
+      total: bs.data.totalBudget || bs.data.total || 0,
+      spent: bs.data.totalSpent  || bs.data.spent || 0,
+    }
+
+    const allTasks = Array.isArray(allTasksRes.data)
+      ? allTasksRes.data
+      : allTasksRes.data?.items || []
+    taskStats.value = {
+      total: allTasks.length,
+      done:  allTasks.filter(t => t.status === 'done').length,
+    }
+
+    priorityTasks.value = (
+      Array.isArray(pendingTasksRes.data)
+        ? pendingTasksRes.data
+        : pendingTasksRes.data?.items || []
+    ).slice(0, 3)
+
+    upcomingEvents.value = (
+      Array.isArray(eventsRes.data)
+        ? eventsRes.data
+        : eventsRes.data?.items || []
+    ).slice(0, 4)
+
+    const guestItems = guestsRes.data?.items || guestsRes.data || []
+    recentRsvps.value = guestItems
+      .filter(g => g.rsvpStatus && g.rsvpStatus !== 'pending')
+      .slice(0, 5)
+
+  } catch (e) {
+    console.error('Dashboard load error', e)
+  }
 })
 
-function formatCurrency(amount) {
-  if (!amount) return '₪0'
-  return '₪' + Math.round(amount).toLocaleString('he-IL')
+function formatDate(d) {
+  return new Date(d).toLocaleDateString('he-IL', { day: 'numeric', month: 'short' })
 }
-
-function formatRelativeTime(dateStr) {
-  const d = new Date(dateStr)
-  const now = new Date()
-  const diffMs = now - d
-  const diffMin = Math.floor(diffMs / 60000)
-  const diffHr  = Math.floor(diffMin / 60)
-  const diffDay = Math.floor(diffHr / 24)
-
-  if (diffMin < 1)  return 'עכשיו'
-  if (diffMin < 60) return `לפני ${diffMin} דק'`
-  if (diffHr < 24)  return `לפני ${diffHr} שע'`
-  if (diffDay < 7)  return `לפני ${diffDay} ימים`
-  return d.toLocaleDateString('he-IL')
+function eventMonth(d) {
+  return new Date(d).toLocaleDateString('he-IL', { month: 'short' }).replace('.', '')
 }
-
-function rsvpLabel(status) {
-  const map = {
-    confirmed: 'מגיע ✅',
-    declined:  'לא מגיע ❌',
-    pending:   'ממתין ⏳'
-  }
-  return map[status] || status
+function eventDay(d) {
+  return new Date(d).getDate()
 }
-
-function rsvpBadgeClass(status) {
-  const map = {
-    confirmed: 'badge-success',
-    declined:  'badge-error',
-    pending:   'badge-neutral'
-  }
-  return map[status] || 'badge-neutral'
+function timeAgo(d) {
+  if (!d) return ''
+  const ms = Date.now() - new Date(d).getTime()
+  const m  = Math.floor(ms / 60000)
+  if (m < 60)  return `לפני ${m} דקות`
+  const h  = Math.floor(m / 60)
+  if (h < 24)  return `לפני ${h} שעות`
+  return `לפני ${Math.floor(h / 24)} ימים`
 }
 </script>
 
 <style scoped>
-/* ── Page ───────────────────────────────────────────────── */
-.dashboard {
-  padding: var(--space-6) var(--space-8);
-  max-width: var(--content-max);
-  margin: 0 auto;
-}
+.dashboard { display: flex; flex-direction: column; gap: 20px; }
 
-/* ── Loading skeletons ──────────────────────────────────── */
-.dashboard-loading { display: flex; flex-direction: column; gap: var(--space-6); }
-.sk-greeting { height: 80px; border-radius: var(--radius-lg); }
-.skeleton-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-4); }
-.sk-stat { height: 96px; border-radius: var(--radius-xl); }
-.sk-card-wide { height: 200px; border-radius: var(--radius-xl); }
-
-/* ── Header ─────────────────────────────────────────────── */
-.dash-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-6);
-  margin-bottom: var(--space-8);
-  flex-wrap: wrap;
-}
-
-.greeting-text {
-  font-size: var(--font-size-3xl);
-  font-weight: 900;
-  color: var(--color-navy);
-  margin-bottom: var(--space-1);
-  line-height: 1.2;
-}
-.greeting-sub {
-  font-size: var(--font-size-base);
-  color: var(--color-text-muted);
-}
-
-/* Countdown badge */
-.countdown-badge {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-hover));
-  color: #fff;
-  padding: var(--space-4) var(--space-8);
-  border-radius: var(--radius-2xl);
-  box-shadow: var(--shadow-pink);
-  min-width: 130px;
-  flex-shrink: 0;
-}
-.countdown-badge.urgent {
-  animation: pulse-badge 2s infinite;
-}
-@keyframes pulse-badge {
-  0%, 100% { box-shadow: var(--shadow-pink); }
-  50% { box-shadow: 0 8px 32px rgba(233,30,140,0.5); }
-}
-.countdown-num {
-  font-size: var(--font-size-5xl);
-  font-weight: 900;
-  line-height: 1;
-}
-.countdown-label {
-  font-size: var(--font-size-sm);
-  opacity: 0.85;
-  font-weight: 600;
-  margin-top: 4px;
-}
-
-/* No date CTA */
-.no-date-cta {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-4) var(--space-6);
-  background: var(--color-primary-bg);
-  border: 1.5px dashed var(--color-primary);
-  border-radius: var(--radius-xl);
-}
-.no-date-text {
-  font-size: var(--font-size-sm);
-  color: var(--color-primary);
-  font-weight: 600;
-}
-
-/* Congrats banner */
-.congrats-banner {
-  background: linear-gradient(90deg, var(--color-primary-light), #fff8e7);
-  border: 1px solid var(--color-primary);
-  border-radius: var(--radius-lg);
-  padding: var(--space-4) var(--space-6);
-  font-weight: 600;
-  color: var(--color-navy);
-  margin-bottom: var(--space-6);
-  font-size: var(--font-size-base);
-}
-
-/* ── Stats row ──────────────────────────────────────────── */
+/* ── Stats Row ── */
 .stats-row {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: var(--space-4);
-  margin-bottom: var(--space-6);
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
 }
 
 .stat-card {
+  background: #FFFFFF;
+  border-radius: 24px;
+  padding: 20px 22px;
+  border: 1px solid #EAEAEA;
   cursor: pointer;
-  transition: box-shadow var(--transition), transform var(--transition);
+  transition: border-color 0.15s;
 }
-.stat-card:hover {
-  box-shadow: var(--shadow);
-  transform: translateY(-3px);
-}
-.stat-card-body {
-  padding: var(--space-5) var(--space-6);
+.stat-card:hover { border-color: #FF407D; }
+
+.stat-header {
   display: flex;
   align-items: center;
-  gap: var(--space-4);
+  justify-content: space-between;
+  margin-bottom: 8px;
 }
-.stat-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: var(--radius-lg);
+.stat-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #9CA3AF;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+.stat-icon { font-size: 20px; }
+
+.stat-value {
+  font-size: 32px;
+  font-weight: 800;
+  color: #1B3C73;
+  margin-bottom: 10px;
+  line-height: 1;
+}
+
+.stat-progress-bar {
+  height: 6px;
+  background: #F0F2F5;
+  border-radius: 3px;
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+.stat-progress-fill {
+  height: 100%;
+  background: #FF407D;
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+.stat-progress-fill.green-fill { background: #22C55E; }
+
+.stat-sub { font-size: 12px; color: #888; }
+
+.stat-meta-row { display: flex; gap: 24px; margin-top: 4px; }
+.meta-label { font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
+.meta-value { font-size: 15px; font-weight: 700; color: #1B3C73; margin-top: 2px; }
+.meta-value.green { color: #22C55E; }
+
+/* ── Middle Grid ── */
+.dashboard-mid {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  gap: 16px;
+}
+
+/* ── Cards ── */
+.dash-card {
+  background: #FFFFFF;
+  border-radius: 24px;
+  border: 1px solid #EAEAEA;
+  padding: 22px;
+}
+
+.dash-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+.dash-card-header h3 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1B3C73;
+  margin: 0;
+}
+.view-all-link {
+  font-size: 13px;
+  color: #FF407D;
+  font-weight: 600;
+  text-decoration: none;
+  transition: opacity 0.15s;
+}
+.view-all-link:hover { text-decoration: underline; }
+
+/* ── Task List ── */
+.task-list { display: flex; flex-direction: column; gap: 8px; }
+
+.task-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: #FAFAFA;
+  border-radius: 12px;
+  border: 1px solid #EAEAEA;
+}
+.task-check {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #D1D5DB;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.4rem;
+  font-size: 11px;
+  color: white;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+.task-check.done { background: #22C55E; border-color: #22C55E; }
+
+.task-body { flex: 1; min-width: 0; }
+.task-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1B3C73;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.task-title.done { text-decoration: line-through; color: #9CA3AF; }
+.task-meta { font-size: 12px; color: #888; margin-top: 2px; }
+
+.task-tag {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 8px;
+  background: #F0F2F5;
+  color: #6B7280;
+  white-space: nowrap;
   flex-shrink: 0;
 }
-.stat-icon-success { background: var(--color-success-bg); }
-.stat-icon-warning { background: var(--color-warning-bg); }
-.stat-icon-error   { background: var(--color-error-bg); }
-.stat-icon-primary { background: var(--color-primary-light); }
 
-.stat-num {
-  font-size: var(--font-size-3xl);
-  font-weight: 900;
-  color: var(--color-navy);
-  line-height: 1;
-}
-.stat-num-primary { color: var(--color-primary); }
-.stat-lbl {
-  font-size: var(--font-size-xs);
-  color: var(--color-text-muted);
-  font-weight: 600;
-  margin-top: 2px;
+.empty-tasks,
+.empty-events,
+.empty-activity {
+  text-align: center;
+  color: #9CA3AF;
+  font-size: 14px;
+  padding: 24px 0;
 }
 
-/* ── Main grid ──────────────────────────────────────────── */
-.dash-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: auto auto;
-  gap: var(--space-5);
-}
+/* ── Events List ── */
+.events-list { display: flex; flex-direction: column; gap: 14px; }
 
-.dash-card { overflow: hidden; }
+.event-item { display: flex; gap: 12px; align-items: center; }
 
-.card-body {
-  padding: var(--space-6);
-}
-
-.card-hdr {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: var(--space-5);
-}
-.card-title {
-  font-size: var(--font-size-lg);
-  font-weight: 800;
-  color: var(--color-navy);
-}
-.card-link {
-  font-size: var(--font-size-sm);
-  color: var(--color-primary);
-  font-weight: 600;
-  transition: opacity var(--transition-fast);
-}
-.card-link:hover { opacity: 0.75; }
-
-/* ── Budget card ────────────────────────────────────────── */
-.budget-card { grid-column: 1; }
-
-.budget-empty {
+.event-date-block {
+  width: 46px;
+  height: 46px;
+  background: #1B3C73;
+  border-radius: 12px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-6) 0;
-  color: var(--color-text-muted);
-  font-size: var(--font-size-sm);
+  justify-content: center;
+  flex-shrink: 0;
+  color: white;
 }
+.event-month { font-size: 10px; opacity: 0.75; letter-spacing: 0.5px; }
+.event-day { font-size: 18px; font-weight: 800; line-height: 1.1; }
 
-.budget-amounts {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  margin-bottom: var(--space-4);
-}
-.budget-remaining-num {
-  font-size: var(--font-size-4xl);
-  font-weight: 900;
-  color: var(--color-navy);
-  line-height: 1;
-}
-.budget-remaining-lbl {
-  font-size: var(--font-size-sm);
-  color: var(--color-text-muted);
+.event-body { flex: 1; min-width: 0; }
+.event-title {
+  font-size: 14px;
   font-weight: 600;
-  margin-right: var(--space-2);
-}
-.budget-total-lbl {
-  font-size: var(--font-size-sm);
-  color: var(--color-text-muted);
-}
-
-.budget-progress {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  margin-bottom: var(--space-2);
-}
-.budget-bar {
-  flex: 1;
-  height: 10px;
-  background: var(--color-bg-subtle);
-  border-radius: var(--radius-full);
+  color: #1B3C73;
+  white-space: nowrap;
   overflow: hidden;
+  text-overflow: ellipsis;
 }
-.budget-fill {
-  height: 100%;
-  background: linear-gradient(90deg, var(--color-primary), var(--color-primary-hover));
-  border-radius: var(--radius-full);
-  transition: width var(--transition-slow);
-}
-.budget-fill.overspent { background: var(--color-error); }
-.budget-pct {
-  font-size: var(--font-size-sm);
+.event-meta { font-size: 12px; color: #888; margin-top: 2px; }
+
+.view-calendar-btn {
+  display: block;
+  margin-top: 18px;
+  padding: 12px;
+  background: #1B3C73;
+  color: white;
+  border-radius: 14px;
+  text-align: center;
   font-weight: 700;
-  color: var(--color-text-muted);
-  min-width: 3ch;
-}
-.budget-pct-danger { color: var(--color-error); }
-.budget-spent-label {
-  font-size: var(--font-size-xs);
-  color: var(--color-text-muted);
-}
-
-/* ── Quick actions card ─────────────────────────────────── */
-.quick-actions-card {
-  grid-column: 2;
-  grid-row: 1 / 3;
-}
-
-.quick-actions-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: var(--space-3);
-  margin-top: var(--space-4);
-}
-.quick-action-btn {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-4) var(--space-2);
-  background: var(--color-bg-card);
-  border: 1.5px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  transition: all var(--transition);
+  font-size: 14px;
   text-decoration: none;
-  color: var(--color-text-muted);
-  font-size: var(--font-size-xs);
-  font-weight: 600;
-  cursor: pointer;
+  border: none;
+  transition: opacity 0.15s;
 }
-.quick-action-btn:hover {
-  background: var(--color-primary);
-  border-color: var(--color-primary);
-  color: #fff;
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-pink);
-}
-.qa-icon { font-size: 1.6rem; line-height: 1; }
+.view-calendar-btn:hover { opacity: 0.88; }
 
-/* ── Activity card ──────────────────────────────────────── */
-.activity-card {
-  grid-column: 1;
-}
+/* ── Activity Feed ── */
+.activity-card { }
 
-.activity-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: var(--space-6) 0;
-}
+.activity-list { display: flex; flex-direction: column; gap: 14px; }
 
-.activity-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
 .activity-item {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-3) 0;
-  border-bottom: 1px solid var(--color-border);
+  gap: 12px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #F0F2F5;
 }
 .activity-item:last-child { border-bottom: none; padding-bottom: 0; }
 
-.activity-avatar {
-  width: 36px;
-  height: 36px;
-  border-radius: var(--radius-full);
-  background: var(--color-primary-light);
-  color: var(--color-primary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 800;
-  font-size: var(--font-size-sm);
-  flex-shrink: 0;
-}
-.activity-info {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-.activity-name {
-  font-weight: 700;
-  font-size: var(--font-size-sm);
-  color: var(--color-text);
-}
-.activity-meta {
-  font-size: var(--font-size-xs);
-  color: var(--color-text-muted);
-}
-.activity-status {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 3px;
-}
-.activity-time {
-  font-size: var(--font-size-xs);
-  color: var(--color-text-light);
-}
+.activity-icon { font-size: 20px; flex-shrink: 0; line-height: 1; }
+.activity-body { flex: 1; font-size: 14px; color: #374151; }
+.activity-body strong { color: #1B3C73; }
+.activity-time { font-size: 12px; color: #9CA3AF; white-space: nowrap; flex-shrink: 0; }
 
-/* ── Responsive ─────────────────────────────────────────── */
-@media (max-width: 1100px) {
-  .quick-actions-grid { grid-template-columns: repeat(4, 1fr); }
-}
-
+/* ── Responsive ── */
 @media (max-width: 900px) {
-  .stats-row { grid-template-columns: repeat(2, 1fr); }
-  .dash-grid { grid-template-columns: 1fr; }
-  .quick-actions-card { grid-column: 1; grid-row: auto; }
+  .stats-row    { grid-template-columns: repeat(2, 1fr); }
+  .dashboard-mid { grid-template-columns: 1fr; }
 }
-
 @media (max-width: 600px) {
-  .dashboard { padding: var(--space-4); }
-  .stats-row { grid-template-columns: repeat(2, 1fr); gap: var(--space-3); }
-  .greeting-text { font-size: var(--font-size-2xl); }
-  .countdown-num { font-size: var(--font-size-4xl); }
-  .dash-header { flex-direction: column; align-items: flex-start; }
-  .quick-actions-grid { grid-template-columns: repeat(4, 1fr); }
-}
-
-@media (max-width: 420px) {
-  /* Tighten stat cards so they don't overflow at 375px */
-  .stat-card-body { padding: var(--space-3); gap: var(--space-2); }
-  .stat-icon { width: 38px; height: 38px; font-size: 1.1rem; }
-  .stat-num { font-size: var(--font-size-2xl); }
-  /* Quick actions: 4-col is tight at 375px, keep icons visible */
-  .quick-action-btn { padding: var(--space-3) var(--space-1); }
-  .qa-icon { font-size: 1.3rem; }
+  .stats-row    { grid-template-columns: 1fr 1fr; gap: 12px; }
+  .stat-value   { font-size: 26px; }
+  .dashboard-mid { gap: 12px; }
+  .dash-card    { padding: 16px; }
 }
 </style>

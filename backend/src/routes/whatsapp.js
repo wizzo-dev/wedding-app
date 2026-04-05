@@ -210,8 +210,11 @@ export default async function whatsappRoutes(app) {
       return { ok: true, scheduled: guests.length }
     }
 
-    // Send now
+    // Send now — verify WhatsApp is connected first
     const state = getClientState(userId)
+    if (!state?.client || state.status !== 'connected') {
+      return reply.code(400).send({ error: 'WA_NOT_CONNECTED', message: 'WhatsApp לא מחובר. אנא סרוק QR מחדש בהגדרות WhatsApp.' })
+    }
     const results = { sent: 0, failed: 0 }
 
     for (const guest of guests) {
@@ -225,14 +228,25 @@ export default async function whatsappRoutes(app) {
         .replace(/{{rsvp_link}}/g, `https://aware-carries-protecting-bay.trycloudflare.com/rsvp/${user.rsvpToken}`)
 
       try {
-        if (state?.client && state.status === 'connected') {
-          const chatId = guest.phone.replace(/\D/g, '') + '@c.us'
-          await state.client.sendMessage(chatId, body)
+        if (!state?.client || state.status !== 'connected') {
+          // WhatsApp not connected — save as failed
+          await prisma.waMessage.create({ data: { userId, templateId: template.id, recipientPhone: guest.phone, recipientName: guest.name, body, status: 'failed' } })
+          results.failed++
+          continue
         }
+        // Normalize Israeli phone: 0XX → 972XX, +972XX → 972XX
+        let normalized = guest.phone.replace(/\D/g, '')
+        if (normalized.startsWith('0')) normalized = '972' + normalized.slice(1)
+        else if (normalized.startsWith('00972')) normalized = normalized.slice(2)
+        const chatId = normalized + '@c.us'
+        console.log(`[WA] Sending to ${chatId}`)
+        await state.client.sendMessage(chatId, body)
         await prisma.waMessage.create({ data: { userId, templateId: template.id, recipientPhone: guest.phone, recipientName: guest.name, body, status: 'sent', sentAt: new Date() } })
         results.sent++
       } catch(e) {
-        await prisma.waMessage.create({ data: { userId, templateId: template.id, recipientPhone: guest.phone, recipientName: guest.name, body, status: 'failed' } })
+        const errMsg = e?.message || String(e) || 'unknown error'
+        console.error(`[WA] Send failed to ${guest.phone}:`, errMsg)
+        await prisma.waMessage.create({ data: { userId, templateId: template.id, recipientPhone: guest.phone, recipientName: guest.name, body, status: 'failed', error: errMsg } })
         results.failed++
       }
     }
@@ -240,11 +254,55 @@ export default async function whatsappRoutes(app) {
     return { ok: true, ...results }
   })
 
-  // GET /api/whatsapp/messages — history
+  // GET /api/whatsapp/messages — history with pagination
   app.get('/messages', { preHandler: [app.authenticate] }, async (req) => {
-    const { status, limit = 50 } = req.query
-    const where = { userId: req.user.userId }
+    const { status, page = 1, limit = 20 } = req.query
+    const userId = req.user.userId
+    const where = { userId }
     if (status) where.status = status
-    return prisma.waMessage.findMany({ where, orderBy: { createdAt: 'desc' }, take: parseInt(limit) })
+    const skip = (parseInt(page) - 1) * parseInt(limit)
+    const [total, items] = await Promise.all([
+      prisma.waMessage.count({ where }),
+      prisma.waMessage.findMany({ where, orderBy: { createdAt: 'desc' }, skip, take: parseInt(limit) })
+    ])
+    return { items, totalPages: Math.ceil(total / parseInt(limit)), total, page: parseInt(page) }
+  })
+
+  // POST /api/whatsapp/resend/:id — resend failed messages from a batch
+  app.post('/resend/:id', { preHandler: [app.authenticate] }, async (req, reply) => {
+    const userId = req.user.userId
+    const msgId = parseInt(req.params.id)
+    const original = await prisma.waMessage.findFirst({ where: { id: msgId, userId } })
+    if (!original) return reply.code(404).send({ error: 'NOT_FOUND' })
+
+    const state = getClientState(userId)
+    if (!state?.client || state.status !== 'connected') {
+      return reply.code(400).send({ error: 'WA_NOT_CONNECTED', message: 'WhatsApp לא מחובר' })
+    }
+
+    try {
+      let normalized = original.recipientPhone.replace(/\D/g, '')
+      if (normalized.startsWith('0')) normalized = '972' + normalized.slice(1)
+      else if (normalized.startsWith('00972')) normalized = normalized.slice(2)
+      const chatId = normalized + '@c.us'
+      await state.client.sendMessage(chatId, original.body)
+      await prisma.waMessage.update({ where: { id: msgId }, data: { status: 'sent', sentAt: new Date(), error: null } })
+      return { ok: true, resent: 1 }
+    } catch (e) {
+      return reply.code(500).send({ error: 'SEND_FAILED', message: e.message })
+    }
+  })
+
+  // Auto-reconnect users with existing WA sessions on startup
+  app.addHook('onReady', async () => {
+    try {
+      const activeSessions = await prisma.waSession.findMany({ where: { status: 'connected' } })
+      for (const session of activeSessions) {
+        console.log(`[WA] Auto-reconnecting user ${session.userId}...`)
+        createClient(session.userId).catch(e => console.error(`[WA] Auto-reconnect failed for user ${session.userId}:`, e.message))
+      }
+    } catch (e) {
+      console.error('[WA] Auto-reconnect startup error:', e.message)
+    }
   })
 }

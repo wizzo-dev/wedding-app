@@ -213,7 +213,7 @@
 
 <script setup>
 import { ref, computed, reactive, onMounted, nextTick } from 'vue'
-import axios from 'axios'
+import api from '@/composables/useApi'
 
 // ── State ──────────────────────────────────────────────────────────────────────
 const tables      = ref([])
@@ -250,7 +250,7 @@ async function loadSeating() {
   loading.value = true
   error.value   = null
   try {
-    const { data } = await axios.get('/api/seating/tables')
+    const { data } = await api.get('/seating/tables')
     tables.value     = data.tables
     unassigned.value = data.unassigned
   } catch (e) {
@@ -316,7 +316,7 @@ async function onDrop(evt, targetTable) {
 
 async function assignGuestToTable(guestId, tableId) {
   try {
-    await axios.put('/api/seating/assign', { guestId, tableId })
+    await api.put('/seating/assign', { guestId, tableId })
     // Optimistic update
     const guest = unassigned.value.find(g => g.id === guestId)
     if (guest) {
@@ -333,7 +333,7 @@ async function assignGuestToTable(guestId, tableId) {
 
 async function unassignGuest(guest, table) {
   try {
-    await axios.put('/api/seating/assign', { guestId: guest.id, tableId: null })
+    await api.put('/seating/assign', { guestId: guest.id, tableId: null })
     // Optimistic update
     table.guests = table.guests.filter(g => g.id !== guest.id)
     unassigned.value.push(guest)
@@ -378,7 +378,7 @@ async function saveTable() {
   savingTable.value = true
   try {
     if (editingTable.value) {
-      const { data } = await axios.put(`/api/seating/tables/${editingTable.value.id}`, {
+      const { data } = await api.put(`/api/seating/tables/${editingTable.value.id}`, {
         name: tableForm.name,
         seats: tableForm.seats
       })
@@ -386,7 +386,7 @@ async function saveTable() {
       if (idx !== -1) tables.value[idx] = { ...tables.value[idx], ...data }
       showToast('שולחן עודכן בהצלחה', 'success')
     } else {
-      const { data } = await axios.post('/api/seating/tables', {
+      const { data } = await api.post('/seating/tables', {
         name: tableForm.name,
         seats: tableForm.seats
       })
@@ -404,7 +404,7 @@ async function saveTable() {
 async function deleteTable(table) {
   if (!confirm(`למחוק את "${table.name}"? כל האורחים יוסרו מהשולחן.`)) return
   try {
-    await axios.delete(`/api/seating/tables/${table.id}`)
+    await api.delete(`/api/seating/tables/${table.id}`)
     const removed = tables.value.find(t => t.id === table.id)
     tables.value = tables.value.filter(t => t.id !== table.id)
     // Return guests to unassigned
@@ -521,7 +521,7 @@ onMounted(loadSeating)
   min-height: 160px;
 }
 .table-card:hover { box-shadow: var(--shadow); }
-.table-card.drag-over { border-color: var(--color-primary); background: var(--color-primary-bg); box-shadow: 0 0 0 3px rgba(233,30,140,0.15); }
+.table-card.drag-over { border-color: var(--color-primary); background: var(--color-primary-bg); border: 2px solid var(--color-primary); }
 .table-card.table-full { border-color: var(--color-success); }
 .table-card.being-dragged { opacity: 0.4; }
 

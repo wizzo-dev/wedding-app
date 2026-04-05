@@ -191,6 +191,12 @@
                 title="שלח WhatsApp"
               >💬</button>
               <button
+                v-if="guest.guestToken"
+                class="btn btn-ghost btn-icon btn-sm action-link"
+                @click="copyGuestLink(guest)"
+                title="העתק לינק אישי"
+              >🔗</button>
+              <button
                 class="btn btn-ghost btn-icon btn-sm"
                 @click="openEditModal(guest)"
                 title="ערוך אורח"
@@ -313,6 +319,11 @@
       </div>
     </Teleport>
 
+  <!-- Toast -->
+  <Transition name="toast">
+    <div v-if="toast" class="toast" :class="toast.type">{{ toast.message }}</div>
+  </Transition>
+
   </div>
 </template>
 
@@ -342,6 +353,8 @@ const importText      = ref('')
 const importLoading   = ref(false)
 const importMsg       = ref('')
 const importOk        = ref(false)
+
+const toast = ref(null)
 
 // ── Config ────────────────────────────────────────────────────────────────────
 const filterTabs = [
@@ -444,6 +457,22 @@ function openWhatsApp(guest) {
   const raw = (guest.phone || '').replace(/\D/g, '')
   const intl = raw.startsWith('0') ? '972' + raw.slice(1) : raw
   window.open(`https://wa.me/${intl}`, '_blank')
+}
+
+function showToast(message, type = 'success') {
+  toast.value = { message, type }
+  setTimeout(() => { toast.value = null }, 3000)
+}
+
+async function copyGuestLink(guest) {
+  const BASE_URL = 'https://aware-carries-protecting-bay.trycloudflare.com'
+  const url = `${BASE_URL}/rsvp/${guest.guestToken}`
+  try {
+    await navigator.clipboard.writeText(url)
+    showToast(`לינק של ${guest.name} הועתק! ✅`, 'success')
+  } catch {
+    showToast('שגיאה בהעתקה', 'error')
+  }
 }
 
 // ── API ───────────────────────────────────────────────────────────────────────
@@ -725,8 +754,22 @@ onMounted(fetchGuests)
 
 /* Actions */
 .td-actions { display: flex; gap: 2px; justify-content: flex-end; }
-.action-wa:hover  { color: #25D366 !important; }
-.action-del:hover { color: var(--color-error) !important; }
+.action-wa:hover   { color: #25D366 !important; }
+.action-link:hover { color: var(--color-primary) !important; }
+.action-del:hover  { color: var(--color-error) !important; }
+
+/* Toast */
+.toast {
+  position: fixed; bottom: var(--space-8); left: 50%;
+  transform: translateX(-50%);
+  padding: 12px 24px; border-radius: var(--radius-full);
+  font-size: var(--font-size-sm); font-weight: 700;
+  z-index: 2000; box-shadow: var(--shadow-lg); color: #fff; white-space: nowrap;
+}
+.toast.success { background: var(--color-success); }
+.toast.error   { background: var(--color-error); }
+.toast-enter-active, .toast-leave-active { transition: all 0.3s ease; }
+.toast-enter-from, .toast-leave-to { opacity: 0; transform: translateX(-50%) translateY(10px); }
 
 /* Result count */
 .result-count {
