@@ -138,7 +138,7 @@ const mainNav = [
 ]
 
 const planningNav = [
-  { icon: '📅', label: 'ציר זמן',         path: '/app/timeline' },
+  { icon: '📅', label: 'יומן',             path: '/app/timeline' },
   { icon: '🪑', label: 'מפת ישיבה',       path: '/app/seating' },
   { icon: '🃏', label: 'כרטיסי הושבה',   path: '/app/cards' },
   { icon: '✅', label: 'משימות',           path: '/app/tasks' },
@@ -154,7 +154,7 @@ const mobileMoreItems = [
   { icon: '🪑', label: 'מפת ישיבה', path: '/app/seating' },
   { icon: '✅', label: 'משימות', path: '/app/tasks' },
   { icon: '🎁', label: 'מתנות', path: '/app/gifts' },
-  { icon: '📅', label: 'ציר זמן', path: '/app/timeline' },
+  { icon: '📅', label: 'יומן', path: '/app/timeline' },
   { icon: '🃏', label: 'כרטיסי הושבה', path: '/app/cards' },
   { icon: '🏢', label: 'ספקים', path: '/app/vendors' },
   { icon: '💬', label: 'WhatsApp', path: '/app/whatsapp/connect' },
@@ -170,7 +170,7 @@ const PAGE_TITLES = {
   '/app/rsvp':          'אישורי הגעה',
   '/app/rsvp-links':    'אישורי הגעה',
   '/app/rsvp-design':   'אישורי הגעה',
-  '/app/timeline':      'ציר זמן',
+  '/app/timeline':      'יומן',
   '/app/seating':       'מפת ישיבה',
   '/app/cards':         'כרטיסי הושבה',
   '/app/tasks':         'משימות',
