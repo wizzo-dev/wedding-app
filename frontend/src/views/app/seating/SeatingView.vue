@@ -10,15 +10,7 @@
         <button class="btn btn-outline btn-sm" @click="exportXlsx">📥 ייצא XLSX</button>
         <router-link to="/app/seating/settings" class="btn btn-outline btn-sm">⚙️ הגדרות</router-link>
         <button @click="showGenerateModal = true" class="btn btn-outline btn-sm">✨ צור שולחנות</button>
-        <div class="venue-dropdown" v-click-outside="() => showVenueMenu = false">
-          <button @click="showVenueMenu = !showVenueMenu" class="btn btn-outline btn-sm">🏛️ אלמנט אולם</button>
-          <div v-if="showVenueMenu" class="venue-menu">
-            <button v-for="el in VENUE_ELEMENT_TYPES" :key="el.type" class="venue-menu-item" @click="addVenueElement(el); showVenueMenu = false">
-              <span>{{ el.icon }}</span> {{ el.label }}
-            </button>
-          </div>
-        </div>
-        <button @click="openAddTable()" class="btn btn-primary btn-sm">+ שולחן חדש</button>
+        <button @click="openAddElement()" class="btn btn-primary btn-sm">+ הוסף אלמנט</button>
       </div>
     </header>
 
@@ -99,7 +91,7 @@
           <p>הוסף שולחן ידנית או השתמש ב"צור שולחנות"</p>
           <div class="empty-actions">
             <button @click="showGenerateModal = true" class="btn btn-primary">✨ צור שולחנות</button>
-            <button @click="openAddTable()" class="btn btn-outline">+ שולחן חדש</button>
+            <button @click="openAddElement()" class="btn btn-outline">+ הוסף אלמנט</button>
           </div>
         </div>
 
@@ -301,27 +293,58 @@
       </div>
     </transition>
 
-    <!-- Add/Edit Table Modal -->
-    <div v-if="showAddTable || editingTable" class="modal-overlay" @click.self="closeTableModal">
+    <!-- Add/Edit Element Modal -->
+    <div v-if="showAddElement || editingTable" class="modal-overlay" @click.self="closeTableModal">
       <div class="modal">
-        <h3 class="modal-title">{{ editingTable ? 'עריכת שולחן' : 'שולחן חדש' }}</h3>
-        <form @submit.prevent="saveTable" class="modal-form">
-          <label>שם שולחן
-            <input v-model="tableForm.name" required placeholder="לדוגמה: שולחן 1" class="form-input" />
-          </label>
-          <label>מספר מקומות
-            <input v-model.number="tableForm.seats" type="number" min="1" max="50" required class="form-input" />
-          </label>
-          <label>סוג שולחן
-            <select v-model="tableForm.type" class="form-input">
-              <option value="round">עגול</option>
-              <option value="square">ריבוע</option>
-              <option value="rectangle">מלבני</option>
-              <option value="head">שולחן ראשי</option>
-            </select>
-          </label>
+        <h3 class="modal-title">{{ editingTable ? 'עריכת שולחן' : 'הוספת אלמנט' }}</h3>
+        <form @submit.prevent="saveElement" class="modal-form">
+          <!-- Element type picker (only when adding, not editing) -->
+          <div v-if="!editingTable" class="element-type-picker">
+            <label class="picker-label">סוג אלמנט</label>
+            <div class="element-grid">
+              <button
+                type="button"
+                class="element-tile"
+                :class="{ active: selectedElementType === 'table' }"
+                @click="selectedElementType = 'table'"
+              >
+                <span class="tile-icon">🍽️</span>
+                <span class="tile-label">שולחן</span>
+              </button>
+              <button
+                v-for="el in VENUE_ELEMENT_TYPES"
+                :key="el.type"
+                type="button"
+                class="element-tile"
+                :class="{ active: selectedElementType === el.type }"
+                @click="selectedElementType = el.type"
+              >
+                <span class="tile-icon">{{ el.icon }}</span>
+                <span class="tile-label">{{ el.label }}</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Table-specific fields -->
+          <template v-if="editingTable || selectedElementType === 'table'">
+            <label>שם שולחן
+              <input v-model="tableForm.name" required placeholder="לדוגמה: שולחן 1" class="form-input" />
+            </label>
+            <label>מספר מקומות
+              <input v-model.number="tableForm.seats" type="number" min="1" max="50" required class="form-input" />
+            </label>
+            <label>צורת שולחן
+              <select v-model="tableForm.type" class="form-input">
+                <option value="round">עגול</option>
+                <option value="square">ריבוע</option>
+                <option value="rectangle">מלבני</option>
+                <option value="head">שולחן ראשי</option>
+              </select>
+            </label>
+          </template>
+
           <div class="modal-actions">
-            <button type="submit" class="btn btn-primary" :disabled="saving">
+            <button type="submit" class="btn btn-primary" :disabled="saving || !selectedElementType">
               {{ saving ? 'שומר...' : (editingTable ? 'שמור' : 'הוסף') }}
             </button>
             <button type="button" @click="closeTableModal" class="btn btn-outline">ביטול</button>
@@ -411,7 +434,7 @@ const VENUE_ELEMENT_TYPES = [
   { type: 'gifts_table', icon: '🎁', label: 'שולחן מתנות', width: 160, height: 60, color: '#D5F5D5' },
 ]
 
-const showVenueMenu = ref(false)
+const selectedElementType = ref('table')
 
 // State
 const tables = ref([])
@@ -433,7 +456,7 @@ const canvasContainer = ref(null)
 const tablePositions = ref({}) // { tableId: {x, y} }
 
 // Modals
-const showAddTable = ref(false)
+const showAddElement = ref(false)
 const editingTable = ref(null)
 const deletingTable = ref(null)
 const showGenerateModal = ref(false)
@@ -756,13 +779,14 @@ async function unassignGuest(guestId) {
   }
 }
 
-// ── Open Add Table (with auto-numbering) ─────────────────────────────────────
-function openAddTable() {
+// ── Open Add Element (with auto-numbering for tables) ───────────────────────
+function openAddElement() {
   const nextNum = tables.value.length + 1
   tableForm.value = { name: `שולחן ${nextNum}`, seats: 8, type: 'round' }
+  selectedElementType.value = 'table'
   editingTable.value = null
   formError.value = null
-  showAddTable.value = true
+  showAddElement.value = true
 }
 
 // ── HTML Overlay Drop Zone helpers ───────────────────────────────────────────
@@ -807,7 +831,8 @@ function clickGuest(guest) {
 function editTable(table) {
   editingTable.value = table
   tableForm.value = { name: table.name, seats: table.seats, type: table.type }
-  showAddTable.value = false
+  selectedElementType.value = 'table'
+  showAddElement.value = false
 }
 
 function confirmDeleteTable(table) {
@@ -815,34 +840,48 @@ function confirmDeleteTable(table) {
 }
 
 function closeTableModal() {
-  showAddTable.value = false
+  showAddElement.value = false
   editingTable.value = null
   tableForm.value = { name: '', seats: 8, type: 'round' }
+  selectedElementType.value = 'table'
   formError.value = null
 }
 
-async function saveTable() {
+async function saveElement() {
   formError.value = null
-  saving.value = true
-  try {
-    if (editingTable.value) {
-      await apiCall(`/tables/${editingTable.value.id}`, {
-        method: 'PUT',
-        body: JSON.stringify(tableForm.value)
-      })
-    } else {
-      await apiCall('/tables', {
-        method: 'POST',
-        body: JSON.stringify(tableForm.value)
-      })
+  // Editing an existing table, or adding a table
+  if (editingTable.value || selectedElementType.value === 'table') {
+    saving.value = true
+    try {
+      if (editingTable.value) {
+        await apiCall(`/tables/${editingTable.value.id}`, {
+          method: 'PUT',
+          body: JSON.stringify(tableForm.value)
+        })
+      } else {
+        await apiCall('/tables', {
+          method: 'POST',
+          body: JSON.stringify(tableForm.value)
+        })
+      }
+      closeTableModal()
+      await loadData()
+    } catch (e) {
+      formError.value = e.message
+    } finally {
+      saving.value = false
     }
-    closeTableModal()
-    await loadData()
-  } catch (e) {
-    formError.value = e.message
-  } finally {
-    saving.value = false
+    return
   }
+
+  // Adding a venue element
+  const elType = VENUE_ELEMENT_TYPES.find(e => e.type === selectedElementType.value)
+  if (!elType) {
+    formError.value = 'בחר סוג אלמנט'
+    return
+  }
+  addVenueElement(elType)
+  closeTableModal()
 }
 
 async function deleteTable() {
@@ -932,19 +971,6 @@ function loadVenueElements() {
   } catch {}
 }
 
-// v-click-outside directive
-const vClickOutside = {
-  mounted(el, binding) {
-    el._clickOutsideHandler = (e) => {
-      if (!el.contains(e.target)) binding.value()
-    }
-    document.addEventListener('click', el._clickOutsideHandler)
-  },
-  unmounted(el) {
-    document.removeEventListener('click', el._clickOutsideHandler)
-  }
-}
-
 onMounted(() => {
   loadData()
   loadVenueElements()
@@ -979,39 +1005,45 @@ onMounted(() => {
 .page-subtitle { color: var(--color-text-muted); font-size: var(--font-size-sm); margin: 0; }
 .header-actions { display: flex; gap: var(--space-2); flex-wrap: wrap; align-items: center; }
 
-/* Venue dropdown */
-.venue-dropdown { position: relative; }
-.venue-menu {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: auto;
-  z-index: 100;
-  background: #fff;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg, 12px);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
-  padding: 6px;
-  min-width: 180px;
-  margin-top: 4px;
-}
-.venue-menu-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  padding: 8px 12px;
-  border: none;
-  background: none;
-  font-family: var(--font);
+/* Element type picker */
+.element-type-picker { margin-bottom: var(--space-3); }
+.picker-label {
+  display: block;
   font-size: var(--font-size-sm);
+  font-weight: 700;
   color: var(--color-navy);
-  cursor: pointer;
-  border-radius: 8px;
-  transition: background 0.12s;
-  text-align: right;
+  margin-bottom: 8px;
 }
-.venue-menu-item:hover { background: var(--color-bg-subtle, #F5F6FA); }
+.element-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.element-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 6px;
+  border: 1.5px solid var(--color-border);
+  background: #fff;
+  border-radius: var(--radius-lg, 12px);
+  cursor: pointer;
+  font-family: var(--font);
+  transition: all 0.15s;
+}
+.element-tile:hover { border-color: var(--color-primary); }
+.element-tile.active {
+  border-color: var(--color-primary);
+  background: var(--color-primary-bg, #FFF0F5);
+}
+.tile-icon { font-size: 1.4rem; }
+.tile-label {
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--color-navy);
+  text-align: center;
+}
 
 /* Stats */
 .stats-bar {

@@ -134,7 +134,7 @@ const mainNav = [
   { icon: '👥', label: 'אורחים',       path: '/app/guests' },
   { icon: '🏢', label: 'ספקים',        path: '/app/vendors' },
   { icon: '💰', label: 'תקציב',        path: '/app/budget' },
-  { icon: '📋', label: 'RSVP',         path: '/app/rsvp-links' },
+  { icon: '📋', label: 'אישורי הגעה',  path: '/app/rsvp' },
 ]
 
 const planningNav = [
@@ -144,7 +144,6 @@ const planningNav = [
   { icon: '✅', label: 'משימות',           path: '/app/tasks' },
   { icon: '🎁', label: 'מתנות',            path: '/app/gifts' },
   { icon: '💬', label: 'WhatsApp',         path: '/app/whatsapp/connect' },
-  { icon: '🎨', label: 'עיצוב RSVP',      path: '/app/rsvp-design' },
 ]
 
 // Mobile: 2 fixed tabs + center button + 2 more in bottom sheet
@@ -168,7 +167,9 @@ const PAGE_TITLES = {
   '/app/guests':        'אורחים',
   '/app/vendors':       'ספקים',
   '/app/budget':        'תקציב',
-  '/app/rsvp-links':    'לינקי RSVP',
+  '/app/rsvp':          'אישורי הגעה',
+  '/app/rsvp-links':    'אישורי הגעה',
+  '/app/rsvp-design':   'אישורי הגעה',
   '/app/timeline':      'ציר זמן',
   '/app/seating':       'מפת ישיבה',
   '/app/cards':         'כרטיסי הושבה',
@@ -179,7 +180,6 @@ const PAGE_TITLES = {
   '/app/whatsapp/templates': 'WhatsApp — תבניות',
   '/app/whatsapp/history':   'WhatsApp — היסטוריה',
   '/app/whatsapp':           'WhatsApp',
-  '/app/rsvp-design':   'עיצוב עמוד RSVP',
   '/app/invitations':   'הזמנות',
   '/app/settings':      'הגדרות',
 }

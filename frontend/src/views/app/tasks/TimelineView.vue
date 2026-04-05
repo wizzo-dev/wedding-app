@@ -48,10 +48,10 @@
     </div>
 
     <!-- Timeline -->
-    <div v-if="!loading && !error && events.length > 0" class="timeline-container">
+    <div v-if="!loading && !error && sortedEvents.length > 0" class="timeline-container">
       <div class="timeline-line"></div>
       <div
-        v-for="(event, idx) in events"
+        v-for="(event, idx) in sortedEvents"
         :key="event.id"
         class="timeline-event fade-in-up"
         :style="{ animationDelay: `${idx * 60}ms` }"
@@ -164,7 +164,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import api from '@/composables/useApi'
 import { useAuthStore } from '@/stores/auth'
 
@@ -181,6 +181,29 @@ const deleteTarget = ref(null)
 const emptyForm = () => ({ date: '', time: '', title: '', description: '' })
 const form = ref(emptyForm())
 const errors = ref({})
+
+// Default date = wedding date (YYYY-MM-DD). Used when an event has no explicit date.
+const weddingDateKey = computed(() => {
+  const wd = auth.user?.weddingDate
+  if (!wd) return '9999-12-31' // no wedding date: put undated events last
+  try {
+    const d = new Date(wd)
+    const y = d.getFullYear()
+    const m = String(d.getMonth() + 1).padStart(2, '0')
+    const dd = String(d.getDate()).padStart(2, '0')
+    return `${y}-${m}-${dd}`
+  } catch { return '9999-12-31' }
+})
+
+// Sort events chronologically by full date+time (falling back to wedding date for undated events)
+const sortedEvents = computed(() => {
+  const fallback = weddingDateKey.value
+  return [...events.value].sort((a, b) => {
+    const aKey = `${(a.date || fallback)}T${a.time || '00:00'}`
+    const bKey = `${(b.date || fallback)}T${b.time || '00:00'}`
+    return aKey.localeCompare(bKey)
+  })
+})
 
 // ── API ───────────────────────────────────────────────────────────────────────
 async function load() {
@@ -233,8 +256,6 @@ async function saveEvent() {
     } else {
       const res = await api.post('/timeline', form.value)
       events.value.push(res.data)
-      // Re-sort
-      events.value.sort((a, b) => a.time.localeCompare(b.time))
     }
     closeModal()
   } catch (e) {
