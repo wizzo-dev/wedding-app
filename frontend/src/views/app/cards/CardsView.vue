@@ -109,27 +109,22 @@ const currentTemplate = computed(() => templates.find(t => t.id === selectedTemp
 async function loadGuests() {
   loading.value = true
   try {
-    const res = await api.get('/seating/assigned-guests')
-    guests.value = res.data || []
-  } catch {
-    // Fallback: load tables with guests
-    try {
-      const res = await api.get('/tables')
-      const allGuests = []
-      for (const table of (res.data || [])) {
-        for (const g of (table.guests || [])) {
-          allGuests.push({
-            id: g.id,
-            name: g.name,
-            tableName: table.name,
-            tableNumber: table.number || table.id,
-          })
-        }
+    const res = await api.get('/seating/tables')
+    const tables = res.data?.tables || res.data || []
+    const allGuests = []
+    for (const table of tables) {
+      for (const g of (table.guests || [])) {
+        allGuests.push({
+          id: g.id,
+          name: g.name,
+          tableName: table.name,
+          tableNumber: table.number || table.id,
+        })
       }
-      guests.value = allGuests
-    } catch {
-      guests.value = []
     }
+    guests.value = allGuests
+  } catch {
+    guests.value = []
   } finally {
     loading.value = false
   }

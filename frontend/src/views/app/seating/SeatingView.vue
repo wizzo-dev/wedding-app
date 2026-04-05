@@ -111,19 +111,27 @@
           >
             <v-layer>
               <template v-for="(table, idx) in tables" :key="table.id">
-                <!-- Table shadow circle -->
-                <v-circle :config="{
+                <!-- Table shadow -->
+                <v-rect :config="{
                   x: tableX(table, idx),
                   y: tableY(table, idx),
-                  radius: TABLE_R + 4,
+                  width: tableDims(table).w + 8,
+                  height: tableDims(table).h + 8,
+                  offsetX: (tableDims(table).w + 8) / 2,
+                  offsetY: (tableDims(table).h + 8) / 2,
+                  cornerRadius: tableDims(table).cr + 4,
                   fill: 'rgba(0,0,0,0.06)',
                   listening: false
                 }" />
                 <!-- Table body -->
-                <v-circle :config="{
+                <v-rect :config="{
                   x: tableX(table, idx),
                   y: tableY(table, idx),
-                  radius: TABLE_R,
+                  width: tableDims(table).w,
+                  height: tableDims(table).h,
+                  offsetX: tableDims(table).w / 2,
+                  offsetY: tableDims(table).h / 2,
+                  cornerRadius: tableDims(table).cr,
                   fill: tableFill(table),
                   stroke: selectedTable?.id === table.id ? '#E91E8C' : (dragOverTable?.id === table.id ? '#E91E8C' : '#d1d5db'),
                   strokeWidth: selectedTable?.id === table.id ? 3 : (dragOverTable?.id === table.id ? 3 : 1.5),
@@ -307,6 +315,7 @@
           <label>סוג שולחן
             <select v-model="tableForm.type" class="form-input">
               <option value="round">עגול</option>
+              <option value="square">ריבוע</option>
               <option value="rectangle">מלבני</option>
               <option value="head">שולחן ראשי</option>
             </select>
@@ -484,6 +493,14 @@ function tableGuestNames(table) {
   return names.slice(0, 2).join(', ') + ` +${names.length - 2}`
 }
 
+function tableDims(table) {
+  const t = table?.type || 'round'
+  if (t === 'rectangle') return { w: TABLE_R * 2.4, h: TABLE_R * 1.2, cr: 10 }
+  if (t === 'square')    return { w: TABLE_R * 1.7, h: TABLE_R * 1.7, cr: 10 }
+  if (t === 'head')      return { w: TABLE_R * 2.8, h: TABLE_R * 1.1, cr: 10 }
+  return { w: TABLE_R * 2, h: TABLE_R * 2, cr: TABLE_R } // round
+}
+
 function tableFill(table) {
   if (dragOverTable.value?.id === table.id) return '#fde8f4'
   if (tableGuestCount(table) >= table.seats) return '#fee2e2'
@@ -585,9 +602,10 @@ function onCanvasDragOver(e) {
   const mx = e.clientX - rect.left
   const my = e.clientY - rect.top
   dragOverTable.value = tables.value.find((t, idx) => {
-    const dx = mx - tableX(t, idx)
-    const dy = my - tableY(t, idx)
-    return Math.sqrt(dx * dx + dy * dy) <= TABLE_R
+    const { w, h } = tableDims(t)
+    const dx = Math.abs(mx - tableX(t, idx))
+    const dy = Math.abs(my - tableY(t, idx))
+    return dx <= w / 2 && dy <= h / 2
   }) || null
 }
 
@@ -751,19 +769,19 @@ function openAddTable() {
 function tableDropStyle(table, idx) {
   const x = tableX(table, idx)
   const y = tableY(table, idx)
+  const { w, h, cr } = tableDims(table)
   return {
     position: 'absolute',
-    left: (x - TABLE_R) + 'px',
-    top: (y - TABLE_R) + 'px',
-    width: (TABLE_R * 2) + 'px',
-    height: (TABLE_R * 2) + 'px',
-    borderRadius: '50%',
+    left: (x - w / 2) + 'px',
+    top: (y - h / 2) + 'px',
+    width: w + 'px',
+    height: h + 'px',
+    borderRadius: cr + 'px',
     cursor: 'pointer',
     zIndex: 10,
     background: 'transparent'
   }
 }
-
 function onOverlayDrop(table) {
   dragOverTable.value = null
   if (!dragGuest.value) return
