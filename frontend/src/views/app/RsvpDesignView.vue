@@ -115,8 +115,31 @@
               <span class="ctrl-icon">🖼</span>
               <div>
                 <h3 class="ctrl-title">תמונת רקע</h3>
-                <p class="ctrl-sub">אופציונלי — URL של תמונה שתכסה את הרקע</p>
+                <p class="ctrl-sub">העלו תמונה מהמחשב או הדביקו קישור</p>
               </div>
+            </div>
+
+            <!-- Upload area -->
+            <div class="upload-area" @click="$refs.fileInput.click()" @dragover.prevent @drop.prevent="handleDrop">
+              <input ref="fileInput" type="file" accept="image/*" class="hidden-input" @change="handleFileSelect" />
+              <div v-if="uploading" class="upload-status">
+                <div class="upload-spinner"></div>
+                <span>מעלה תמונה...</span>
+              </div>
+              <div v-else-if="form.rsvpBgImage" class="upload-preview">
+                <img :src="form.rsvpBgImage" class="upload-thumb" alt="תמונת רקע" />
+                <button class="remove-img-btn" @click.stop="form.rsvpBgImage = ''">✕ הסר</button>
+              </div>
+              <div v-else class="upload-placeholder">
+                <span class="upload-icon">📤</span>
+                <span>לחצו להעלאת תמונה או גררו לכאן</span>
+                <span class="upload-formats">JPG, PNG, WEBP, GIF (עד 5MB)</span>
+              </div>
+            </div>
+
+            <!-- Or URL -->
+            <div class="url-divider">
+              <span>או הדביקו קישור</span>
             </div>
             <input
               v-model="form.rsvpBgImage"
@@ -196,6 +219,7 @@ import { useAuthStore } from '@/stores/auth'
 
 const auth = useAuthStore()
 const saving = ref(false)
+const uploading = ref(false)
 const saveSuccess = ref(false)
 const loading = ref(true)
 
@@ -296,6 +320,38 @@ async function save() {
 function openPreview() {
   const token = auth.user?.rsvpToken
   if (token) window.open(`/rsvp/${token}`, '_blank')
+}
+
+async function uploadFile(file) {
+  if (!file) return
+  if (file.size > 5 * 1024 * 1024) {
+    alert('הקובץ גדול מדי. מקסימום 5MB')
+    return
+  }
+  uploading.value = true
+  try {
+    const fd = new FormData()
+    fd.append('file', file)
+    const res = await api.post('/users/upload-image', fd, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
+    form.rsvpBgImage = res.data.url
+  } catch (e) {
+    alert(e.response?.data?.message || 'שגיאה בהעלאת התמונה')
+  } finally {
+    uploading.value = false
+  }
+}
+
+function handleFileSelect(e) {
+  const file = e.target.files?.[0]
+  if (file) uploadFile(file)
+  e.target.value = ''
+}
+
+function handleDrop(e) {
+  const file = e.dataTransfer?.files?.[0]
+  if (file) uploadFile(file)
 }
 
 onMounted(load)
@@ -489,6 +545,83 @@ onMounted(load)
   transition: border-color var(--transition-fast);
 }
 .ctrl-input:focus { border-color: var(--color-primary); background: #fff; }
+
+/* Upload area */
+.hidden-input { display: none; }
+.upload-area {
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius-lg, 12px);
+  padding: var(--space-5);
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  margin-bottom: var(--space-3);
+}
+.upload-area:hover { border-color: var(--color-primary); background: var(--color-primary-light, #FFF0F5); }
+.upload-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+.upload-icon { font-size: 2rem; }
+.upload-formats { font-size: var(--font-size-xs); opacity: 0.7; }
+.upload-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+}
+.upload-thumb {
+  max-width: 200px;
+  max-height: 120px;
+  object-fit: cover;
+  border-radius: var(--radius);
+}
+.remove-img-btn {
+  background: none;
+  border: 1px solid var(--color-error, #EF4444);
+  color: var(--color-error, #EF4444);
+  border-radius: var(--radius-full);
+  padding: 4px 14px;
+  font-size: var(--font-size-xs);
+  font-family: var(--font);
+  cursor: pointer;
+  font-weight: 600;
+}
+.remove-img-btn:hover { background: var(--color-error, #EF4444); color: #fff; }
+.upload-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  color: var(--color-primary);
+  font-weight: 600;
+}
+.upload-spinner {
+  width: 20px; height: 20px;
+  border: 2.5px solid var(--color-border);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.url-divider {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin: var(--space-3) 0;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+.url-divider::before, .url-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--color-border);
+}
 .ctrl-hint {
   font-size: var(--font-size-xs);
   color: var(--color-text-muted);

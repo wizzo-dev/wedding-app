@@ -107,6 +107,32 @@
         </div>
         <router-link to="/app/timeline" class="view-calendar-btn">צפה בציר הזמן</router-link>
       </div>
+
+      <!-- Event Details Quick Access -->
+      <div class="dash-card event-details-card">
+        <div class="dash-card-header">
+          <h3>פרטי האירוע</h3>
+          <router-link to="/app/settings" class="edit-link">✏️ עריכה</router-link>
+        </div>
+        <div class="event-details-body" v-if="auth.user">
+          <div class="detail-row">
+            <span class="detail-label">💑</span>
+            <span class="detail-value">{{ auth.user.name1 }} & {{ auth.user.name2 }}</span>
+          </div>
+          <div class="detail-row" v-if="auth.user.weddingDate">
+            <span class="detail-label">📅</span>
+            <span class="detail-value">{{ new Date(auth.user.weddingDate).toLocaleDateString('he-IL', { day: 'numeric', month: 'long', year: 'numeric' }) }}</span>
+          </div>
+          <div class="detail-row" v-if="auth.user.venue">
+            <span class="detail-label">🏛️</span>
+            <span class="detail-value">{{ auth.user.venue }}</span>
+          </div>
+          <div class="detail-row" v-if="auth.user.venueAddress">
+            <span class="detail-label">📍</span>
+            <span class="detail-value">{{ auth.user.venueAddress }}</span>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- ── Recent Activity ── -->
@@ -143,6 +169,9 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import api from '@/composables/useApi'
+import { useAuthStore } from '@/stores/auth'
+
+const auth = useAuthStore()
 
 const guestStats     = ref({ total: 0, confirmed: 0, declined: 0, pending: 0 })
 const budgetStats    = ref({ total: 0, spent: 0 })
@@ -449,6 +478,35 @@ function timeAgo(d) {
 .activity-body { flex: 1; font-size: 14px; color: #374151; }
 .activity-body strong { color: #1B3C73; }
 .activity-time { font-size: 12px; color: #9CA3AF; white-space: nowrap; flex-shrink: 0; }
+
+/* Event Details Card */
+.event-details-card .dash-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.edit-link {
+  font-size: 13px;
+  color: #FF407D;
+  text-decoration: none;
+  font-weight: 600;
+}
+.edit-link:hover { text-decoration: underline; }
+.event-details-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+}
+.detail-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: #374151;
+}
+.detail-label { font-size: 18px; flex-shrink: 0; }
+.detail-value { font-weight: 600; color: #1B3C73; }
 
 /* ── Responsive ── */
 @media (max-width: 900px) {

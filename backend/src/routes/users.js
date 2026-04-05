@@ -1,5 +1,11 @@
 import bcrypt from 'bcrypt'
 import { prisma } from '../models/db.js'
+import { randomUUID } from 'crypto'
+import { writeFile, mkdir } from 'fs/promises'
+import { join, dirname } from 'path'
+import { fileURLToPath } from 'url'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
 
 const BCRYPT_ROUNDS = 12
 
@@ -116,6 +122,30 @@ export default async function userRoutes(app) {
       data,
       select: { rsvpGreeting: true, rsvpBgColor: true, rsvpBgImage: true, rsvpAccentColor: true }
     })
+  })
+
+  // POST /api/users/upload-image — upload an image file and return its URL
+  app.post('/upload-image', { preHandler: [app.authenticate] }, async (req, reply) => {
+    const data = await req.file()
+    if (!data) {
+      return reply.code(400).send({ error: 'NO_FILE', message: 'לא נבחר קובץ' })
+    }
+
+    const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+    if (!allowed.includes(data.mimetype)) {
+      return reply.code(400).send({ error: 'INVALID_TYPE', message: 'פורמט תמונה לא נתמך. יש להעלות JPG, PNG, WEBP או GIF' })
+    }
+
+    const ext = data.mimetype.split('/')[1].replace('jpeg', 'jpg')
+    const filename = `${req.user.userId}_${randomUUID()}.${ext}`
+    const uploadsDir = join(__dirname, '..', '..', 'uploads')
+    await mkdir(uploadsDir, { recursive: true })
+
+    const buffer = await data.toBuffer()
+    await writeFile(join(uploadsDir, filename), buffer)
+
+    const url = `/uploads/${filename}`
+    return { url }
   })
 
   // POST /api/users/change-password

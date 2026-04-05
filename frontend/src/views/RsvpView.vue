@@ -1,6 +1,11 @@
 <template>
   <div class="rsvp-page" dir="rtl" :style="rsvpPageStyle">
 
+    <!-- Edit RSVP design link (visible only for logged-in owner) -->
+    <router-link v-if="isOwner" to="/app/rsvp-design" class="rsvp-edit-fab" title="עריכת עיצוב RSVP">
+      ✏️ ערוך עיצוב
+    </router-link>
+
     <!-- Invitation image card -->
     <div class="inv-card">
       <button class="zoom-btn" @click="zoomOpen = true" v-if="imageUrl" aria-label="הגדל תמונה">⊕</button>
@@ -122,8 +127,14 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 
 const route = useRoute()
+const auth = useAuthStore()
+const isOwner = computed(() => {
+  if (!auth.isLoggedIn || !auth.user?.rsvpToken) return false
+  return route.params.code === auth.user.rsvpToken
+})
 
 // State
 const couple          = ref({})
@@ -602,4 +613,23 @@ onMounted(loadEvent)
   .rsvp-btn { font-size: 12px; padding: 11px 4px; }
   .event-title h1 { font-size: 19px; }
 }
+
+/* Edit FAB for owner */
+.rsvp-edit-fab {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  z-index: 1000;
+  background: #FF407D;
+  color: #fff;
+  padding: 10px 18px;
+  border-radius: 24px;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: 'Heebo', sans-serif;
+  text-decoration: none;
+  box-shadow: 0 4px 16px rgba(255,64,125,0.4);
+  transition: transform 0.15s, opacity 0.15s;
+}
+.rsvp-edit-fab:hover { transform: scale(1.05); opacity: 0.95; }
 </style>

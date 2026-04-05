@@ -57,6 +57,7 @@
         :style="{ animationDelay: `${idx * 60}ms` }"
       >
         <div class="event-time-col">
+          <div class="event-date" v-if="event.date">{{ formatDate(event.date) }}</div>
           <div class="event-time">{{ formatTime(event.time) }}</div>
         </div>
         <div class="event-dot"></div>
@@ -86,6 +87,16 @@
             <button class="modal-close" @click="closeModal">✕</button>
           </div>
           <div class="modal-body">
+            <div class="form-group">
+              <label class="form-label">תאריך</label>
+              <input
+                v-model="form.date"
+                type="date"
+                class="form-input"
+                dir="ltr"
+              />
+              <span class="form-hint">אם לא נבחר, ייחשב כיום החתונה</span>
+            </div>
             <div class="form-group">
               <label class="form-label">שעה *</label>
               <input
@@ -167,7 +178,7 @@ const showModal = ref(false)
 const editEvent = ref(null)
 const deleteTarget = ref(null)
 
-const emptyForm = () => ({ time: '', title: '', description: '' })
+const emptyForm = () => ({ date: '', time: '', title: '', description: '' })
 const form = ref(emptyForm())
 const errors = ref({})
 
@@ -194,7 +205,7 @@ function openAddModal() {
 
 function openEditModal(evt) {
   editEvent.value = evt
-  form.value = { time: evt.time, title: evt.title, description: evt.description || '' }
+  form.value = { date: evt.date || '', time: evt.time, title: evt.title, description: evt.description || '' }
   errors.value = {}
   showModal.value = true
 }
@@ -254,8 +265,14 @@ async function deleteEvent() {
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function formatTime(t) {
   if (!t) return ''
-  // t is HH:MM
   return t
+}
+
+function formatDate(d) {
+  if (!d) return ''
+  try {
+    return new Date(d + 'T00:00:00').toLocaleDateString('he-IL', { day: 'numeric', month: 'short' })
+  } catch { return d }
 }
 
 // Wedding date banner
@@ -359,6 +376,13 @@ onMounted(() => {
 .event-time-col {
   text-align: left;
   padding-top: 14px;
+}
+
+.event-date {
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--color-navy);
+  margin-bottom: 2px;
 }
 
 .event-time {
@@ -576,6 +600,7 @@ onMounted(() => {
 .form-input:focus { border-color: var(--color-primary); background: #fff; }
 .form-textarea { resize: vertical; min-height: 70px; }
 .form-error { font-size: var(--font-size-xs); color: var(--color-error); }
+.form-hint { font-size: var(--font-size-xs); color: var(--color-text-muted); margin-top: 2px; }
 
 .muted-text { color: var(--color-text-muted); font-size: var(--font-size-sm); margin-top: var(--space-2); }
 

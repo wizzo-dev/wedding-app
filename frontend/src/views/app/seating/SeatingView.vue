@@ -10,6 +10,14 @@
         <button class="btn btn-outline btn-sm" @click="exportXlsx">📥 ייצא XLSX</button>
         <router-link to="/app/seating/settings" class="btn btn-outline btn-sm">⚙️ הגדרות</router-link>
         <button @click="showGenerateModal = true" class="btn btn-outline btn-sm">✨ צור שולחנות</button>
+        <div class="venue-dropdown" v-click-outside="() => showVenueMenu = false">
+          <button @click="showVenueMenu = !showVenueMenu" class="btn btn-outline btn-sm">🏛️ אלמנט אולם</button>
+          <div v-if="showVenueMenu" class="venue-menu">
+            <button v-for="el in VENUE_ELEMENT_TYPES" :key="el.type" class="venue-menu-item" @click="addVenueElement(el); showVenueMenu = false">
+              <span>{{ el.icon }}</span> {{ el.label }}
+            </button>
+          </div>
+        </div>
         <button @click="openAddTable()" class="btn btn-primary btn-sm">+ שולחן חדש</button>
       </div>
     </header>
@@ -164,6 +172,38 @@
                   listening: false,
                   ellipsis: true,
                   wrap: 'none'
+                }" />
+              </template>
+
+              <!-- Venue Elements (stage, bar, head table, etc.) -->
+              <template v-for="(el, eIdx) in venueElements" :key="'ve-'+eIdx">
+                <v-rect :config="{
+                  x: el.x,
+                  y: el.y,
+                  width: el.width,
+                  height: el.height,
+                  fill: el.color,
+                  stroke: '#9ca3af',
+                  strokeWidth: 1.5,
+                  cornerRadius: 8,
+                  draggable: true,
+                  opacity: 0.85,
+                  id: 've-'+eIdx
+                }"
+                @dragend="(e) => onVenueElementDragEnd(eIdx, e)"
+                @dblclick="() => removeVenueElement(eIdx)"
+                />
+                <v-text :config="{
+                  x: el.x,
+                  y: el.y + el.height / 2 - 8,
+                  width: el.width,
+                  text: el.icon + ' ' + el.label,
+                  fontSize: 13,
+                  fontFamily: 'Heebo, sans-serif',
+                  fontStyle: 'bold',
+                  fill: '#1A1F36',
+                  align: 'center',
+                  listening: false
                 }" />
               </template>
             </v-layer>
@@ -350,8 +390,23 @@ const auth = useAuthStore()
 // Constants
 const TABLE_R = 55
 
+// Venue element types
+const VENUE_ELEMENT_TYPES = [
+  { type: 'stage', icon: '🎤', label: 'במה', width: 300, height: 80, color: '#E8D5F5' },
+  { type: 'bar', icon: '🍸', label: 'בר', width: 180, height: 60, color: '#D5E8F5' },
+  { type: 'head_table', icon: '👑', label: 'שולחן הנשיא', width: 260, height: 70, color: '#FFF0D5' },
+  { type: 'dj', icon: '🎵', label: 'DJ', width: 120, height: 60, color: '#D5F5E8' },
+  { type: 'dance_floor', icon: '💃', label: 'רחבת ריקודים', width: 250, height: 200, color: '#F5E8D5' },
+  { type: 'entrance', icon: '🚪', label: 'כניסה', width: 120, height: 50, color: '#E0E0E0' },
+  { type: 'photo', icon: '📸', label: 'עמדת צילום', width: 100, height: 80, color: '#F5D5E8' },
+  { type: 'gifts_table', icon: '🎁', label: 'שולחן מתנות', width: 160, height: 60, color: '#D5F5D5' },
+]
+
+const showVenueMenu = ref(false)
+
 // State
 const tables = ref([])
+const venueElements = ref([])
 const unassigned = ref([])
 const stats = ref(null)
 const loading = ref(false)
@@ -382,19 +437,24 @@ const generating = ref(false)
 const formError = ref(null)
 const generateError = ref(null)
 
-// Stage config — sized dynamically to fit all tables
-const stageConfig = computed(() => ({
-  width: Math.max(900, 4 * 200 + 100),
-  height: Math.max(500, Math.ceil(tables.value.length / 4) * 200 + 100)
-}))
+// Stage config — sized dynamically to fit all tables + venue elements
+const stageConfig = computed(() => {
+  const allItems = [...tables.value, ...venueElements.value]
+  const maxX = allItems.reduce((mx, item) => Math.max(mx, (item.x || 0) + 200), 0)
+  const maxY = allItems.reduce((my, item) => Math.max(my, (item.y || 0) + 200), 0)
+  return {
+    width: Math.max(1400, maxX + 100),
+    height: Math.max(700, maxY + 100, Math.ceil(tables.value.length / 5) * 200 + 200)
+  }
+})
 
 // Grid-based position fallback (no overlap)
 function tableGridPos(idx) {
-  const cols = 4
-  const colWidth = 200
+  const cols = 6
+  const colWidth = 210
   const rowHeight = 200
-  const startX = 100
-  const startY = 100
+  const startX = 120
+  const startY = 120
   return {
     x: startX + (idx % cols) * colWidth,
     y: startY + Math.floor(idx / cols) * rowHeight
@@ -812,7 +872,65 @@ async function exportXlsx() {
   URL.revokeObjectURL(url)
 }
 
-onMounted(loadData)
+// ── Venue Elements ──────────────────────────────────────────────────────────
+function addVenueElement(elType) {
+  venueElements.value.push({
+    type: elType.type,
+    icon: elType.icon,
+    label: elType.label,
+    width: elType.width,
+    height: elType.height,
+    color: elType.color,
+    x: 50 + Math.random() * 200,
+    y: 50 + Math.random() * 100
+  })
+  saveVenueElements()
+}
+
+function onVenueElementDragEnd(idx, evt) {
+  const node = evt.target
+  venueElements.value[idx].x = node.x()
+  venueElements.value[idx].y = node.y()
+  saveVenueElements()
+}
+
+function removeVenueElement(idx) {
+  if (confirm(`להסיר את ${venueElements.value[idx]?.label}?`)) {
+    venueElements.value.splice(idx, 1)
+    saveVenueElements()
+  }
+}
+
+function saveVenueElements() {
+  try {
+    localStorage.setItem(`venue_elements_${auth.user?.id || 0}`, JSON.stringify(venueElements.value))
+  } catch {}
+}
+
+function loadVenueElements() {
+  try {
+    const stored = localStorage.getItem(`venue_elements_${auth.user?.id || 0}`)
+    if (stored) venueElements.value = JSON.parse(stored)
+  } catch {}
+}
+
+// v-click-outside directive
+const vClickOutside = {
+  mounted(el, binding) {
+    el._clickOutsideHandler = (e) => {
+      if (!el.contains(e.target)) binding.value()
+    }
+    document.addEventListener('click', el._clickOutsideHandler)
+  },
+  unmounted(el) {
+    document.removeEventListener('click', el._clickOutsideHandler)
+  }
+}
+
+onMounted(() => {
+  loadData()
+  loadVenueElements()
+})
 </script>
 
 <style scoped>
@@ -842,6 +960,40 @@ onMounted(loadData)
 }
 .page-subtitle { color: var(--color-text-muted); font-size: var(--font-size-sm); margin: 0; }
 .header-actions { display: flex; gap: var(--space-2); flex-wrap: wrap; align-items: center; }
+
+/* Venue dropdown */
+.venue-dropdown { position: relative; }
+.venue-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: auto;
+  z-index: 100;
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg, 12px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  padding: 6px;
+  min-width: 180px;
+  margin-top: 4px;
+}
+.venue-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  background: none;
+  font-family: var(--font);
+  font-size: var(--font-size-sm);
+  color: var(--color-navy);
+  cursor: pointer;
+  border-radius: 8px;
+  transition: background 0.12s;
+  text-align: right;
+}
+.venue-menu-item:hover { background: var(--color-bg-subtle, #F5F6FA); }
 
 /* Stats */
 .stats-bar {

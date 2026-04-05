@@ -165,10 +165,17 @@ app.get('/rsvp/:code', async (req, reply) => {
   }
 })
 
+// ── Uploaded files ────────────────────────────────────────────────────────────
+app.register(staticFiles, {
+  root: join(__dirname, '..', 'uploads'),
+  prefix: '/uploads/'
+})
+
 // ── Static Frontend ───────────────────────────────────────────────────────────
 app.register(staticFiles, {
   root: frontendDist,
-  prefix: '/'
+  prefix: '/',
+  decorateReply: false
 })
 
 // ── Health Check ──────────────────────────────────────────────────────────────

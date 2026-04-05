@@ -12,13 +12,14 @@ export default async function timelineRoutes(app) {
 
   // POST /api/timeline — create a new event
   app.post('/', { preHandler: [app.authenticate] }, async (req, reply) => {
-    const { time, title, description, sortOrder } = req.body
+    const { time, title, description, sortOrder, date } = req.body
     if (!time || !title) {
       return reply.code(400).send({ error: 'MISSING_FIELDS', message: 'שדות זמן וכותרת הם חובה' })
     }
     const event = await prisma.timelineEvent.create({
       data: {
         userId: req.user.userId,
+        date: date?.trim() || null,
         time: time.trim(),
         title: title.trim(),
         description: description?.trim() || null,
@@ -31,7 +32,7 @@ export default async function timelineRoutes(app) {
   // PUT /api/timeline/:id — update event
   app.put('/:id', { preHandler: [app.authenticate] }, async (req, reply) => {
     const id = parseInt(req.params.id)
-    const { time, title, description, sortOrder } = req.body
+    const { time, title, description, sortOrder, date } = req.body
 
     const existing = await prisma.timelineEvent.findFirst({
       where: { id, userId: req.user.userId }
@@ -45,6 +46,7 @@ export default async function timelineRoutes(app) {
     const updated = await prisma.timelineEvent.update({
       where: { id },
       data: {
+        date: date !== undefined ? (date?.trim() || null) : existing.date,
         time: time.trim(),
         title: title.trim(),
         description: description?.trim() ?? null,

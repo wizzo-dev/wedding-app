@@ -332,6 +332,7 @@ model Subscription {
 model TimelineEvent {
   id          Int      @id @default(autoincrement())
   userId      Int      @map("user_id")
+  date        String?  @map("event_date")
   time        String
   title       String
   description String?
