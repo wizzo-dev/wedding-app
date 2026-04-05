@@ -26,8 +26,7 @@
         v-for="tab in statTabs"
         :key="tab.key"
         class="stat-badge"
-        :class="[tab.cls, { active: activeFilter === tab.filter }]"
-        @click="setFilter(tab.filter)"
+        :class="tab.cls"
       >
         <span class="sb-num">{{ stats[tab.key] }}</span>
         <span class="sb-label">{{ tab.label }}</span>
@@ -627,16 +626,10 @@ onMounted(fetchGuests)
   border-radius: var(--radius-lg);
   background: var(--color-bg-card);
   border: 1.5px solid var(--color-border);
-  cursor: pointer;
-  transition: all var(--transition);
+  cursor: default;
   min-width: 68px;
 }
-.stat-badge:not(.people-total):hover { border-color: var(--color-primary); background: var(--color-primary-bg); }
-.stat-badge.active { background: var(--color-primary-light); border-color: var(--color-primary); }
-.stat-badge.confirmed.active { background: var(--color-success-bg); border-color: var(--color-success); }
-.stat-badge.maybe.active { background: var(--color-warning-bg); border-color: var(--color-warning); }
-.stat-badge.declined.active { background: var(--color-error-bg); border-color: var(--color-error); }
-.stat-badge.people-total { cursor: default; background: var(--color-bg-subtle); border-style: dashed; }
+.stat-badge.people-total { background: var(--color-bg-subtle); border-style: dashed; }
 .sb-num { font-size: var(--font-size-xl); font-weight: 800; color: var(--color-navy); line-height: 1; }
 .sb-label { font-size: var(--font-size-xs); color: var(--color-text-muted); margin-top: 2px; white-space: nowrap; }
 
