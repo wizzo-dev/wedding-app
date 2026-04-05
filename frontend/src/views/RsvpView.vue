@@ -2,7 +2,7 @@
   <div class="rsvp-page" dir="rtl" :style="rsvpPageStyle">
 
     <!-- Edit RSVP design link (visible only for logged-in owner) -->
-    <router-link v-if="isOwner" to="/app/rsvp-design" class="rsvp-edit-fab" title="עריכת עיצוב RSVP">
+    <router-link v-if="isOwner" to="/app/rsvp" class="rsvp-edit-fab" title="עריכת עיצוב RSVP">
       ✏️ ערוך עיצוב
     </router-link>
 
